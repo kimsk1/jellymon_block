@@ -29,6 +29,7 @@ var exit_at := {}            # Vector2i -> 출구 데이터 목록
 var grabbed: Catcher = null
 var grab_offset := Vector2.ZERO
 var drag_px := Vector2.ZERO
+var active_touch_index := -1
 
 var time_left := 0.0
 var total_time := 1.0
@@ -193,26 +194,34 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if event is InputEventScreenTouch:
 		if event.pressed:
+			# 이미 잡은 손가락이 있으면 두 번째 손가락이 드래그 대상을 바꾸지 못하게 한다.
+			if active_touch_index >= 0:
+				return
 			var c = _pick_catcher(event.position)
 			if c != null:
+				var local_position := to_local(event.position)
 				grabbed = c
+				active_touch_index = event.index
 				c.set_grabbed(true)
-				drag_px = event.position
-				grab_offset = (origin + Vector2(c.origin_cell) * G.CELL) - event.position
+				drag_px = local_position
+				grab_offset = (origin + Vector2(c.origin_cell) * G.CELL) - local_position
 				audio.play("grab", 1.0, -8.0)
 				G.haptic(10)
-		else:
+		elif event.index == active_touch_index:
 			_release()
 	elif event is InputEventScreenDrag:
-		if grabbed:
-			drag_px = event.position
+		if grabbed and event.index == active_touch_index:
+			drag_px = to_local(event.position)
 
 
-func _pick_catcher(p: Vector2):
+func _pick_catcher(viewport_position: Vector2):
 	# 숫자 배지는 모양의 빈 모서리에 걸칠 수 있으므로 격자 판정보다 먼저 소유 블록을 선택한다.
 	for c in catchers:
-		if is_instance_valid(c) and c.badge_contains(p):
+		if is_instance_valid(c) and c.badge_contains(viewport_position):
 			return c
+	# 터치 좌표는 Viewport 기준이고 보드는 긴 화면에서 screen_offset만큼 이동하므로,
+	# 셀/거리 판정 전에 Game 노드의 로컬 좌표로 변환한다.
+	var p := to_local(viewport_position)
 	var cell := Vector2i(int(floor((p.x - origin.x) / G.CELL)), int(floor((p.y - origin.y) / G.CELL)))
 	if catcher_at.has(cell):
 		return catcher_at[cell]
@@ -231,6 +240,7 @@ func _release() -> void:
 	if grabbed:
 		grabbed.set_grabbed(false)
 		grabbed = null
+	active_touch_index = -1
 
 
 # ────────────────────────── 이동 (격자 슬라이드) ──────────────────────────
@@ -635,6 +645,37 @@ func _draw() -> void:
 
 
 # ────────────────────────── 헤드리스/QA 유틸 ──────────────────────────
+
+func debug_validate_touch_mapping(test_offset := Vector2(0, 160)) -> bool:
+	## 세로로 긴 Android 화면처럼 보드가 이동한 상태에서 선택 좌표와 멀티터치를 검증한다.
+	if catchers.is_empty() or state != "play":
+		return false
+	var original_position := position
+	position = test_offset
+	var target: Catcher = catchers[0]
+	var target_local := cell_pos(target.origin_cell + target.cells[0])
+	var target_viewport := to_global(target_local)
+	var press := InputEventScreenTouch.new()
+	press.index = 3
+	press.pressed = true
+	press.position = target_viewport
+	_unhandled_input(press)
+	var valid := grabbed == target and active_touch_index == 3
+	# 다른 손가락이 떨어져도 첫 손가락의 드래그가 유지되어야 한다.
+	var unrelated_release := InputEventScreenTouch.new()
+	unrelated_release.index = 4
+	unrelated_release.pressed = false
+	unrelated_release.position = target_viewport
+	_unhandled_input(unrelated_release)
+	valid = valid and grabbed == target and active_touch_index == 3
+	var release := InputEventScreenTouch.new()
+	release.index = 3
+	release.pressed = false
+	release.position = target_viewport
+	_unhandled_input(release)
+	valid = valid and grabbed == null and active_touch_index == -1
+	position = original_position
+	return valid
 
 func _find_catcher_for(cid: String) -> Catcher:
 	for c in catchers:

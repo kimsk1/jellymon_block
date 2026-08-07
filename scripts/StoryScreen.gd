@@ -12,6 +12,9 @@ var full_text := ""
 var revealed := 0.0
 var typing := false
 var typing_speed := 32.0
+var last_advance_msec := -1000
+
+const ADVANCE_DEBOUNCE_MS := 120
 
 var background: TextureRect
 var speaker_label: Label
@@ -187,7 +190,16 @@ func _on_gui_input(event: InputEvent) -> void:
 	if not pressed:
 		return
 	accept_event()
+	_request_advance(Time.get_ticks_msec())
+
+
+func _request_advance(now_msec: int) -> bool:
+	## 모바일/에디터에서 한 번의 탭이 MouseButton+ScreenTouch로 중복 전달되는 것을 막는다.
+	if now_msec - last_advance_msec < ADVANCE_DEBOUNCE_MS:
+		return false
+	last_advance_msec = now_msec
 	_advance()
+	return true
 
 
 func _advance() -> void:
@@ -210,6 +222,8 @@ func _show_line(index: int) -> void:
 	var speaker: Dictionary = cast.get(speaker_id, {"name": "이야기"})
 	speaker_label.text = _replace_variables(String(speaker.get("name", "이야기")))
 	full_text = _replace_variables(String(line.get("text", "")))
+	# 이전 문장의 완성 상태(-1 또는 전체 글자 수)를 지운 뒤 새 문장을 0글자부터 시작한다.
+	dialogue_label.visible_characters = -1
 	dialogue_label.text = full_text
 	dialogue_label.visible_characters = 0
 	revealed = 0.0
@@ -218,6 +232,20 @@ func _show_line(index: int) -> void:
 	progress_label.text = "%d / %d" % [line_index + 1, lines.size()]
 	_update_portrait(speaker_id, String(line.get("portrait_side", "left")))
 	main.audio.play("grab", 1.0 + float(line_index % 3) * 0.04, -8.0)
+
+
+func debug_validate_typewriter_advance() -> bool:
+	## 다음 탭과 함께 들어오는 중복 이벤트가 새 문장을 즉시 완성하지 않는지 검증한다.
+	if lines.size() < 2:
+		return false
+	_show_line(0)
+	typing = false
+	dialogue_label.visible_characters = full_text.length()
+	continue_label.visible = true
+	last_advance_msec = -1000
+	var first_accepted := _request_advance(1000)
+	var duplicate_accepted := _request_advance(1001)
+	return first_accepted and not duplicate_accepted and line_index == 1 and typing and revealed == 0.0 and dialogue_label.visible_characters == 0
 
 
 func _replace_variables(value: String) -> String:

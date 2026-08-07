@@ -86,6 +86,10 @@ func _ready() -> void:
 	show_title()
 	if OS.get_cmdline_user_args().has("--shots"):
 		_screenshot_run()
+	elif OS.get_cmdline_user_args().has("--validate-story-typing"):
+		_headless_story_typing_test()
+	elif OS.get_cmdline_user_args().has("--validate-touch"):
+		_headless_touch_test()
 	elif DisplayServer.get_name() == "headless":
 		_headless_smoke_test()
 
@@ -339,8 +343,29 @@ func _snap(fname: String) -> void:
 	print("[snap] ", fname)
 
 
+func _headless_story_typing_test() -> void:
+	show_story(ScenarioCatalog.intro(), Callable())
+	await get_tree().create_timer(0.2).timeout
+	var valid: bool = current_screen is StoryScreen and current_screen.debug_validate_typewriter_advance()
+	print("[story typing validation] next_line_retypes=", valid)
+	get_tree().quit(0 if valid else 1)
+
+
+func _headless_touch_test() -> void:
+	start_level(0, true, true)
+	await get_tree().create_timer(0.4).timeout
+	var offsets := [Vector2(0, 140), Vector2(0, 300), Vector2(40, 0), Vector2(180, 0)]
+	var failed := false
+	for offset in offsets:
+		var valid := game != null and game.debug_validate_touch_mapping(offset)
+		print("[touch validation] offset=", offset, " valid=", valid)
+		failed = failed or not valid
+	get_tree().quit(1 if failed else 0)
+
+
 func _headless_smoke_test() -> void:
 	print("[smoke] start")
+	var smoke_failed := false
 	await get_tree().create_timer(0.4).timeout
 	show_map()
 	await get_tree().create_timer(0.4).timeout
@@ -348,7 +373,10 @@ func _headless_smoke_test() -> void:
 		start_level(lv, true)
 		await get_tree().create_timer(0.5).timeout
 		if game:
+			if not game.debug_validate_touch_mapping():
+				push_error("[smoke] Android 긴 화면 터치 좌표/손가락 추적 오류: level=%d" % lv)
+				smoke_failed = true
 			await game.debug_drive()
 		await get_tree().create_timer(1.0).timeout
 	print("[smoke] done")
-	get_tree().quit()
+	get_tree().quit(1 if smoke_failed else 0)
