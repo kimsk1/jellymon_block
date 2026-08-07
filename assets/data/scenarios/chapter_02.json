@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "id": "chapter_02",
+  "chapter": 2,
+  "title": "캔디 숲",
+  "subtitle": "달콤한 미로의 거짓 속삭임",
+  "level_range": [11, 20],
+  "featured_resident": "starbean",
+  "start": {
+    "id": "chapter_02_start",
+    "background_asset": "res://assets/story/chapter_02_start.png",
+    "trigger": {"type": "chapter_start", "level": 11, "once_per_profile": true},
+    "background": "story_candy_forest_entrance",
+    "music": "chapter_forest_story",
+    "lines": [
+      {"id": "ch02_s_001", "type": "narration", "speaker": "narrator", "text": "캔디 숲의 나무들은 서로 붙어 거대한 미로가 되었고, 길마다 검은 설탕 가시가 돋아나 있었습니다.", "camera": "pan_forest"},
+      {"id": "ch02_s_002", "type": "dialogue", "speaker": "starbean", "text": "돌아가! 숲의 사탕을 빼앗으러 온 거지?", "expression": "wild", "portrait_side": "right", "sfx": "candy_snap"},
+      {"id": "ch02_s_003", "type": "dialogue", "speaker": "mallow", "text": "아니야, 별콩! 그 목소리는 네 마음이 아니라 검은 시럽의 속삭임이야!", "expression": "pleading", "portrait_side": "left"},
+      {"id": "ch02_s_004", "type": "dialogue", "speaker": "player", "text": "봉인 모양에 맞는 블록을 놓으면 가시 길을 열 수 있어. 숲을 망가뜨리지 않고 구하자.", "expression": "focused", "portrait_side": "left"},
+      {"id": "ch02_s_005", "type": "system", "speaker": "narrator", "text": "목표: 모양 봉인을 풀어 순화 게이트까지 이어지는 길을 만드세요.", "effect": "mission_card"}
+    ]
+  },
+  "end": {
+    "id": "chapter_02_end",
+    "background_asset": "res://assets/story/chapter_02_end.png",
+    "trigger": {"type": "chapter_clear", "level": 20, "once_per_profile": true},
+    "background": "story_candy_forest_restored",
+    "music": "story_forest_clear",
+    "reward_cue": "resident_starbean",
+    "next": "chapter_03.start",
+    "lines": [
+      {"id": "ch02_e_001", "type": "narration", "speaker": "narrator", "text": "마지막 봉인이 빛나자 검은 설탕 가시는 알록달록한 막대사탕 꽃으로 피어났습니다.", "effect": "candy_bloom", "sfx": "forest_chime"},
+      {"id": "ch02_e_002", "type": "dialogue", "speaker": "starbean", "text": "미안해. 누군가 계속 '모두 네 걸 빼앗을 거야'라고 속삭였어.", "expression": "sad", "portrait_side": "right"},
+      {"id": "ch02_e_003", "type": "dialogue", "speaker": "player", "text": "이제 혼자 지킬 필요 없어. 우리 아지트에서 함께 돌보자.", "expression": "smile", "portrait_side": "left"},
+      {"id": "ch02_e_004", "type": "narration", "speaker": "narrator", "text": "그때 숲의 소다 열매가 파랗게 깜박이며 해변에서 온 구조 신호를 비췄습니다.", "sfx": "bubble_signal", "camera": "clue_reveal"},
+      {"id": "ch02_e_005", "type": "dialogue", "speaker": "starbean", "text": "소다 해변이 온통 거품에 잠겼어! 내 별빛으로 길을 비출게.", "expression": "determined", "portrait_side": "right"},
+      {"id": "ch02_e_006", "type": "narration", "speaker": "narrator", "text": "별콩이 두 번째 주민으로 합류하고, 일행은 파도 소리를 따라 달렸습니다.", "effect": "resident_join"}
+    ]
+  }
+}

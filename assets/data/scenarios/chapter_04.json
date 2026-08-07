@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "id": "chapter_04",
+  "chapter": 4,
+  "title": "아이스 설산",
+  "subtitle": "얼어붙은 용기의 불씨",
+  "level_range": [31, 40],
+  "featured_resident": "sprout",
+  "start": {
+    "id": "chapter_04_start",
+    "background_asset": "res://assets/story/chapter_04_start.png",
+    "trigger": {"type": "chapter_start", "level": 31, "once_per_profile": true},
+    "background": "story_ice_mountain_blizzard",
+    "music": "chapter_ice_story",
+    "lines": [
+      {"id": "ch04_s_001", "type": "narration", "speaker": "narrator", "text": "아이스 설산의 바람은 마음까지 얼릴 듯 차가웠고, 젤리 몬스터들은 단단한 얼음 갑옷 속에 갇혀 있었습니다.", "effect": "snow_gust"},
+      {"id": "ch04_s_002", "type": "dialogue", "speaker": "sprout", "text": "멈춰… 산이 화났어. 움직이면 모두 얼어붙을 거야!", "expression": "wild_afraid", "portrait_side": "right"},
+      {"id": "ch04_s_003", "type": "dialogue", "speaker": "bubble", "text": "이 아이는 우릴 공격하는 게 아니라 아래 마을을 지키고 있어.", "expression": "concerned", "portrait_side": "left"},
+      {"id": "ch04_s_004", "type": "dialogue", "speaker": "player", "text": "얼음의 움직임을 읽고 길을 열자. 마음 블록이라면 갑옷 안의 친구도 따뜻하게 품을 수 있어.", "expression": "focused", "portrait_side": "left"},
+      {"id": "ch04_s_005", "type": "system", "speaker": "narrator", "text": "목표: 미끄러운 길과 좁은 통로를 이용해 얼어붙은 젤리몬을 순화하세요.", "effect": "mission_card"}
+    ]
+  },
+  "end": {
+    "id": "chapter_04_end",
+    "background_asset": "res://assets/story/chapter_04_end.png",
+    "trigger": {"type": "chapter_clear", "level": 40, "once_per_profile": true},
+    "background": "story_ice_mountain_aurora",
+    "music": "story_ice_clear",
+    "reward_cue": "resident_sprout",
+    "next": "chapter_05.start",
+    "lines": [
+      {"id": "ch04_e_001", "type": "narration", "speaker": "narrator", "text": "검은 얼음이 녹자 눈 아래 잠들어 있던 초록 새싹들이 오로라처럼 산등성이를 밝혔습니다.", "effect": "aurora_sprouts", "sfx": "ice_break_clear"},
+      {"id": "ch04_e_002", "type": "dialogue", "speaker": "sprout", "text": "난 새싹이야. 화산에서 날아온 재가 무서워 모두를 얼려 숨기려 했어.", "expression": "relieved", "portrait_side": "right"},
+      {"id": "ch04_e_003", "type": "narration", "speaker": "narrator", "text": "정상 너머에는 검은 연기를 내뿜는 초코 화산과, 외로운 왕관 모양의 그림자가 보였습니다.", "camera": "volcano_reveal", "sfx": "volcano_rumble"},
+      {"id": "ch04_e_004", "type": "dialogue", "speaker": "sprout", "text": "저 목소리는 화가 난 게 아니야. 계속 '아무도 오지 마'라고 울고 있어.", "expression": "sad", "portrait_side": "right"},
+      {"id": "ch04_e_005", "type": "dialogue", "speaker": "player", "text": "그렇다면 마지막으로 구해야 할 친구는 화산 안에 있어.", "expression": "determined", "portrait_side": "left"},
+      {"id": "ch04_e_006", "type": "narration", "speaker": "narrator", "text": "새싹이 네 번째 주민으로 합류하고, 모두는 뜨거운 마지막 길로 향했습니다.", "effect": "resident_join"}
+    ]
+  }
+}

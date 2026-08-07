@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "id": "intro",
+  "title": "하늘에서 내린 젤리비",
+  "background_asset": "res://assets/story/intro.png",
+  "trigger": {"type": "first_launch_after_nickname", "once_per_profile": true},
+  "estimated_seconds": 70,
+  "next": "chapter_01.start",
+  "scenes": [
+	{
+	  "id": "intro_01_peaceful_day",
+	  "background": "story_jelly_village_day",
+	  "music": "story_warm_home",
+	  "transition": "fade_in",
+	  "lines": [
+		{"id": "intro_001", "type": "narration", "speaker": "narrator", "text": "말랑 구름 아래, 작고 달콤한 젤리 마을에는 웃음이 통통 튀고 있었어요.", "effect": "soft_sparkles"},
+		{"id": "intro_002", "type": "narration", "speaker": "narrator", "text": "하지만 그날 밤, 하늘 한가운데에 검은 소용돌이가 열렸습니다.", "sfx": "distant_rumble", "camera": "tilt_up"}
+	  ]
+	},
+	{
+	  "id": "intro_02_invasion",
+	  "background": "story_jelly_village_storm",
+	  "music": "story_jelly_rain",
+	  "transition": "flash_dark",
+	  "lines": [
+		{"id": "intro_003", "type": "narration", "speaker": "narrator", "text": "검은 시럽이 섞인 젤리비가 쏟아지자, 낯선 젤리 몬스터들이 골목과 지붕을 가득 메웠어요.", "sfx": "jelly_rain", "effect": "screen_drops"},
+		{"id": "intro_004", "type": "dialogue", "speaker": "mallow", "text": "비켜! 어디로 가야 하는지도 모르겠단 말이야!", "expression": "wild", "portrait_side": "right", "sfx": "jelly_growl"},
+		{"id": "intro_005", "type": "narration", "speaker": "narrator", "text": "젤리 몬스터들은 화가 난 것처럼 보였지만, 자세히 보니 모두 겁에 질려 떨고 있었습니다.", "camera": "close_up_mallow"}
+	  ]
+	},
+	{
+	  "id": "intro_03_first_rescue",
+	  "background": "story_village_square_gate",
+	  "music": "story_first_courage",
+	  "transition": "cut",
+	  "lines": [
+		{"id": "intro_006", "type": "dialogue", "speaker": "player", "text": "잡아서 혼내는 게 아니라, 안전한 곳으로 옮겨야 해.", "expression": "determined", "portrait_side": "left"},
+		{"id": "intro_007", "type": "narration", "speaker": "narrator", "text": "{player_name}의 손끝에서 색색의 마음 블록이 깨어났습니다.", "sfx": "block_awaken", "effect": "color_rings"},
+		{"id": "intro_008", "type": "narration", "speaker": "narrator", "text": "빨간 블록 안에 말랑을 조심히 담아 같은 색 순화 게이트로 보내자, 검은 얼룩이 별가루가 되어 흩어졌어요.", "sfx": "purify_burst", "effect": "heart_burst"},
+		{"id": "intro_009", "type": "dialogue", "speaker": "mallow", "text": "후아… 이제 마음이 조용해졌어. 검은 시럽이 자꾸 무서운 생각을 속삭였어.", "expression": "relieved", "portrait_side": "right"}
+	  ]
+	},
+	{
+	  "id": "intro_04_promise",
+	  "background": "story_hideout_first_light",
+	  "music": "story_promise",
+	  "transition": "warm_wipe",
+	  "lines": [
+		{"id": "intro_010", "type": "dialogue", "speaker": "mallow", "text": "아직 마을 밖에 친구들이 잔뜩 남아 있어. 나도 같이 구하러 갈래!", "expression": "smile", "portrait_side": "right"},
+		{"id": "intro_011", "type": "dialogue", "speaker": "player", "text": "좋아. 모두 원래의 착한 마음을 되찾게 하자.", "expression": "smile", "portrait_side": "left"},
+		{"id": "intro_012", "type": "narration", "speaker": "narrator", "text": "그렇게 {player_name}와 말랑의 첫 번째 젤리 구출 모험이 시작되었습니다.", "effect": "title_logo_reveal", "sfx": "story_stinger"},
+		{"id": "intro_013", "type": "system", "speaker": "narrator", "text": "젤리 몬스터를 마음 블록에 담고 순화 게이트로 보내 착한 젤리몬으로 되돌려 주세요!", "effect": "mission_card"}
+	  ]
+	}
+  ]
+}

@@ -20,6 +20,7 @@ var attendance_claimed_days := 0
 var attendance_last_claim_date := ""
 var ads_removed := false
 var nickname := ""
+var seen_scenarios: Array[String] = []
 var energy := MAX_ENERGY
 var energy_updated_at := 0
 var persistence_enabled := true
@@ -39,6 +40,10 @@ func load_data() -> void:
 				attendance_last_claim_date = String(d.get("attendance_last_claim_date", ""))
 				ads_removed = bool(d.get("ads_removed", false))
 				nickname = String(d.get("nickname", ""))
+				for scenario_id in d.get("seen_scenarios", []):
+					var value := String(scenario_id)
+					if not value.is_empty() and not seen_scenarios.has(value):
+						seen_scenarios.append(value)
 				for color in d.get("rescued_jellies", []):
 					if G.COLORS.has(String(color)) and not rescued_jellies.has(String(color)) and rescued_jellies.size() < 5:
 						rescued_jellies.append(String(color))
@@ -82,6 +87,7 @@ func save_data() -> void:
 			"attendance_last_claim_date": attendance_last_claim_date,
 			"ads_removed": ads_removed,
 			"nickname": nickname,
+			"seen_scenarios": seen_scenarios,
 			"energy": energy,
 			"energy_updated_at": energy_updated_at,
 		}))
@@ -203,6 +209,17 @@ func set_nickname(value: String) -> bool:
 	nickname = value
 	save_data()
 	return true
+
+
+func has_seen_scenario(sequence_id: String) -> bool:
+	return seen_scenarios.has(sequence_id)
+
+
+func mark_scenario_seen(sequence_id: String) -> void:
+	if sequence_id.is_empty() or seen_scenarios.has(sequence_id):
+		return
+	seen_scenarios.append(sequence_id)
+	save_data()
 
 
 func spend_stardust(amount: int) -> bool:

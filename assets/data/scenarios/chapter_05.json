@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "id": "chapter_05",
+  "chapter": 5,
+  "title": "초코 화산",
+  "subtitle": "검은 시럽과 마지막 마음",
+  "level_range": [41, 50],
+  "featured_resident": "popo",
+  "start": {
+    "id": "chapter_05_start",
+    "background_asset": "res://assets/story/chapter_05_start.png",
+    "trigger": {"type": "chapter_start", "level": 41, "once_per_profile": true},
+    "background": "story_choco_volcano_entrance",
+    "music": "chapter_volcano_story",
+    "lines": [
+      {"id": "ch05_s_001", "type": "narration", "speaker": "narrator", "text": "초코 화산에서는 끈적한 검은 시럽이 강처럼 흐르고, 가장 많은 젤리 몬스터가 출구를 잃은 채 떠돌고 있었습니다.", "effect": "syrup_flow"},
+      {"id": "ch05_s_002", "type": "dialogue", "speaker": "popo", "text": "왕에게 가까이 오지 마! 우리가 지키지 않으면 왕은 또 혼자가 돼!", "expression": "wild", "portrait_side": "right"},
+      {"id": "ch05_s_003", "type": "dialogue", "speaker": "mallow", "text": "우린 빼앗으러 온 게 아니야. 함께 살자고 말하러 왔어!", "expression": "pleading", "portrait_side": "left"},
+      {"id": "ch05_s_004", "type": "dialogue", "speaker": "player", "text": "검은 시럽이 아무리 길을 막아도, 모두가 돌아갈 게이트를 만들 거야.", "expression": "determined", "portrait_side": "left"},
+      {"id": "ch05_s_005", "type": "system", "speaker": "narrator", "text": "목표: 봉인과 배출구를 모두 활용해 젤리몬을 순화하고 화산 중심부에 도달하세요.", "effect": "mission_card"}
+    ]
+  },
+  "end": {
+    "id": "chapter_05_end",
+    "background_asset": "res://assets/story/chapter_05_end.png",
+    "trigger": {"type": "chapter_clear", "level": 50, "once_per_profile": true},
+    "background": "story_choco_volcano_heart",
+    "music": "story_finale",
+    "reward_cue": "resident_popo",
+    "next": "home_epilogue",
+    "lines": [
+      {"id": "ch05_e_001", "type": "dialogue", "speaker": "cacao_king", "text": "다가오지 마! 모두 달콤한 것만 좋아해. 쓰디쓴 나는 또 버려질 거야!", "expression": "rage_sad", "portrait_side": "right", "sfx": "boss_roar"},
+      {"id": "ch05_e_002", "type": "dialogue", "speaker": "player", "text": "쓴맛도 달콤함도 함께 있어야 진짜 초코가 돼. 널 버리러 온 게 아니야.", "expression": "gentle", "portrait_side": "left"},
+      {"id": "ch05_e_003", "type": "dialogue", "speaker": "popo", "text": "왕이 외로워 흘린 눈물이 검은 시럽이 된 거였어… 이제 우리가 곁에 있을게.", "expression": "tearful", "portrait_side": "left"},
+      {"id": "ch05_e_004", "type": "narration", "speaker": "narrator", "text": "{player_name}이 마지막 마음 블록을 순화 게이트로 보내자, 검은 시럽은 따뜻한 초코 별가루로 변했습니다.", "effect": "final_purify", "sfx": "final_burst", "camera": "wide_shake"},
+      {"id": "ch05_e_005", "type": "dialogue", "speaker": "cacao_king", "text": "나도… 누군가와 함께 있어도 되는 거구나. 이 화산을 모두의 따뜻한 집으로 지킬게.", "expression": "soft_smile", "portrait_side": "right"},
+      {"id": "ch05_e_006", "type": "dialogue", "speaker": "popo", "text": "나는 포포! 아지트에 가서 매일 오늘 이야기를 들려주고 싶어!", "expression": "joy", "portrait_side": "right"},
+      {"id": "ch05_e_007", "type": "narration", "speaker": "narrator", "text": "포포가 다섯 번째 주민으로 합류했고, 순화된 젤리몬들은 저마다의 마을과 아지트에서 함께 웃기 시작했습니다.", "effect": "all_residents_join"},
+      {"id": "ch05_e_008", "type": "dialogue", "speaker": "mallow", "text": "모험은 끝났지만 우리 생활은 이제 시작이야. 방도 꾸미고, 사진도 찍고, 오래오래 같이 놀자!", "expression": "joy", "portrait_side": "left"},
+      {"id": "ch05_e_009", "type": "narration", "speaker": "narrator", "text": "침입자라 불리던 젤리 몬스터들은 이제 모두의 자랑스러운 친구, 젤리몬이 되었습니다.", "effect": "ending_logo", "sfx": "ending_stinger"},
+      {"id": "ch05_e_010", "type": "system", "speaker": "narrator", "text": "새로운 생활이 열렸습니다. 젤리 아지트에서 친구들과 즐거운 추억을 만들어 보세요!", "effect": "home_unlock_card"}
+    ]
+  }
+}

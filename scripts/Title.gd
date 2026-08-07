@@ -59,8 +59,8 @@ func _ready() -> void:
 	var interactive := not OS.get_cmdline_user_args().has("--shots") and DisplayServer.get_name() != "headless"
 	if interactive and not main.save.has_nickname():
 		call_deferred("_show_nickname_popup")
-	elif interactive and main.save.can_claim_attendance():
-		call_deferred("_show_attendance_popup")
+	elif interactive:
+		call_deferred("_continue_first_time_flow")
 
 
 func _process(_delta: float) -> void:
@@ -371,8 +371,14 @@ func _confirm_nickname() -> void:
 	nickname_error = null
 	nickname_confirm_button = null
 	_show_toast("%s님, 환영해요!" % main.save.get_nickname())
+	call_deferred("_continue_first_time_flow")
+
+
+func _continue_first_time_flow() -> void:
+	if main.play_intro_if_needed():
+		return
 	if main.save.can_claim_attendance():
-		call_deferred("_show_attendance_popup")
+		_show_attendance_popup()
 
 
 func _refresh_home_energy() -> void:

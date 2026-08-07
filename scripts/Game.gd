@@ -508,10 +508,16 @@ func _clear_level() -> void:
 	energy_reserved = false
 	await get_tree().create_timer(1.3).timeout
 	var has_next := level_idx + 1 < Levels.LEVELS.size()
-	hud.show_result(stars_n, score, stardust_reward, main.save.get_stardust(), has_next,
-		func(): main.start_level(level_idx + 1),
-		func(): main.show_map(),
-		func(): main.start_level(level_idx))
+	var show_clear_result := func():
+		if not is_instance_valid(hud):
+			return
+		hud.show_result(stars_n, score, stardust_reward, main.save.get_stardust(), has_next,
+			func(): main.start_level(level_idx + 1),
+			func(): main.show_map(),
+			func(): main.start_level(level_idx))
+	if main.play_chapter_end_if_needed(level_idx, show_clear_result):
+		return
+	show_clear_result.call()
 
 
 func _fail() -> void:

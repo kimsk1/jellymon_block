@@ -14,6 +14,7 @@ func _ready() -> void:
 	var level_errors := Levels.validate_all()
 	level_errors.append_array(RoomData.validate_catalog())
 	level_errors.append_array(ShopCatalog.validate_catalog())
+	level_errors.append_array(ScenarioCatalog.validate())
 	if SaveGame.calculate_stardust_reward(0, 1) != 1:
 		level_errors.append("별가루 보상 오류: 0성→1성")
 	if SaveGame.calculate_stardust_reward(1, 3) != 5:
@@ -82,7 +83,15 @@ func show_title() -> void:
 	current_screen = t
 
 
-func show_map() -> void:
+func show_map(skip_pending_story: bool = false) -> void:
+	var interactive := not OS.get_cmdline_user_args().has("--shots") and DisplayServer.get_name() != "headless"
+	if interactive and not skip_pending_story:
+		for chapter_index in range(5):
+			var final_level := chapter_index * 10 + 9
+			var sequence_id := "chapter_%02d_end" % (chapter_index + 1)
+			if save.get_stars(final_level) > 0 and not save.has_seen_scenario(sequence_id):
+				show_story(ScenarioCatalog.chapter(chapter_index, "end"), func(): show_map(true))
+				return
 	_clear_screen()
 	var m := MapScreen.new()
 	m.main = self
@@ -90,10 +99,51 @@ func show_map() -> void:
 	current_screen = m
 
 
-func start_level(idx: int, bypass_energy: bool = false) -> void:
+func show_story(sequence: Dictionary, on_finished: Callable) -> void:
+	if sequence.is_empty():
+		if on_finished.is_valid():
+			on_finished.call_deferred()
+		return
+	_clear_screen()
+	var story := StoryScreen.new()
+	story.main = self
+	story.sequence = sequence
+	story.on_finished = on_finished
+	add_child(story)
+	current_screen = story
+
+
+func show_story_overlay(sequence: Dictionary, on_finished: Callable) -> void:
+	## 클리어 직후 이야기는 게임 노드를 유지한 채 전체 화면 위에 재생한다.
+	if sequence.is_empty():
+		if on_finished.is_valid():
+			on_finished.call_deferred()
+		return
+	var story := StoryScreen.new()
+	story.main = self
+	story.sequence = sequence
+	story.on_finished = on_finished
+	story.z_index = 200
+	add_child(story)
+
+
+func play_intro_if_needed() -> bool:
+	if not save.has_nickname() or save.has_seen_scenario("intro"):
+		return false
+	show_story(ScenarioCatalog.intro(), Callable(self, "show_title"))
+	return true
+
+
+func start_level(idx: int, bypass_energy: bool = false, skip_story: bool = false) -> void:
 	if idx >= Levels.LEVELS.size():
 		show_map()
 		return
+	if not bypass_energy and not skip_story and idx % 10 == 0:
+		var chapter_index := idx / 10
+		var sequence_id := "chapter_%02d_start" % (chapter_index + 1)
+		if not save.has_seen_scenario(sequence_id):
+			show_story(ScenarioCatalog.chapter(chapter_index, "start"), func(): start_level(idx, false, true))
+			return
 	var energy_reserved := false
 	# L1~5는 튜토리얼 보호 구간. 이후에는 입장 시 예약 차감하고 클리어 시 반환한다.
 	if idx >= 5 and not bypass_energy:
@@ -111,6 +161,19 @@ func start_level(idx: int, bypass_energy: bool = false) -> void:
 	add_child(g)
 	current_screen = g
 	game = g
+
+
+func play_chapter_end_if_needed(level_idx: int, destination: Callable) -> bool:
+	# 자동 플레이는 입력을 만들지 않으므로 이야기 오버레이를 건너뛴다.
+	if OS.get_cmdline_user_args().has("--shots") or DisplayServer.get_name() == "headless":
+		return false
+	var is_chapter_end := level_idx % 10 == 9
+	var chapter_index := level_idx / 10
+	var sequence_id := "chapter_%02d_end" % (chapter_index + 1)
+	if is_chapter_end and not save.has_seen_scenario(sequence_id):
+		show_story_overlay(ScenarioCatalog.chapter(chapter_index, "end"), destination)
+		return true
+	return false
 
 
 func on_level_finished(idx: int, stars: int, cleared: bool, refund_reserved_energy: bool = false) -> int:
@@ -156,6 +219,24 @@ func _screenshot_run() -> void:
 		await get_tree().create_timer(0.1).timeout
 		if current_screen.attendance_popup:
 			current_screen._close_attendance_popup()
+	show_story(ScenarioCatalog.intro(), Callable(self, "show_title"))
+	await get_tree().create_timer(0.45).timeout
+	await _snap("shot_story_intro.png")
+	if current_screen is StoryScreen:
+		current_screen._finish()
+	await get_tree().create_timer(0.12).timeout
+	show_story(ScenarioCatalog.chapter(0, "start"), Callable(self, "show_title"))
+	await get_tree().create_timer(0.45).timeout
+	await _snap("shot_story_chapter_start.png")
+	if current_screen is StoryScreen:
+		current_screen._finish()
+	await get_tree().create_timer(0.12).timeout
+	show_story(ScenarioCatalog.chapter(4, "end"), Callable(self, "show_title"))
+	await get_tree().create_timer(0.45).timeout
+	await _snap("shot_story_chapter_end.png")
+	if current_screen is StoryScreen:
+		current_screen._finish()
+	await get_tree().create_timer(0.12).timeout
 	await _snap("shot_title.png")
 	if current_screen is Title:
 		current_screen._show_shop_popup()

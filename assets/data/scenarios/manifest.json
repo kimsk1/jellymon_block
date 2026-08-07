@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "locale": "ko-KR",
+  "story_title": "젤리몬! 마음을 되찾는 모험",
+  "premise": "검은 시럽에 물들어 침입한 젤리 몬스터를 마음 블록으로 안전하게 포획하고 순화 게이트로 내보내 착한 젤리몬으로 되돌린 뒤 함께 살아가는 이야기",
+  "variables": {
+    "player_name": "최초 실행에서 입력한 닉네임"
+  },
+  "terms": {
+    "wild_jelly": "검은 시럽의 영향으로 감정이 뒤엉킨 젤리 몬스터",
+    "heart_block": "젤리 몬스터를 다치지 않게 담아 옮기는 색상별 테트리스형 블록",
+    "calm_gate": "가득 찬 마음 블록을 밖으로 보내 젤리 몬스터를 순화하는 색상별 배출구",
+    "jelly_hideout": "순화된 젤리몬이 플레이어와 함께 생활하는 공간",
+    "black_syrup": "외로움과 불안을 증폭해 젤리몬을 난폭하게 만드는 정체불명의 시럽"
+  },
+  "cast": {
+    "narrator": {"name": "이야기", "portrait": "none", "color": "#6B5278"},
+    "player": {"name": "{player_name}", "portrait": "player_silhouette", "color": "#FFFFFF"},
+    "mallow": {"name": "말랑", "portrait": "jelly_R", "color": "#F06478", "mark": "heart"},
+    "starbean": {"name": "별콩", "portrait": "jelly_Y", "color": "#F1C63E", "mark": "star"},
+    "bubble": {"name": "방울", "portrait": "jelly_B", "color": "#4A9BE8", "mark": "circle"},
+    "sprout": {"name": "새싹", "portrait": "jelly_G", "color": "#61BE67", "mark": "triangle"},
+    "popo": {"name": "포포", "portrait": "jelly_P", "color": "#9A65D8", "mark": "diamond"},
+    "cacao_king": {"name": "카카오 왕", "portrait": "jelly_boss_dark", "color": "#4A3048", "mark": "crown"}
+  },
+  "playback_defaults": {
+    "text_speed": 32,
+    "tap_to_advance": true,
+    "allow_skip": true,
+    "remember_seen": true,
+    "player_name_fallback": "구출 대원"
+  },
+  "files": [
+    {"id": "intro", "path": "res://assets/data/scenarios/intro.json"},
+    {"id": "chapter_01", "path": "res://assets/data/scenarios/chapter_01.json"},
+    {"id": "chapter_02", "path": "res://assets/data/scenarios/chapter_02.json"},
+    {"id": "chapter_03", "path": "res://assets/data/scenarios/chapter_03.json"},
+    {"id": "chapter_04", "path": "res://assets/data/scenarios/chapter_04.json"},
+    {"id": "chapter_05", "path": "res://assets/data/scenarios/chapter_05.json"}
+  ]
+}

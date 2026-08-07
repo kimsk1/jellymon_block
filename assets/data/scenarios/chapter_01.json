@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "id": "chapter_01",
+  "chapter": 1,
+  "title": "젤리 마을",
+  "subtitle": "뒤엉킨 마음의 첫 구조",
+  "level_range": [1, 10],
+  "featured_resident": "mallow",
+  "start": {
+    "id": "chapter_01_start",
+    "background_asset": "res://assets/story/chapter_01_start.png",
+    "trigger": {"type": "chapter_start", "level": 1, "once_per_profile": true},
+    "background": "story_jelly_village_morning",
+    "music": "chapter_village_story",
+    "lines": [
+      {"id": "ch01_s_001", "type": "narration", "speaker": "narrator", "text": "비는 그쳤지만 젤리 마을의 길은 몬스터와 뒤엉킨 블록으로 막혀 있었습니다.", "camera": "pan_village"},
+      {"id": "ch01_s_002", "type": "dialogue", "speaker": "mallow", "text": "친구들은 나처럼 검은 시럽에 놀란 거야. 다치게 하면 안 돼!", "expression": "worried", "portrait_side": "right"},
+      {"id": "ch01_s_003", "type": "dialogue", "speaker": "player", "text": "같은 색 마음 블록에 담으면 안전해. 길을 만들고 한 마리씩 데려오자.", "expression": "determined", "portrait_side": "left"},
+      {"id": "ch01_s_004", "type": "dialogue", "speaker": "mallow", "text": "블록이 가득 차면 순화 게이트로 보내는 거지? 내가 색깔을 알려 줄게!", "expression": "bright", "portrait_side": "right"},
+      {"id": "ch01_s_005", "type": "system", "speaker": "narrator", "text": "목표: 젤리 마을의 몬스터를 순화하고 검은 시럽의 흔적을 찾으세요.", "effect": "mission_card"}
+    ]
+  },
+  "end": {
+    "id": "chapter_01_end",
+    "background_asset": "res://assets/story/chapter_01_end.png",
+    "trigger": {"type": "chapter_clear", "level": 10, "once_per_profile": true},
+    "background": "story_jelly_village_festival",
+    "music": "story_village_clear",
+    "reward_cue": "resident_mallow",
+    "next": "chapter_02.start",
+    "lines": [
+      {"id": "ch01_e_001", "type": "narration", "speaker": "narrator", "text": "마지막 블록이 게이트를 통과하자 마을을 덮었던 검은 얼룩이 맑은 별가루로 변했습니다.", "sfx": "purify_wave", "effect": "village_color_restore"},
+      {"id": "ch01_e_002", "type": "dialogue", "speaker": "mallow", "text": "봐! 모두 다시 웃고 있어. {player_name}, 네가 우리 마음을 찾아 줬어!", "expression": "joy", "portrait_side": "right"},
+      {"id": "ch01_e_003", "type": "narration", "speaker": "narrator", "text": "우물가에서는 캔디 잎이 붙은 검은 시럽 조각이 발견되었습니다.", "camera": "close_up_clue", "sfx": "mystery_ping"},
+      {"id": "ch01_e_004", "type": "dialogue", "speaker": "mallow", "text": "이 냄새는 캔디 숲에서 불어와. 다음 친구들이 위험해!", "expression": "surprised", "portrait_side": "right"},
+      {"id": "ch01_e_005", "type": "narration", "speaker": "narrator", "text": "말랑은 젤리 아지트의 첫 주민이 되었고, 둘은 캔디 숲으로 향했습니다.", "effect": "resident_join"}
+    ]
+  }
+}

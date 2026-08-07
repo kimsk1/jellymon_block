@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "id": "chapter_03",
+  "chapter": 3,
+  "title": "소다 해변",
+  "subtitle": "거품 파도 속 구조 신호",
+  "level_range": [21, 30],
+  "featured_resident": "bubble",
+  "start": {
+    "id": "chapter_03_start",
+    "background_asset": "res://assets/story/chapter_03_start.png",
+    "trigger": {"type": "chapter_start", "level": 21, "once_per_profile": true},
+    "background": "story_soda_beach_storm",
+    "music": "chapter_beach_story",
+    "lines": [
+      {"id": "ch03_s_001", "type": "narration", "speaker": "narrator", "text": "소다 해변에서는 탄산 파도가 거꾸로 치솟고, 젤리 몬스터들이 거품 섬 사이를 떠돌고 있었습니다.", "effect": "bubble_storm"},
+      {"id": "ch03_s_002", "type": "dialogue", "speaker": "bubble", "text": "가까이 오지 마! 이 거품이 터지면 모두 바다로 날아가 버릴 거야!", "expression": "panicked", "portrait_side": "right"},
+      {"id": "ch03_s_003", "type": "dialogue", "speaker": "starbean", "text": "우리가 길을 나눠 맡으면 돼. {player_name}은 블록을, 우리는 게이트를 찾자!", "expression": "bright", "portrait_side": "left"},
+      {"id": "ch03_s_004", "type": "dialogue", "speaker": "player", "text": "파도에 휩쓸리기 전에 색깔별로 안전하게 순화시키자.", "expression": "determined", "portrait_side": "left"},
+      {"id": "ch03_s_005", "type": "system", "speaker": "narrator", "text": "목표: 흩어진 출구를 확인하고, 가득 찬 블록을 알맞은 게이트로 보내세요.", "effect": "mission_card"}
+    ]
+  },
+  "end": {
+    "id": "chapter_03_end",
+    "background_asset": "res://assets/story/chapter_03_end.png",
+    "trigger": {"type": "chapter_clear", "level": 30, "once_per_profile": true},
+    "background": "story_soda_beach_sunset",
+    "music": "story_beach_clear",
+    "reward_cue": "resident_bubble",
+    "next": "chapter_04.start",
+    "lines": [
+      {"id": "ch03_e_001", "type": "narration", "speaker": "narrator", "text": "모든 블록이 빠져나가자 거품 폭풍은 수천 개의 무지개 방울로 변해 해변 위에 내려앉았습니다.", "effect": "rainbow_bubbles", "sfx": "wave_clear"},
+      {"id": "ch03_e_002", "type": "dialogue", "speaker": "bubble", "text": "살았다! 난 방울이야. 무서워서 자꾸 더 큰 거품을 만들고 있었어.", "expression": "relieved", "portrait_side": "right"},
+      {"id": "ch03_e_003", "type": "narration", "speaker": "narrator", "text": "해변 바닥의 검은 시럽은 차가운 물길을 따라 북쪽 아이스 설산으로 이어져 있었습니다.", "camera": "map_reveal", "sfx": "cold_wind"},
+      {"id": "ch03_e_004", "type": "dialogue", "speaker": "bubble", "text": "산 위에서 누군가 계속 울고 있어. 내 방울에 그 소리가 담겨 왔어.", "expression": "worried", "portrait_side": "right"},
+      {"id": "ch03_e_005", "type": "dialogue", "speaker": "mallow", "text": "그 울음이 검은 시럽의 시작일지도 몰라. 함께 올라가자!", "expression": "determined", "portrait_side": "left"},
+      {"id": "ch03_e_006", "type": "narration", "speaker": "narrator", "text": "방울이 세 번째 주민이 되고, 일행은 얼어붙은 산길에 첫발을 내디뎠습니다.", "effect": "resident_join"}
+    ]
+  }
+}
