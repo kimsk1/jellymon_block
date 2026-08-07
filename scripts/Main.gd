@@ -22,6 +22,8 @@ func _ready() -> void:
 		level_errors.append("별가루 보상 오류: 3성 재클리어")
 	if SaveGame.ATTENDANCE_REWARDS != [10, 20, 30, 40, 50, 60, 100]:
 		level_errors.append("7일 출석 보상 구성 오류")
+	if SaveGame.is_valid_nickname("") or SaveGame.is_valid_nickname("공백 이름") or SaveGame.is_valid_nickname("전각　공백") or SaveGame.is_valid_nickname("가나다라마바사아자차카타파") or not SaveGame.is_valid_nickname("젤리친구"):
+		level_errors.append("닉네임 입력 규칙 오류")
 	var shop_test_save := SaveGame.new()
 	shop_test_save.persistence_enabled = false
 	if not shop_test_save.apply_verified_shop_item(ShopCatalog.item_by_id("stardust_50")) or shop_test_save.get_stardust() != 50:
@@ -145,11 +147,30 @@ func request_rewarded_ad(on_reward: Callable, on_unavailable: Callable = Callabl
 func _screenshot_run() -> void:
 	## 개발용: 화면 캡처 (xvfb 환경 QA)
 	await get_tree().create_timer(1.2).timeout
+	if current_screen is Title and not save.has_nickname():
+		current_screen._show_nickname_popup()
+		await get_tree().create_timer(0.25).timeout
+		await _snap("shot_nickname.png")
+		current_screen.nickname_input.text = "젤리친구"
+		current_screen._confirm_nickname()
+		await get_tree().create_timer(0.1).timeout
+		if current_screen.attendance_popup:
+			current_screen._close_attendance_popup()
 	await _snap("shot_title.png")
 	if current_screen is Title:
 		current_screen._show_shop_popup()
 	await get_tree().create_timer(0.2).timeout
 	await _snap("shot_shop.png")
+	var qa_buy_button := Button.new()
+	if current_screen is Title:
+		current_screen.add_child(qa_buy_button)
+		current_screen._show_purchase_confirmation(ShopCatalog.item_by_id("heart_5"), qa_buy_button)
+	await get_tree().create_timer(0.2).timeout
+	await _snap("shot_purchase_confirm.png")
+	if current_screen is Title:
+		current_screen._close_purchase_confirmation()
+	if is_instance_valid(qa_buy_button):
+		qa_buy_button.queue_free()
 	if current_screen is Title:
 		current_screen._close_shop_popup()
 		current_screen._show_attendance_popup()

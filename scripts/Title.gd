@@ -14,9 +14,15 @@ var attendance_button: Button
 var attendance_popup: Control
 var stardust_label: Label
 var shop_popup: Control
+var purchase_confirm_popup: Control
 var shop_balance_label: Label
 var shop_status_label: Label
 var home_energy_label: Label
+var header_name_label: Label
+var nickname_popup: Control
+var nickname_input: LineEdit
+var nickname_error: Label
+var nickname_confirm_button: Button
 var _last_home_energy_second := -1
 var placements: Array = []
 var furniture_nodes: Array[RoomFurniture] = []
@@ -49,8 +55,11 @@ func _ready() -> void:
 	_build_header()
 	_build_navigation()
 	_refresh_room()
-	# 자동 QA에서는 다른 화면 캡처를 가리지 않고 실제 플레이에서만 당일 출석을 안내한다.
-	if not OS.get_cmdline_user_args().has("--shots") and DisplayServer.get_name() != "headless" and main.save.can_claim_attendance():
+	# 최초 닉네임 설정을 출석 안내보다 먼저 처리한다. 자동 QA에서는 기존 화면 캡처를 가리지 않는다.
+	var interactive := not OS.get_cmdline_user_args().has("--shots") and DisplayServer.get_name() != "headless"
+	if interactive and not main.save.has_nickname():
+		call_deferred("_show_nickname_popup")
+	elif interactive and main.save.can_claim_attendance():
 		call_deferred("_show_attendance_popup")
 
 
@@ -210,14 +219,15 @@ func _build_header() -> void:
 	info.alignment = BoxContainer.ALIGNMENT_CENTER
 	row.add_child(info)
 	var stage := RoomData.growth_stage(main.save)
-	var title := Label.new()
-	title.text = "내 젤리몬 · %s" % RoomData.growth_name(stage)
-	title.add_theme_font_size_override("font_size", 27)
-	title.add_theme_color_override("font_color", Color("#5b3d73"))
-	info.add_child(title)
+	header_name_label = Label.new()
+	header_name_label.text = main.save.get_nickname() if main.save.has_nickname() else "내 젤리몬"
+	header_name_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	header_name_label.add_theme_font_size_override("font_size", 27)
+	header_name_label.add_theme_color_override("font_color", Color("#5b3d73"))
+	info.add_child(header_name_label)
 	var stars := RoomData.total_stars(main.save)
 	var progress := Label.new()
-	progress.text = "성장 별  %d / %d" % [stars, RoomData.next_growth_stars(stage)] if stage < 3 else "최종 성장 완료 · 별 %d" % stars
+	progress.text = "%s · 성장 별 %d / %d" % [RoomData.growth_name(stage), stars, RoomData.next_growth_stars(stage)] if stage < 3 else "%s · 별 %d" % [RoomData.growth_name(stage), stars]
 	progress.add_theme_font_size_override("font_size", 19)
 	progress.add_theme_color_override("font_color", Color("#8d6b98"))
 	info.add_child(progress)
@@ -255,6 +265,114 @@ func _build_header() -> void:
 	ui_layer.add_child(attendance_button)
 	_refresh_home_energy()
 	_refresh_attendance_button()
+
+
+func _show_nickname_popup() -> void:
+	if nickname_popup and is_instance_valid(nickname_popup):
+		return
+	var dim := ColorRect.new()
+	dim.color = Color(0.09, 0.04, 0.16, 0.74)
+	_fit_overlay_to_viewport(dim)
+	dim.mouse_filter = Control.MOUSE_FILTER_STOP
+	dim.z_index = 110
+	add_child(dim)
+	nickname_popup = dim
+	var center := CenterContainer.new()
+	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	dim.add_child(center)
+	var panel := PanelContainer.new()
+	panel.custom_minimum_size = Vector2(620, 510)
+	panel.add_theme_stylebox_override("panel", _panel_style(Color("#f8eaff"), Color("#815ba9"), 36))
+	center.add_child(panel)
+	panel.scale = Vector2(0.72, 0.72)
+	panel.pivot_offset = Vector2(310, 255)
+	panel.create_tween().tween_property(panel, "scale", Vector2.ONE, 0.3).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	var content := VBoxContainer.new()
+	content.alignment = BoxContainer.ALIGNMENT_CENTER
+	content.add_theme_constant_override("separation", 16)
+	panel.add_child(content)
+	var avatar := TextureRect.new()
+	avatar.texture = G.jelly_tex("R")
+	avatar.custom_minimum_size = Vector2(105, 105)
+	avatar.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	avatar.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	avatar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	content.add_child(avatar)
+	var title := Label.new()
+	title.text = "반가워요! 이름을 알려주세요"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 34)
+	title.add_theme_color_override("font_color", Color("#5b3675"))
+	content.add_child(title)
+	var guide := Label.new()
+	guide.text = "공백 없이 1~12글자로 입력해 주세요."
+	guide.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	guide.add_theme_font_size_override("font_size", 20)
+	guide.add_theme_color_override("font_color", Color("#7e628d"))
+	content.add_child(guide)
+	nickname_input = LineEdit.new()
+	nickname_input.custom_minimum_size = Vector2(510, 72)
+	nickname_input.max_length = SaveGame.MAX_NICKNAME_LENGTH
+	nickname_input.placeholder_text = "닉네임 입력"
+	nickname_input.alignment = HORIZONTAL_ALIGNMENT_CENTER
+	nickname_input.add_theme_font_size_override("font_size", 28)
+	nickname_input.add_theme_color_override("font_color", Color("#563a6e"))
+	nickname_input.add_theme_color_override("placeholder_color", Color("#a58daf"))
+	nickname_input.add_theme_stylebox_override("normal", _panel_style(Color("#fffafd"), Color("#b38acb"), 20))
+	nickname_input.add_theme_stylebox_override("focus", _panel_style(Color.WHITE, Color("#e06e91"), 20))
+	nickname_input.text_changed.connect(_on_nickname_text_changed)
+	nickname_input.text_submitted.connect(func(_value: String): _confirm_nickname())
+	content.add_child(nickname_input)
+	nickname_error = Label.new()
+	nickname_error.text = "공백은 사용할 수 없어요."
+	nickname_error.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	nickname_error.add_theme_font_size_override("font_size", 18)
+	nickname_error.add_theme_color_override("font_color", Color("#d34f70"))
+	nickname_error.modulate.a = 0.0
+	content.add_child(nickname_error)
+	var notice := Label.new()
+	notice.text = "※ 불법·음란·위험한 단어는 외부 노출 시 *로 표시될 수 있어요."
+	notice.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	notice.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	notice.custom_minimum_size.x = 540
+	notice.add_theme_font_size_override("font_size", 17)
+	notice.add_theme_color_override("font_color", Color("#8b718f"))
+	content.add_child(notice)
+	nickname_confirm_button = _button("이 이름으로 시작하기", Color("#eb7b95"), Vector2(330, 70), 25)
+	nickname_confirm_button.disabled = true
+	nickname_confirm_button.pressed.connect(_confirm_nickname)
+	content.add_child(nickname_confirm_button)
+	nickname_input.call_deferred("grab_focus")
+
+
+func _on_nickname_text_changed(value: String) -> void:
+	var valid := SaveGame.is_valid_nickname(value)
+	if nickname_confirm_button:
+		nickname_confirm_button.disabled = not valid
+	if nickname_error:
+		nickname_error.modulate.a = 0.0 if value.is_empty() or valid else 1.0
+		nickname_error.text = "공백은 사용할 수 없어요." if value.length() <= SaveGame.MAX_NICKNAME_LENGTH else "닉네임은 12글자까지 사용할 수 있어요."
+
+
+func _confirm_nickname() -> void:
+	if not nickname_input or not main.save.set_nickname(nickname_input.text):
+		if nickname_error:
+			nickname_error.text = "공백 없이 1~12글자로 입력해 주세요."
+			nickname_error.modulate.a = 1.0
+		return
+	main.audio.play("shiny", 1.04)
+	G.haptic(15)
+	if header_name_label:
+		header_name_label.text = main.save.get_nickname()
+	if nickname_popup and is_instance_valid(nickname_popup):
+		nickname_popup.queue_free()
+	nickname_popup = null
+	nickname_input = null
+	nickname_error = null
+	nickname_confirm_button = null
+	_show_toast("%s님, 환영해요!" % main.save.get_nickname())
+	if main.save.can_claim_attendance():
+		call_deferred("_show_attendance_popup")
 
 
 func _refresh_home_energy() -> void:
@@ -356,7 +474,7 @@ func _shop_item_card(item: Dictionary) -> PanelContainer:
 	var purchased: bool = is_ads and bool(main.save.has_removed_ads())
 	var buy := _button("구매 완료" if purchased else String(item.get("display_price", "")), Color("#77b984") if purchased else Color("#eb8650"), Vector2(135, 68), 23)
 	buy.disabled = purchased
-	buy.pressed.connect(func(): _purchase_shop_item(item, buy))
+	buy.pressed.connect(func(): _show_purchase_confirmation(item, buy))
 	row.add_child(buy)
 	return card
 
@@ -410,6 +528,85 @@ func _show_shop_popup() -> void:
 	content.add_child(close)
 
 
+func _show_purchase_confirmation(item: Dictionary, buy_button: Button) -> void:
+	if purchase_confirm_popup and is_instance_valid(purchase_confirm_popup):
+		return
+	var dim := ColorRect.new()
+	dim.color = Color(0.08, 0.03, 0.14, 0.76)
+	_fit_overlay_to_viewport(dim)
+	dim.mouse_filter = Control.MOUSE_FILTER_STOP
+	dim.z_index = 125
+	add_child(dim)
+	purchase_confirm_popup = dim
+	var center := CenterContainer.new()
+	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	dim.add_child(center)
+	var panel := PanelContainer.new()
+	panel.custom_minimum_size = Vector2(570, 470)
+	panel.add_theme_stylebox_override("panel", _panel_style(Color("#fff5fb"), Color("#8d64b4"), 34))
+	center.add_child(panel)
+	panel.scale = Vector2(0.76, 0.76)
+	panel.pivot_offset = Vector2(285, 235)
+	panel.create_tween().tween_property(panel, "scale", Vector2.ONE, 0.25).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	var content := VBoxContainer.new()
+	content.alignment = BoxContainer.ALIGNMENT_CENTER
+	content.add_theme_constant_override("separation", 15)
+	panel.add_child(content)
+	var badge := PanelContainer.new()
+	badge.custom_minimum_size = Vector2(96, 96)
+	var badge_style := StyleBoxFlat.new()
+	badge_style.bg_color = Color("#f6cc63") if String(item.get("type", "")) == "stardust" else (Color("#ef718d") if String(item.get("type", "")) == "energy" else Color("#8062b7"))
+	badge_style.border_color = badge_style.bg_color.darkened(0.25)
+	badge_style.set_border_width_all(3)
+	badge_style.set_corner_radius_all(30)
+	badge.add_theme_stylebox_override("panel", badge_style)
+	content.add_child(badge)
+	var badge_icon := Label.new()
+	badge_icon.text = "★" if String(item.get("type", "")) == "stardust" else ("♥" if String(item.get("type", "")) == "energy" else "AD\nOFF")
+	badge_icon.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	badge_icon.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	badge_icon.add_theme_font_size_override("font_size", 48 if String(item.get("type", "")) != "remove_ads" else 21)
+	badge_icon.add_theme_color_override("font_color", Color.WHITE)
+	badge.add_child(badge_icon)
+	var title := Label.new()
+	title.text = "구매할까요?"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 37)
+	title.add_theme_color_override("font_color", Color("#5b3973"))
+	content.add_child(title)
+	var product := Label.new()
+	product.text = "%s\n%s" % [String(item.get("name", "")), String(item.get("display_price", ""))]
+	product.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	product.add_theme_font_size_override("font_size", 25)
+	product.add_theme_color_override("font_color", Color("#6e4d7f"))
+	content.add_child(product)
+	var notice := Label.new()
+	notice.text = "구매 버튼을 누르면 결제가 진행됩니다."
+	notice.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	notice.add_theme_font_size_override("font_size", 17)
+	notice.add_theme_color_override("font_color", Color("#907694"))
+	content.add_child(notice)
+	var actions := HBoxContainer.new()
+	actions.alignment = BoxContainer.ALIGNMENT_CENTER
+	actions.add_theme_constant_override("separation", 14)
+	content.add_child(actions)
+	var cancel := _button("취소", Color("#8b78a9"), Vector2(190, 70), 25)
+	cancel.pressed.connect(_close_purchase_confirmation)
+	actions.add_child(cancel)
+	var confirm := _button("구매", Color("#eb7b55"), Vector2(230, 70), 26)
+	confirm.pressed.connect(func():
+		_close_purchase_confirmation()
+		_purchase_shop_item(item, buy_button)
+	)
+	actions.add_child(confirm)
+
+
+func _close_purchase_confirmation() -> void:
+	if purchase_confirm_popup and is_instance_valid(purchase_confirm_popup):
+		purchase_confirm_popup.queue_free()
+	purchase_confirm_popup = null
+
+
 func _purchase_shop_item(item: Dictionary, buy_button: Button) -> void:
 	if not OS.is_debug_build():
 		shop_status_label.text = "플랫폼 결제 공급자를 연결한 뒤 구매할 수 있어요."
@@ -429,6 +626,7 @@ func _purchase_shop_item(item: Dictionary, buy_button: Button) -> void:
 
 
 func _close_shop_popup() -> void:
+	_close_purchase_confirmation()
 	if shop_popup and is_instance_valid(shop_popup):
 		shop_popup.queue_free()
 	shop_popup = null

@@ -9,6 +9,7 @@ const MAX_ENERGY := 5
 const ENERGY_REGEN_SECONDS := 10 * 60
 const ROOM_GRID_VERSION := 2
 const ATTENDANCE_REWARDS := [10, 20, 30, 40, 50, 60, 100]
+const MAX_NICKNAME_LENGTH := 12
 
 var stars := {}
 var stardust := 0
@@ -18,6 +19,7 @@ var rescued_jellies: Array[String] = []
 var attendance_claimed_days := 0
 var attendance_last_claim_date := ""
 var ads_removed := false
+var nickname := ""
 var energy := MAX_ENERGY
 var energy_updated_at := 0
 var persistence_enabled := true
@@ -36,6 +38,7 @@ func load_data() -> void:
 				attendance_claimed_days = clampi(int(d.get("attendance_claimed_days", 0)), 0, ATTENDANCE_REWARDS.size())
 				attendance_last_claim_date = String(d.get("attendance_last_claim_date", ""))
 				ads_removed = bool(d.get("ads_removed", false))
+				nickname = String(d.get("nickname", ""))
 				for color in d.get("rescued_jellies", []):
 					if G.COLORS.has(String(color)) and not rescued_jellies.has(String(color)) and rescued_jellies.size() < 5:
 						rescued_jellies.append(String(color))
@@ -78,6 +81,7 @@ func save_data() -> void:
 			"attendance_claimed_days": attendance_claimed_days,
 			"attendance_last_claim_date": attendance_last_claim_date,
 			"ads_removed": ads_removed,
+			"nickname": nickname,
 			"energy": energy,
 			"energy_updated_at": energy_updated_at,
 		}))
@@ -172,6 +176,33 @@ static func calculate_stardust_reward(previous: int, achieved: int) -> int:
 
 func get_stardust() -> int:
 	return stardust
+
+
+static func is_valid_nickname(value: String) -> bool:
+	if value.is_empty() or value.length() > MAX_NICKNAME_LENGTH:
+		return false
+	# 일반/전각/줄바꿈뿐 아니라 보이지 않는 유니코드 공백도 닉네임에 포함할 수 없다.
+	for i in range(value.length()):
+		var code := value.unicode_at(i)
+		if code <= 0x20 or code == 0xA0 or (code >= 0x2000 and code <= 0x200B) or code == 0x2028 or code == 0x2029 or code == 0x202F or code == 0x205F or code == 0x3000:
+			return false
+	return true
+
+
+func has_nickname() -> bool:
+	return is_valid_nickname(nickname)
+
+
+func get_nickname() -> String:
+	return nickname if has_nickname() else ""
+
+
+func set_nickname(value: String) -> bool:
+	if not is_valid_nickname(value):
+		return false
+	nickname = value
+	save_data()
+	return true
 
 
 func spend_stardust(amount: int) -> bool:
