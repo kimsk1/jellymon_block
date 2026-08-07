@@ -4,6 +4,11 @@ class_name MapScreen
 
 var main = null
 var star_tex: Texture2D
+var stardust_label: Label
+var energy_label: Label
+var energy_timer_label: Label
+var empty_energy_timer_label: Label
+var _last_energy_second := -1
 
 const BTN_COLORS := [
 	Color(1.0, 0.45, 0.55), Color(1.0, 0.65, 0.3), Color(0.35, 0.7, 0.95),
@@ -22,6 +27,8 @@ func _ready() -> void:
 	bg.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	bg.modulate = Color(1, 1, 1, 0.88)
 	add_child(bg)
+	_add_stardust_panel()
+	_add_energy_panel()
 
 	var title := Label.new()
 	title.text = "레벨 선택"
@@ -83,6 +90,157 @@ func _ready() -> void:
 	back.position = Vector2(G.W / 2 - 110, G.H - 150)
 	back.pressed.connect(_on_back)
 	add_child(back)
+	_update_energy_display()
+
+
+func _process(_delta: float) -> void:
+	var now := int(Time.get_unix_time_from_system())
+	if now != _last_energy_second:
+		_last_energy_second = now
+		_update_energy_display()
+
+
+func _add_energy_panel() -> void:
+	var panel := PanelContainer.new()
+	panel.position = Vector2(G.W - 224, 24)
+	panel.size = Vector2(196, 64)
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(1.0, 0.96, 0.98, 0.94)
+	style.border_color = Color("#dc6685")
+	style.set_border_width_all(4)
+	style.set_corner_radius_all(22)
+	style.shadow_color = Color(0.18, 0.08, 0.2, 0.24)
+	style.shadow_size = 6
+	style.shadow_offset = Vector2(0, 4)
+	style.content_margin_left = 13
+	style.content_margin_right = 13
+	panel.add_theme_stylebox_override("panel", style)
+	add_child(panel)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 8)
+	panel.add_child(row)
+	energy_label = Label.new()
+	energy_label.add_theme_font_size_override("font_size", 28)
+	energy_label.add_theme_color_override("font_color", Color("#e84f73"))
+	row.add_child(energy_label)
+	energy_timer_label = Label.new()
+	energy_timer_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	energy_timer_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	energy_timer_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	energy_timer_label.add_theme_font_size_override("font_size", 17)
+	energy_timer_label.add_theme_color_override("font_color", Color("#685575"))
+	row.add_child(energy_timer_label)
+
+
+func _add_stardust_panel() -> void:
+	var panel := PanelContainer.new()
+	panel.position = Vector2(28, 24)
+	panel.size = Vector2(205, 64)
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.98, 0.95, 1.0, 0.96)
+	style.border_color = Color("#9b78d0")
+	style.set_border_width_all(4)
+	style.set_corner_radius_all(22)
+	style.shadow_color = Color(0.18, 0.08, 0.2, 0.24)
+	style.shadow_size = 6
+	style.shadow_offset = Vector2(0, 4)
+	style.content_margin_left = 14
+	style.content_margin_right = 14
+	panel.add_theme_stylebox_override("panel", style)
+	add_child(panel)
+	stardust_label = Label.new()
+	stardust_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	stardust_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	stardust_label.add_theme_font_size_override("font_size", 24)
+	stardust_label.add_theme_color_override("font_color", Color("#7150a3"))
+	panel.add_child(stardust_label)
+
+
+func _energy_time_text() -> String:
+	var seconds: int = main.save.seconds_until_next_energy()
+	return "%02d:%02d" % [seconds / 60, seconds % 60]
+
+
+func _update_energy_display() -> void:
+	if main == null or energy_label == null:
+		return
+	var current: int = main.save.get_energy()
+	stardust_label.text = "✦ 별가루 %d" % main.save.get_stardust()
+	energy_label.text = "♥ %d/%d" % [current, SaveGame.MAX_ENERGY]
+	energy_timer_label.text = "가득 참" if current >= SaveGame.MAX_ENERGY else "다음 " + _energy_time_text()
+	if empty_energy_timer_label:
+		empty_energy_timer_label.text = "지금 도전할 수 있어요!" if current > 0 else "다음 행동력  " + _energy_time_text()
+
+
+func show_energy_empty() -> void:
+	var dim := ColorRect.new()
+	dim.color = Color(0.1, 0.05, 0.16, 0.58)
+	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	dim.mouse_filter = Control.MOUSE_FILTER_STOP
+	add_child(dim)
+	var center := CenterContainer.new()
+	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	dim.add_child(center)
+	var panel := PanelContainer.new()
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color("#fffaf0")
+	style.border_color = Color("#da6687")
+	style.set_border_width_all(5)
+	style.set_corner_radius_all(30)
+	style.shadow_color = Color(0.1, 0.04, 0.18, 0.38)
+	style.shadow_size = 14
+	style.shadow_offset = Vector2(0, 9)
+	style.content_margin_left = 42
+	style.content_margin_right = 42
+	style.content_margin_top = 34
+	style.content_margin_bottom = 34
+	panel.add_theme_stylebox_override("panel", style)
+	center.add_child(panel)
+	var box := VBoxContainer.new()
+	box.custom_minimum_size = Vector2(400, 0)
+	box.alignment = BoxContainer.ALIGNMENT_CENTER
+	box.add_theme_constant_override("separation", 18)
+	panel.add_child(box)
+	var heart := Label.new()
+	heart.text = "♥"
+	heart.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	heart.add_theme_font_size_override("font_size", 74)
+	heart.add_theme_color_override("font_color", Color("#ef5d7d"))
+	box.add_child(heart)
+	var title := Label.new()
+	title.text = "행동력이 부족해요"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 38)
+	title.add_theme_color_override("font_color", G.INK)
+	box.add_child(title)
+	var guide := Label.new()
+	guide.text = "10분마다 행동력이 1개씩 회복돼요.\n1개가 생기면 바로 다시 도전할 수 있어요!"
+	guide.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	guide.add_theme_font_size_override("font_size", 23)
+	guide.add_theme_color_override("font_color", Color("#75647f"))
+	box.add_child(guide)
+	empty_energy_timer_label = Label.new()
+	empty_energy_timer_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	empty_energy_timer_label.add_theme_font_size_override("font_size", 30)
+	empty_energy_timer_label.add_theme_color_override("font_color", Color("#df5575"))
+	box.add_child(empty_energy_timer_label)
+	var ok := Button.new()
+	ok.text = "확인"
+	ok.custom_minimum_size = Vector2(250, 72)
+	ok.add_theme_font_size_override("font_size", 29)
+	var button_style := StyleBoxFlat.new()
+	button_style.bg_color = Color("#f28661")
+	button_style.border_color = Color("#b9574d")
+	button_style.set_border_width_all(4)
+	button_style.set_corner_radius_all(20)
+	ok.add_theme_stylebox_override("normal", button_style)
+	ok.add_theme_color_override("font_color", Color.WHITE)
+	ok.pressed.connect(func():
+		empty_energy_timer_label = null
+		dim.queue_free()
+	)
+	box.add_child(ok)
+	_update_energy_display()
 
 
 func _on_back() -> void:

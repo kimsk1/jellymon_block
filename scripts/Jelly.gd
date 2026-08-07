@@ -88,3 +88,9 @@ func sad() -> void:
 	tw.set_parallel(true)
 	tw.tween_property(sprite, "modulate", Color(0.62, 0.6, 0.68), 0.45)
 	tw.tween_property(sprite, "scale:y", base_scale * 0.85, 0.45).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+
+
+func revive() -> void:
+	set_process(true)
+	sprite.modulate = Color(1.35, 1.32, 1.05) if shiny else Color.WHITE
+	sprite.scale = Vector2.ONE * base_scale

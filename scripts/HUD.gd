@@ -181,6 +181,15 @@ func _big_button(text: String, col: Color) -> Button:
 	return b
 
 
+func _result_button(text: String, col: Color) -> Button:
+	var b := Button.new()
+	b.text = text
+	b.custom_minimum_size = Vector2(142, 76)
+	b.add_theme_font_size_override("font_size", 27)
+	_style_button(b, col)
+	return b
+
+
 func _style_button(b: Button, col: Color) -> void:
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = col
@@ -251,7 +260,7 @@ func _title_label(text: String, col: Color) -> Label:
 	return l
 
 
-func show_result(stars_n: int, score: int, has_next: bool, on_next: Callable, on_map: Callable, on_retry: Callable) -> void:
+func show_result(stars_n: int, score: int, stardust_reward: int, stardust_total: int, has_next: bool, on_next: Callable, on_map: Callable, on_retry: Callable) -> void:
 	var v := _popup_frame()
 	v.add_child(_title_label("클리어!", Color(1.0, 0.5, 0.35)))
 	# 별 3개 (순차 팝)
@@ -284,25 +293,32 @@ func show_result(stars_n: int, score: int, has_next: bool, on_next: Callable, on
 	sc.add_theme_font_size_override("font_size", 34)
 	sc.add_theme_color_override("font_color", G.INK)
 	v.add_child(sc)
+	var dust := Label.new()
+	dust.text = "✦ 별가루 +%d   보유 %d" % [stardust_reward, stardust_total] if stardust_reward > 0 else "✦ 이미 받은 별 보상이에요   보유 %d" % stardust_total
+	dust.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	dust.add_theme_font_size_override("font_size", 25)
+	dust.add_theme_color_override("font_color", Color("#8057b2"))
+	v.add_child(dust)
 	var btns := HBoxContainer.new()
 	btns.alignment = BoxContainer.ALIGNMENT_CENTER
-	btns.add_theme_constant_override("separation", 18)
+	btns.add_theme_constant_override("separation", 12)
 	v.add_child(btns)
-	var b_retry := _big_button("다시", Color(0.62, 0.56, 0.72))
+	var b_home := _result_button("홈", Color("#55a9d8"))
+	b_home.tooltip_text = "레벨 선택으로"
+	b_home.pressed.connect(on_map)
+	btns.add_child(b_home)
+	var b_retry := _result_button("다시", Color(0.62, 0.56, 0.72))
 	b_retry.pressed.connect(on_retry)
 	btns.add_child(b_retry)
 	if has_next:
-		var b_next := _big_button("다음 레벨", Color(0.28, 0.75, 0.42))
+		var b_next := _result_button("다음 레벨", Color(0.28, 0.75, 0.42))
 		b_next.pressed.connect(on_next)
 		btns.add_child(b_next)
-	else:
-		var b_map := _big_button("맵으로", Color(0.28, 0.65, 0.85))
-		b_map.pressed.connect(on_map)
-		btns.add_child(b_map)
 
 
-func show_fail(reason: String, on_retry: Callable, on_map: Callable) -> void:
+func show_fail(reason: String, stardust_total: int, on_continue: Callable, on_retry: Callable, on_map: Callable) -> void:
 	var v := _popup_frame()
+	var dim: Control = v.get_parent().get_parent().get_parent()
 	v.add_child(_title_label("아쉬워요!", Color(0.55, 0.48, 0.68)))
 	var l := Label.new()
 	l.text = reason
@@ -311,18 +327,28 @@ func show_fail(reason: String, on_retry: Callable, on_map: Callable) -> void:
 	l.add_theme_color_override("font_color", G.INK)
 	v.add_child(l)
 	var tip := Label.new()
-	tip.text = "재도전은 언제나 무료!"
+	tip.text = "현재 보드 그대로, 시간만 처음부터 다시 시작해요.\n보유 별가루  ✦ %d" % stardust_total
 	tip.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	tip.add_theme_font_size_override("font_size", 24)
 	tip.add_theme_color_override("font_color", Color(0.6, 0.55, 0.7))
 	v.add_child(tip)
+	var b_continue := _big_button("✦ 20  이어하기", Color("#9165c7"))
+	b_continue.custom_minimum_size = Vector2(430, 78)
+	b_continue.disabled = stardust_total < 20
+	if b_continue.disabled:
+		b_continue.text = "별가루가 부족해요  (%d/20)" % stardust_total
+	b_continue.pressed.connect(func():
+		if bool(on_continue.call()):
+			dim.queue_free()
+	)
+	v.add_child(b_continue)
 	var btns := HBoxContainer.new()
 	btns.alignment = BoxContainer.ALIGNMENT_CENTER
 	btns.add_theme_constant_override("separation", 18)
 	v.add_child(btns)
-	var b_map := _big_button("그만", Color(0.62, 0.56, 0.72))
+	var b_map := _result_button("그만", Color(0.62, 0.56, 0.72))
 	b_map.pressed.connect(on_map)
 	btns.add_child(b_map)
-	var b_retry := _big_button("다시 도전", Color(1.0, 0.55, 0.25))
+	var b_retry := _result_button("처음부터", Color(1.0, 0.55, 0.25))
 	b_retry.pressed.connect(on_retry)
 	btns.add_child(b_retry)

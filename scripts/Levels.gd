@@ -108,9 +108,227 @@ static func _generated_level(number: int) -> Dictionary:
 	_promote_tetrominoes(result, _level_shape_pool(number), 2 + number / 12)
 	if _is_greedily_solvable(result):
 		_intermix_level(result, number)
+		_add_shape_seal(result, number)
 		_reduce_empty_space(result, number)
 		_remove_unused_islands(result)
+		_fix_known_mobility_traps(result, number)
+		_validate_shape_seal(result)
+		_add_rescue_exits(result, number)
 	return result
+
+
+static func _fix_known_mobility_traps(level: Dictionary, number: int) -> void:
+	## 자동 풀이는 다른 색을 먼저 치우는 순서를 허용하지만, 시작부터 사방이 막힌 블록은
+	## 클릭 고장으로 오해하기 쉽다. 플레이 테스트에서 확인된 배치만 최소 이동으로 보정한다.
+	if number == 39:
+		var board: Array = level.grid
+		# L39 파란 S1의 오른쪽 빨간 젤리를 하단 빈칸으로 옮겨 즉시 한 칸 이동 가능하게 한다.
+		if board.size() > 8 and board[6].length() > 6 and board[6][5] == "R" and board[8][0] == ".":
+			_put(board, 5, 6, ".")
+			_put(board, 0, 8, "R")
+
+
+static func _add_rescue_exits(level: Dictionary, number: int) -> void:
+	## L6 이후 봉인 레벨과 번갈아 등장하는 색상별 공용 배송 통로.
+	## FULL 블록은 같은 색 출구까지 이동해야 보드에서 제거된다.
+	if number < 6 or level.has("shape_seals"):
+		return
+	var board: Array = level.grid
+	var h: int = board.size()
+	var w: int = board[0].length()
+	var colors: Array[String] = []
+	for spec in level.catchers:
+		var color: String = spec.color
+		if not colors.has(color):
+			colors.append(color)
+	var candidates: Array[Dictionary] = []
+	for y in range(h):
+		for x in range(w):
+			if board[y][x] != ".":
+				continue
+			var cell := Vector2i(x, y)
+			for dir: Vector2i in [Vector2i.UP, Vector2i.RIGHT, Vector2i.DOWN, Vector2i.LEFT]:
+				var next_cell: Vector2i = cell + dir
+				if next_cell.x < 0 or next_cell.y < 0 or next_cell.x >= w or next_cell.y >= h or board[next_cell.y][next_cell.x] == "_":
+					candidates.append({"cell": [x, y], "direction": [dir.x, dir.y]})
+					break
+	if candidates.size() < colors.size():
+		return
+	# 여러 결정적 배치를 시도하고 실제 흡수+배송 자동 풀이가 되는 첫 조합만 채택한다.
+	for attempt in range(48):
+		var exits: Array = []
+		var used := {}
+		var valid := true
+		for ci in range(colors.size()):
+			var picked: Dictionary = {}
+			for offset in range(candidates.size()):
+				var index := (attempt * 3 + ci * 7 + offset) % candidates.size()
+				var candidate: Dictionary = candidates[index]
+				var key := "%s,%s" % [candidate.cell[0], candidate.cell[1]]
+				if not used.has(key):
+					picked = candidate
+					used[key] = true
+					break
+			if picked.is_empty():
+				valid = false
+				break
+			exits.append({
+				"color": colors[ci],
+				"catcher": -1,
+				"cell": picked.cell,
+				"direction": picked.direction,
+			})
+		if not valid:
+			continue
+		level["exits"] = exits
+		if _is_greedily_solvable(level):
+			level.hint = "젤리를 모두 담아 GO가 된 블록을 같은 색 화살표 출구로 내보내세요!"
+			return
+	level.erase("exits")
+
+
+static func _add_shape_seal(level: Dictionary, number: int) -> void:
+	## 시그니처 기믹: 같은 색 폴리오미노를 룬 모양에 정확히 포개면 수정 장벽이 열린다.
+	## L6부터 4레벨 간격으로 등장하며, 장벽이 닫힌 상태에서도 기본 풀이는 항상 보장한다.
+	if number < 6 or (number - 6) % 4 != 0:
+		return
+	var board: Array = level.grid
+	var h: int = board.size()
+	var w: int = board[0].length()
+	var specs: Array = level.catchers
+	var positions: Array[Vector2i] = []
+	var active: Array[bool] = []
+	var occupied := {}
+	for spec in specs:
+		var org := Vector2i(spec.cell[0], spec.cell[1])
+		positions.append(org)
+		active.append(true)
+		for off in G.SHAPES[spec.shape]:
+			occupied[org + off] = true
+	var chosen_index := -1
+	var seal_origin := Vector2i(-1, -1)
+	for si in range(specs.size()):
+		if G.SHAPES[specs[si].shape].size() < 2:
+			continue
+		var own_start := {}
+		for off in G.SHAPES[specs[si].shape]:
+			own_start[positions[si] + off] = true
+		var targets: Array[Vector2i] = []
+		for y in range(h):
+			for x in range(w):
+				targets.append(Vector2i(x, y))
+		targets.sort_custom(func(a: Vector2i, b: Vector2i) -> bool:
+			return a.distance_squared_to(positions[si]) > b.distance_squared_to(positions[si])
+		)
+		for target in targets:
+			if target == positions[si]:
+				continue
+			if not _test_can_place(board, specs, positions, active, si, target):
+				continue
+			var clean := true
+			for off in G.SHAPES[specs[si].shape]:
+				var cell: Vector2i = target + off
+				# 같은 색 젤리가 놓인 룬은 허용한다. 블록이 포개지는 순간 구조와 봉인 해제가 함께 일어난다.
+				if occupied.has(cell) and not own_start.has(cell):
+					clean = false
+					break
+			if clean and _can_reach_origin(board, specs, positions, active, si, target):
+				chosen_index = si
+				seal_origin = target
+				break
+		if chosen_index >= 0:
+			break
+	if chosen_index < 0:
+		return
+	var seal_cells: Array = []
+	var seal_lookup := {}
+	for off in G.SHAPES[specs[chosen_index].shape]:
+		var cell: Vector2i = seal_origin + off
+		seal_cells.append([cell.x, cell.y])
+		seal_lookup[cell] = true
+	var gate_candidates: Array[Vector2i] = []
+	for y in range(1, h - 1):
+		for x in range(1, w - 1):
+			var cell := Vector2i(x, y)
+			if board[y][x] != "." or occupied.has(cell) or seal_lookup.has(cell):
+				continue
+			var open_neighbors := 0
+			for dir in [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]:
+				var ch: String = board[y + dir.y][x + dir.x]
+				if ch != "_" and ch != "#":
+					open_neighbors += 1
+			if open_neighbors >= 2:
+				gate_candidates.append(cell)
+	gate_candidates.sort_custom(func(a: Vector2i, b: Vector2i) -> bool:
+		var center := Vector2(w - 1, h - 1) * 0.5
+		return Vector2(a).distance_squared_to(center) < Vector2(b).distance_squared_to(center)
+	)
+	for gate in gate_candidates:
+		_put(board, gate.x, gate.y, "#")
+		var seal_reachable := _can_reach_origin(board, specs, positions, active, chosen_index, seal_origin)
+		if seal_reachable and _is_greedily_solvable(level):
+			_put(board, gate.x, gate.y, ".")
+			level["shape_seals"] = [{
+				"color": specs[chosen_index].color,
+				"shape": specs[chosen_index].shape,
+				"cells": seal_cells,
+				"gates": [[gate.x, gate.y]],
+			}]
+			level.hint = "빛나는 모양 봉인에 같은 색 블록을 정확히 포개 장벽을 여세요!"
+			print("[shape seal] added ", level.name, " ", specs[chosen_index].color, "-", specs[chosen_index].shape)
+			return
+		_put(board, gate.x, gate.y, ".")
+
+
+static func _validate_shape_seal(level: Dictionary) -> void:
+	if not level.has("shape_seals"):
+		return
+	if not _shape_seal_is_valid(level):
+		print("[shape seal] removed after compaction ", level.name)
+		level.erase("shape_seals")
+
+
+static func _shape_seal_is_valid(level: Dictionary) -> bool:
+	var board: Array = level.grid
+	var specs: Array = level.catchers
+	var positions: Array[Vector2i] = []
+	var active: Array[bool] = []
+	for spec in specs:
+		positions.append(Vector2i(spec.cell[0], spec.cell[1]))
+		active.append(true)
+	var seal: Dictionary = level.shape_seals[0]
+	var chosen_index := -1
+	for i in range(specs.size()):
+		if specs[i].color == seal.color and specs[i].shape == seal.shape:
+			chosen_index = i
+			break
+	if chosen_index < 0:
+		return false
+	var first := Vector2i(int(seal.cells[0][0]), int(seal.cells[0][1]))
+	var seal_origin: Vector2i = first - G.SHAPES[seal.shape][0]
+	for pair in seal.gates:
+		_put(board, int(pair[0]), int(pair[1]), "#")
+	var valid := _can_reach_origin(board, specs, positions, active, chosen_index, seal_origin) and _is_greedily_solvable(level)
+	for pair in seal.gates:
+		_put(board, int(pair[0]), int(pair[1]), ".")
+	return valid
+
+
+static func _can_reach_origin(board: Array, specs: Array, positions: Array[Vector2i], active: Array[bool], ci: int, target: Vector2i) -> bool:
+	var queue: Array[Vector2i] = [positions[ci]]
+	var seen := {positions[ci]: true}
+	var head := 0
+	while head < queue.size():
+		var origin: Vector2i = queue[head]
+		head += 1
+		if origin == target:
+			return true
+		for dir in [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]:
+			var next: Vector2i = origin + dir
+			if not seen.has(next) and _test_can_place(board, specs, positions, active, ci, next):
+				seen[next] = true
+				queue.append(next)
+	return false
 
 
 static func _remove_unused_islands(level: Dictionary) -> void:
@@ -123,6 +341,11 @@ static func _remove_unused_islands(level: Dictionary) -> void:
 		var org := Vector2i(spec.cell[0], spec.cell[1])
 		for off in G.SHAPES[spec.shape]:
 			occupied[org + off] = true
+	for seal in level.get("shape_seals", []):
+		for pair in seal.cells:
+			occupied[Vector2i(int(pair[0]), int(pair[1]))] = true
+		for pair in seal.gates:
+			occupied[Vector2i(int(pair[0]), int(pair[1]))] = true
 	var seen := {}
 	for y in range(h):
 		for x in range(w):
@@ -161,6 +384,11 @@ static func _reduce_empty_space(level: Dictionary, number: int) -> void:
 		var org := Vector2i(spec.cell[0], spec.cell[1])
 		for off in G.SHAPES[spec.shape]:
 			occupied[org + off] = true
+	for seal in level.get("shape_seals", []):
+		for pair in seal.cells:
+			occupied[Vector2i(int(pair[0]), int(pair[1]))] = true
+		for pair in seal.gates:
+			occupied[Vector2i(int(pair[0]), int(pair[1]))] = true
 	var free_empty := 0
 	for y in range(h):
 		for x in range(w):
@@ -204,7 +432,7 @@ static func _reduce_empty_space(level: Dictionary, number: int) -> void:
 		var removed := false
 		for cell in candidates:
 			_put(board, cell.x, cell.y, "_")
-			if _is_greedily_solvable(level):
+			if _is_greedily_solvable(level) and (not level.has("shape_seals") or _shape_seal_is_valid(level)):
 				free_empty -= 1
 				removed = true
 				break
@@ -567,6 +795,53 @@ static func validate_all() -> PackedStringArray:
 							jelly_count += 1
 				if int(capacity_by_color[color]) != jelly_count:
 					errors.append("L%d: %s 홀 용량 합(%d)과 젤리 수(%d) 불일치" % [idx + 1, color, capacity_by_color[color], jelly_count])
+		for seal in level.get("shape_seals", []):
+			for pair in seal.cells + seal.gates:
+				var cell := Vector2i(int(pair[0]), int(pair[1]))
+				if cell.x < 0 or cell.y < 0 or cell.x >= width or cell.y >= grid.size():
+					errors.append("L%d: 모양 봉인/장벽이 보드 밖" % (idx + 1))
+		var exit_colors := {}
+		for exit in level.get("exits", []):
+			var exit_cell := Vector2i(int(exit.cell[0]), int(exit.cell[1]))
+			var direction := Vector2i(int(exit.direction[0]), int(exit.direction[1]))
+			var color := String(exit.color)
+			if not G.COLORS.has(color):
+				errors.append("L%d: 알 수 없는 배출구 색상 %s" % [idx + 1, color])
+			if exit_cell.x < 0 or exit_cell.y < 0 or exit_cell.x >= width or exit_cell.y >= grid.size():
+				errors.append("L%d: 젤리 배출구가 보드 밖" % (idx + 1))
+			elif grid[exit_cell.y][exit_cell.x] != ".":
+				errors.append("L%d: 젤리 배출구 칸이 이동 가능 타일이 아님" % (idx + 1))
+			else:
+				var outside := exit_cell + direction
+				if abs(direction.x) + abs(direction.y) != 1:
+					errors.append("L%d: 젤리 배출구 방향이 상하좌우가 아님" % (idx + 1))
+				elif outside.x >= 0 and outside.y >= 0 and outside.x < width and outside.y < grid.size() and grid[outside.y][outside.x] != "_":
+					errors.append("L%d: 젤리 배출구가 외벽과 맞닿지 않음" % (idx + 1))
+			exit_colors[color] = true
+		if level.has("exits"):
+			for color in catcher_colors:
+				if not exit_colors.has(color):
+					errors.append("L%d: %s 블록용 젤리 배출구 없음" % [idx + 1, color])
+		if level.has("shape_seals") and not _shape_seal_is_valid(level):
+			errors.append("L%d: 닫힌 수정 장벽 상태에서 봉인 또는 기본 풀이 도달 불가" % (idx + 1))
+		if idx == 38:
+			var specs: Array = level.catchers
+			var positions: Array[Vector2i] = []
+			var active: Array[bool] = []
+			var blue_index := -1
+			for ci in range(specs.size()):
+				positions.append(Vector2i(specs[ci].cell[0], specs[ci].cell[1]))
+				active.append(true)
+				if specs[ci].color == "B" and specs[ci].shape == "S1":
+					blue_index = ci
+			var blue_can_move := false
+			if blue_index >= 0:
+				for direction in [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]:
+					if _test_can_place(grid, specs, positions, active, blue_index, positions[blue_index] + direction):
+						blue_can_move = true
+						break
+			if not blue_can_move:
+				errors.append("L39: 파란 S1 블록이 시작 위치에서 이동 불가")
 		if not _is_greedily_solvable(level):
 			errors.append("L%d: 충돌 규칙 기준 도달 불가능한 젤리 존재" % (idx + 1))
 	return errors
@@ -585,6 +860,7 @@ static func _is_solvable_with_shift(level: Dictionary, shift: int) -> bool:
 	## 보너스 모드 없이도 완주 가능한 레벨만 통과시킨다.
 	var board: Array = level.grid.duplicate()
 	var specs: Array = level.catchers
+	var catcher_count: int = specs.size()
 	var positions: Array[Vector2i] = []
 	var capacities: Array[int] = []
 	var active: Array[bool] = []
@@ -597,13 +873,26 @@ static func _is_solvable_with_shift(level: Dictionary, shift: int) -> bool:
 		for ch in row:
 			if G.COLORS.has(ch):
 				remaining += 1
-	var safety := remaining + 1
-	while remaining > 0 and safety > 0:
+	var safety := remaining + catcher_count * 4 + 12
+	while (remaining > 0 or _has_pending_exit(level, active, capacities)) and safety > 0:
 		safety -= 1
 		var progressed := false
 		for order in range(specs.size()):
 			var ci: int = (order + shift) % specs.size()
 			if not active[ci]:
+				continue
+			if capacities[ci] <= 0:
+				if _catcher_has_exit(level, specs, ci):
+					var exit_origin := _find_reachable_exit(board, specs, positions, active, ci, level.exits)
+					if exit_origin.x >= 0:
+						positions[ci] = exit_origin
+						active[ci] = false
+						progressed = true
+						break
+				else:
+					active[ci] = false
+					progressed = true
+					break
 				continue
 			var target := _find_reachable_jelly(board, specs, positions, active, ci)
 			if target.x < 0:
@@ -616,13 +905,71 @@ static func _is_solvable_with_shift(level: Dictionary, shift: int) -> bool:
 					remaining -= 1
 					capacities[ci] -= 1
 					if capacities[ci] <= 0:
-						active[ci] = false
+						if not _catcher_has_exit(level, specs, ci):
+							active[ci] = false
 						break
 			progressed = true
 			break
 		if not progressed:
 			return false
-	return remaining == 0
+	return remaining == 0 and not _has_pending_exit(level, active, capacities)
+
+
+static func _catcher_has_exit(level: Dictionary, specs: Array, ci: int) -> bool:
+	for exit in level.get("exits", []):
+		if exit.color == specs[ci].color and (int(exit.get("catcher", -1)) < 0 or int(exit.catcher) == ci):
+			return true
+	return false
+
+
+static func _has_pending_exit(level: Dictionary, active: Array[bool], capacities: Array[int]) -> bool:
+	if not level.has("exits"):
+		return false
+	for i in range(active.size()):
+		if active[i] and capacities[i] <= 0:
+			return true
+	return false
+
+
+static func _find_reachable_exit(board: Array, specs: Array, positions: Array[Vector2i], active: Array[bool], ci: int, exits: Array) -> Vector2i:
+	var start: Vector2i = positions[ci]
+	var queue: Array[Vector2i] = [start]
+	var seen := {start: true}
+	var head := 0
+	while head < queue.size():
+		var origin: Vector2i = queue[head]
+		head += 1
+		for exit in exits:
+			if exit.color != specs[ci].color or (int(exit.get("catcher", -1)) >= 0 and int(exit.catcher) != ci):
+				continue
+			var exit_cell := Vector2i(int(exit.cell[0]), int(exit.cell[1]))
+			for off in G.SHAPES[specs[ci].shape]:
+				if origin + off == exit_cell:
+					return origin
+		for dir in [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]:
+			var next: Vector2i = origin + dir
+			if not seen.has(next) and _test_can_place_full(board, specs, positions, active, ci, next):
+				seen[next] = true
+				queue.append(next)
+	return Vector2i(-1, -1)
+
+
+static func _test_can_place_full(board: Array, specs: Array, positions: Array[Vector2i], active: Array[bool], ci: int, org: Vector2i) -> bool:
+	var width: int = board[0].length()
+	for off in G.SHAPES[specs[ci].shape]:
+		var cell: Vector2i = org + off
+		if cell.x < 0 or cell.y < 0 or cell.x >= width or cell.y >= board.size():
+			return false
+		var ch: String = board[cell.y][cell.x]
+		if ch == "#" or ch == "_" or G.COLORS.has(ch):
+			return false
+		for oi in range(specs.size()):
+			if oi == ci or not active[oi]:
+				continue
+			for other_off in G.SHAPES[specs[oi].shape]:
+				if positions[oi] + other_off == cell:
+					return false
+	return true
 
 
 static func _find_reachable_jelly(board: Array, specs: Array, positions: Array[Vector2i], active: Array[bool], ci: int) -> Vector2i:

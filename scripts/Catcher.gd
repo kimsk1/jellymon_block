@@ -5,6 +5,7 @@ class_name Catcher
 
 var color_id := "R"
 var shape_id := "S1"
+var spec_index := -1
 var cells: Array = []          # Vector2i 오프셋 목록
 var origin_cell := Vector2i.ZERO
 var grabbed := false
@@ -21,6 +22,7 @@ var arrival_pending := false
 var movement_locked := false
 var count_badge: Label
 var badge_panel: PanelContainer
+var badge_style: StyleBoxFlat
 
 
 func setup(cid: String, shape: String, amount: int = 1) -> void:
@@ -42,15 +44,15 @@ func setup(cid: String, shape: String, amount: int = 1) -> void:
 	generated.setup(cells, G.COLORS[cid])
 	visual_root.add_child(generated)
 	badge_panel = PanelContainer.new()
-	var badge_bg := StyleBoxFlat.new()
-	badge_bg.bg_color = Color("#fff7d6")
-	badge_bg.border_color = G.COLORS[cid].darkened(0.28)
-	badge_bg.set_border_width_all(4)
-	badge_bg.set_corner_radius_all(20)
-	badge_bg.shadow_color = Color(0.04, 0.05, 0.14, 0.42)
-	badge_bg.shadow_size = 4
-	badge_bg.shadow_offset = Vector2(0, 3)
-	badge_panel.add_theme_stylebox_override("panel", badge_bg)
+	badge_style = StyleBoxFlat.new()
+	badge_style.bg_color = Color("#fff7d6")
+	badge_style.border_color = G.COLORS[cid].darkened(0.28)
+	badge_style.set_border_width_all(4)
+	badge_style.set_corner_radius_all(20)
+	badge_style.shadow_color = Color(0.04, 0.05, 0.14, 0.42)
+	badge_style.shadow_size = 4
+	badge_style.shadow_offset = Vector2(0, 3)
+	badge_panel.add_theme_stylebox_override("panel", badge_style)
 	badge_panel.position = bbox * G.CELL - Vector2(49, 50)
 	badge_panel.size = Vector2(48, 48)
 	badge_panel.z_index = 5
@@ -124,6 +126,33 @@ func consume() -> bool:
 	return false
 
 
+func set_full() -> void:
+	completed = true
+	movement_locked = true
+	count_badge.text = "GO"
+	count_badge.add_theme_font_size_override("font_size", 20)
+	badge_style.bg_color = Color("#dfffe6")
+	badge_style.border_color = Color("#43b66a")
+	visual_root.modulate = Color(1.14, 1.14, 1.2)
+	var tw := create_tween()
+	tw.tween_property(self, "scale", Vector2(1.08, 0.94), 0.1)
+	tw.tween_property(self, "scale", Vector2.ONE, 0.18).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+
+func evacuate(direction: Vector2i) -> void:
+	## FULL 블록이 벽 통로를 통해 보드 밖으로 배송되는 연출.
+	set_process(false)
+	movement_locked = true
+	count_badge.visible = false
+	badge_panel.visible = false
+	var target := position + Vector2(direction) * G.CELL * 2.4
+	var tw := create_tween().set_parallel(true)
+	tw.tween_property(self, "position", target, 0.34).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
+	tw.tween_property(self, "scale", Vector2(0.24, 0.7) if direction.x != 0 else Vector2(0.7, 0.24), 0.34)
+	tw.tween_property(self, "modulate:a", 0.0, 0.22).set_delay(0.12)
+	tw.chain().tween_callback(queue_free)
+
+
 func vanish() -> void:
 	set_process(false)
 	var tw := create_tween().set_parallel(true)
@@ -148,6 +177,12 @@ func sad() -> void:
 	tw.set_parallel(true)
 	tw.tween_property(visual_root, "modulate", Color(0.62, 0.6, 0.68), 0.45)
 	tw.tween_property(visual_root, "scale:y", 0.9, 0.45).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+
+
+func revive() -> void:
+	set_process(true)
+	visual_root.modulate = Color(1.14, 1.14, 1.2) if completed else Color.WHITE
+	visual_root.scale = Vector2.ONE
 
 
 class ShapeVisual extends Node2D:

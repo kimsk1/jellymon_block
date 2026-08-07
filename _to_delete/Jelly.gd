@@ -1,5 +1,5 @@
 extends Node2D
-class_name Jelly
+class_name LegacyJelly
 ## 젤리몬. 로직은 격자 기반, 시각은 스쿼시&스트레치 (02 문서 8.2)
 
 var color_id := "R"

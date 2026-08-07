@@ -9,6 +9,7 @@ class_name Game
 var main = null
 var audio: AudioMgr
 var level_idx := 0
+var energy_reserved := false
 var L: Dictionary
 var cols := 0
 var rows := 0
@@ -19,6 +20,11 @@ var jellies: Array = []
 var jelly_at := {}          # Vector2i -> Jelly
 var catchers: Array = []
 var catcher_at := {}        # Vector2i -> Catcher
+var shape_seals: Array = []
+var seal_at := {}           # Vector2i -> 봉인 데이터
+var seal_gates := {}        # 닫힌 수정 장벽 셀
+var rescue_exits: Array = []
+var exit_at := {}            # Vector2i -> 출구 데이터 목록
 
 var grabbed: Catcher = null
 var grab_offset := Vector2.ZERO
@@ -50,6 +56,8 @@ func _ready() -> void:
 	var bottom_h := 240.0
 	origin = Vector2((G.W - cols * G.CELL) / 2.0, 0.0)
 	origin.y = top_h + max(0.0, (G.H - top_h - bottom_h - rows * G.CELL) / 2.0)
+	_setup_shape_seals()
+	_setup_rescue_exits()
 
 	jellies_node = Node2D.new()
 	add_child(jellies_node)
@@ -69,8 +77,9 @@ func _ready() -> void:
 				walls[Vector2i(c, r)] = true
 			elif G.COLORS.has(ch):
 				_spawn_jelly(ch, Vector2i(c, r))
-	for cspec in L.catchers:
-		_spawn_catcher(cspec.color, cspec.shape, Vector2i(cspec.cell[0], cspec.cell[1]), int(cspec.get("capacity", _count_color(cspec.color))))
+	for si in range(L.catchers.size()):
+		var cspec: Dictionary = L.catchers[si]
+		_spawn_catcher(cspec.color, cspec.shape, Vector2i(cspec.cell[0], cspec.cell[1]), int(cspec.get("capacity", _count_color(cspec.color))), si)
 
 	hud = HUD.new()
 	hud.game = self
@@ -112,9 +121,10 @@ func _count_color(cid: String) -> int:
 	return int(goals.get(cid, 0))
 
 
-func _spawn_catcher(cid: String, shape: String, org: Vector2i, capacity: int) -> void:
+func _spawn_catcher(cid: String, shape: String, org: Vector2i, capacity: int, spec_index: int) -> void:
 	var c := Catcher.new()
 	c.setup(cid, shape, capacity)
+	c.spec_index = spec_index
 	c.origin_cell = org
 	c.position = origin + Vector2(org) * G.CELL
 	c.slide_target = c.position
@@ -122,6 +132,40 @@ func _spawn_catcher(cid: String, shape: String, org: Vector2i, capacity: int) ->
 	catchers.append(c)
 	for off in c.cells:
 		catcher_at[org + off] = c
+
+
+func _setup_shape_seals() -> void:
+	for raw in L.get("shape_seals", []):
+		var seal := {
+			"color": String(raw.color),
+			"shape": String(raw.shape),
+			"cells": [],
+			"gates": [],
+			"active": false,
+		}
+		for pair in raw.cells:
+			var cell := Vector2i(int(pair[0]), int(pair[1]))
+			seal.cells.append(cell)
+			seal_at[cell] = seal
+		for pair in raw.gates:
+			var cell := Vector2i(int(pair[0]), int(pair[1]))
+			seal.gates.append(cell)
+			seal_gates[cell] = seal
+		shape_seals.append(seal)
+
+
+func _setup_rescue_exits() -> void:
+	for raw in L.get("exits", []):
+		var exit := {
+			"color": String(raw.color),
+			"catcher": int(raw.catcher),
+			"cell": Vector2i(int(raw.cell[0]), int(raw.cell[1])),
+			"direction": Vector2i(int(raw.direction[0]), int(raw.direction[1])),
+		}
+		rescue_exits.append(exit)
+		var list: Array = exit_at.get(exit.cell, [])
+		list.append(exit)
+		exit_at[exit.cell] = list
 
 
 # ────────────────────────── 입력 ──────────────────────────
@@ -208,12 +252,15 @@ func _can_place(c: Catcher, org: Vector2i) -> bool:
 			return false
 		if voids.has(cl):
 			return false
+		if seal_gates.has(cl):
+			return false
 		var oc = catcher_at.get(cl)
 		if oc != null and oc != c:
 			return false            # 캐처끼리 통과 불가
 		var j = jelly_at.get(cl)
-		if j != null and j.color_id != c.color_id:
-			return false            # 다른 색 젤리 통과 불가
+		if j != null:
+			if c.completed or j.color_id != c.color_id:
+				return false            # FULL 블록과 다른 색 블록은 젤리를 통과할 수 없다.
 	return true
 
 
@@ -257,7 +304,76 @@ func _resolve_catcher_arrivals() -> void:
 		if is_instance_valid(c) and c.arrival_pending and c.position.distance_to(c.slide_target) <= 1.0:
 			c.position = c.slide_target
 			c.arrival_pending = false
+			if _try_rescue_exit(c):
+				continue
+			_check_shape_seals(c)
 			_absorb_footprint(c)
+
+
+func _has_rescue_exit(c: Catcher) -> bool:
+	for exit in rescue_exits:
+		if (exit.catcher < 0 or exit.catcher == c.spec_index) and exit.color == c.color_id:
+			return true
+	return false
+
+
+func _try_rescue_exit(c: Catcher) -> bool:
+	if not c.completed:
+		return false
+	var footprint := {}
+	for off in c.cells:
+		footprint[c.origin_cell + off] = true
+	for exit in rescue_exits:
+		if (exit.catcher < 0 or exit.catcher == c.spec_index) and exit.color == c.color_id and footprint.has(exit.cell):
+			_evacuate_catcher(c, exit)
+			return true
+	return false
+
+
+func _evacuate_catcher(c: Catcher, exit: Dictionary) -> void:
+	if grabbed == c:
+		_release()
+	for off in c.cells:
+		catcher_at.erase(c.origin_cell + off)
+	catchers.erase(c)
+	var pos := cell_pos(exit.cell)
+	fx.ring(pos, G.COLORS[c.color_id], 1.35)
+	fx.impact(pos, G.COLORS[c.color_id], true)
+	fx.float_text(pos, "구출 완료!", Color("#eaffbe"), 30)
+	audio.play("pop_big", 1.3)
+	G.haptic(40)
+	shake_amt = maxf(shake_amt, 8.0)
+	c.evacuate(exit.direction)
+	_maybe_clear_level()
+
+
+func _check_shape_seals(c: Catcher) -> void:
+	var footprint := {}
+	for off in c.cells:
+		footprint[c.origin_cell + off] = true
+	for seal in shape_seals:
+		if seal.active or seal.color != c.color_id or seal.shape != c.shape_id:
+			continue
+		var matched := true
+		for cell in seal.cells:
+			if not footprint.has(cell):
+				matched = false
+				break
+		if not matched:
+			continue
+		seal.active = true
+		for gate in seal.gates:
+			seal_gates.erase(gate)
+		var center := Vector2.ZERO
+		for cell in seal.cells:
+			center += cell_pos(cell)
+		center /= float(seal.cells.size())
+		fx.impact(center, G.COLORS[c.color_id], true)
+		fx.float_text(center, "봉인 해제!", Color("#fff2a6"), 31)
+		audio.play("pop_big", 1.25)
+		G.haptic(35)
+		shake_amt = maxf(shake_amt, 6.0)
+		queue_redraw()
 
 
 # ────────────────────────── 흡수 (가두기) ──────────────────────────
@@ -283,7 +399,7 @@ func _absorb_footprint(c: Catcher) -> void:
 
 func _unlock_catcher_after_absorb(c: Catcher) -> void:
 	await get_tree().create_timer(0.2).timeout
-	if is_instance_valid(c) and not c.completed:
+	if is_instance_valid(c):
 		c.movement_locked = false
 
 
@@ -317,10 +433,14 @@ func _absorb(j: Jelly, c: Catcher, cl: Vector2i) -> void:
 	audio.play("pop")
 	G.haptic(10)
 	if c.consume():
-		call_deferred("_finish_catcher", c)
+		if _has_rescue_exit(c):
+			c.set_full()
+			fx.float_text(c.center_px(), "출구로!", Color("#dcffb4"), 29)
+			call_deferred("_try_rescue_exit", c)
+		else:
+			call_deferred("_finish_catcher", c)
 	active_absorptions = maxi(0, active_absorptions - 1)
-	if jellies.is_empty() and active_absorptions == 0:
-		_clear_level()
+	_maybe_clear_level()
 
 
 func _finish_catcher(c: Catcher) -> void:
@@ -337,6 +457,12 @@ func _finish_catcher(c: Catcher) -> void:
 	fx.impact(c.center_px(), G.COLORS[c.color_id], true)
 	shake_amt = 11.0
 	c.vanish()
+	_maybe_clear_level()
+
+
+func _maybe_clear_level() -> void:
+	if state == "play" and jellies.is_empty() and active_absorptions == 0 and catchers.is_empty():
+		_clear_level()
 
 
 # ────────────────────────── 종료 ──────────────────────────
@@ -360,10 +486,11 @@ func _clear_level() -> void:
 			c.cheer(0.08 * i)
 			i += 1
 	fx.confetti()
-	main.on_level_finished(level_idx, stars_n, true)
+	var stardust_reward: int = main.on_level_finished(level_idx, stars_n, true, energy_reserved)
+	energy_reserved = false
 	await get_tree().create_timer(1.3).timeout
 	var has_next := level_idx + 1 < Levels.LEVELS.size()
-	hud.show_result(stars_n, score, has_next,
+	hud.show_result(stars_n, score, stardust_reward, main.save.get_stardust(), has_next,
 		func(): main.start_level(level_idx + 1),
 		func(): main.show_map(),
 		func(): main.start_level(level_idx))
@@ -381,9 +508,28 @@ func _fail() -> void:
 		if is_instance_valid(c):
 			c.sad()
 	await get_tree().create_timer(0.9).timeout
-	hud.show_fail("시간이 다 됐어요!",
+	hud.show_fail("시간이 다 됐어요!", main.save.get_stardust(),
+		_continue_with_stardust,
 		func(): main.start_level(level_idx),
 		func(): main.show_map())
+
+
+func _continue_with_stardust() -> bool:
+	const CONTINUE_COST := 20
+	if state != "fail" or not main.save.spend_stardust(CONTINUE_COST):
+		return false
+	for j in jellies:
+		if is_instance_valid(j) and not j.absorbing:
+			j.revive()
+	for c in catchers:
+		if is_instance_valid(c):
+			c.revive()
+	time_left = total_time
+	hud.set_time(time_left, total_time)
+	state = "play"
+	audio.play("grab", 1.18)
+	G.haptic(18)
+	return true
 
 
 # ────────────────────────── 보드 렌더 ──────────────────────────
@@ -424,13 +570,51 @@ func _draw() -> void:
 				# 아래쪽의 은은한 음영과 모서리 광점으로 장난감 타일 같은 재질감을 더한다.
 				draw_line(p + Vector2(13, G.CELL - 11), p + Vector2(G.CELL - 15, G.CELL - 11), Color(0.61, 0.48, 0.3, 0.12), 3.0, true)
 				draw_circle(p + Vector2(G.CELL - 17, 16), 2.5, Color(1, 1, 1, 0.62))
+			# FULL 블록을 보드 밖으로 보내는 색상별 구조 통로.
+			if exit_at.has(cell):
+				var exit: Dictionary = exit_at[cell][0]
+				var exit_col: Color = G.COLORS[exit.color]
+				var center := p + Vector2.ONE * G.CELL * 0.5
+				draw_circle(center, G.CELL * 0.31, Color(exit_col.r, exit_col.g, exit_col.b, 0.2))
+				draw_arc(center, G.CELL * 0.3, 0, TAU, 28, exit_col.darkened(0.2), 6.0, true)
+				var dir := Vector2(exit.direction).normalized()
+				var side := dir.rotated(PI * 0.5)
+				var tip := center + dir * 22.0
+				var tail := center - dir * 19.0
+				draw_line(tail, tip, Color.WHITE, 8.0, true)
+				draw_line(tip, tip - dir * 15.0 + side * 13.0, Color.WHITE, 7.0, true)
+				draw_line(tip, tip - dir * 15.0 - side * 13.0, Color.WHITE, 7.0, true)
+			# 같은 색·모양의 블록을 포개면 장벽을 여는 폴리오미노 룬.
+			if seal_at.has(cell):
+				var seal: Dictionary = seal_at[cell]
+				var rune_col: Color = G.COLORS[seal.color]
+				var alpha := 0.22 if seal.active else 0.72
+				draw_circle(p + Vector2(G.CELL * 0.5, G.CELL * 0.5), G.CELL * 0.25, Color(rune_col.r, rune_col.g, rune_col.b, alpha * 0.22))
+				draw_arc(p + Vector2(G.CELL * 0.5, G.CELL * 0.5), G.CELL * 0.22, 0, TAU, 24, Color(rune_col.r, rune_col.g, rune_col.b, alpha), 4.0, true)
+				for angle in [0.0, PI * 0.5, PI, PI * 1.5]:
+					var a := p + Vector2(G.CELL * 0.5, G.CELL * 0.5) + Vector2.RIGHT.rotated(angle) * G.CELL * 0.29
+					draw_circle(a, 4.0, Color(rune_col.r, rune_col.g, rune_col.b, alpha))
+			# 닫힌 장벽은 반투명 수정 기둥으로 표시한다.
+			if seal_gates.has(cell):
+				var seal: Dictionary = seal_gates[cell]
+				var gate_col: Color = G.COLORS[seal.color].lightened(0.2)
+				var crystal := PackedVector2Array([
+					p + Vector2(G.CELL * 0.5, 7),
+					p + Vector2(G.CELL - 9, G.CELL * 0.36),
+					p + Vector2(G.CELL - 14, G.CELL - 9),
+					p + Vector2(14, G.CELL - 9),
+					p + Vector2(9, G.CELL * 0.36),
+				])
+				draw_colored_polygon(crystal, Color(gate_col.r, gate_col.g, gate_col.b, 0.9))
+				draw_polyline(PackedVector2Array(crystal + PackedVector2Array([crystal[0]])), gate_col.darkened(0.32), 5.0, true)
+				draw_line(p + Vector2(G.CELL * 0.48, 15), p + Vector2(G.CELL * 0.3, G.CELL - 18), Color(1, 1, 1, 0.62), 5.0, true)
 
 
 # ────────────────────────── 헤드리스/QA 유틸 ──────────────────────────
 
 func _find_catcher_for(cid: String) -> Catcher:
 	for c in catchers:
-		if c.color_id == cid:
+		if c.color_id == cid and not c.completed and c.remaining_capacity > 0:
 			return c
 	return null
 
@@ -459,4 +643,30 @@ func debug_drive() -> void:
 		debug_capture_one()
 		await get_tree().create_timer(0.2).timeout
 		elapsed += 0.2
-	print("[smoke] level=", level_idx, " state=", state, " score=", score, " left=", jellies.size())
+	# 배출구 레벨은 모든 FULL 블록이 실제 출구 판정을 거쳐 나가야 클리어된다.
+	while state == "play" and not catchers.is_empty() and elapsed < 36.0:
+		var full: Catcher = null
+		for candidate in catchers:
+			if candidate.completed and _has_rescue_exit(candidate):
+				full = candidate
+				break
+		if full == null:
+			break
+		var matching_exit: Dictionary = {}
+		for exit in rescue_exits:
+			if exit.color == full.color_id and (exit.catcher < 0 or exit.catcher == full.spec_index):
+				matching_exit = exit
+				break
+		if matching_exit.is_empty():
+			break
+		for off in full.cells:
+			catcher_at.erase(full.origin_cell + off)
+		full.origin_cell = matching_exit.cell - full.cells[0]
+		for off in full.cells:
+			catcher_at[full.origin_cell + off] = full
+		full.position = origin + Vector2(full.origin_cell) * G.CELL
+		full.slide_target = full.position
+		_try_rescue_exit(full)
+		await get_tree().create_timer(0.2).timeout
+		elapsed += 0.2
+	print("[smoke] level=", level_idx, " state=", state, " score=", score, " left=", jellies.size(), " catchers=", catchers.size())

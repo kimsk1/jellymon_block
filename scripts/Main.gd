@@ -10,6 +10,12 @@ var game: Game = null
 func _ready() -> void:
 	randomize()
 	var level_errors := Levels.validate_all()
+	if SaveGame.calculate_stardust_reward(0, 1) != 1:
+		level_errors.append("별가루 보상 오류: 0성→1성")
+	if SaveGame.calculate_stardust_reward(1, 3) != 5:
+		level_errors.append("별가루 보상 오류: 1성→3성")
+	if SaveGame.calculate_stardust_reward(3, 3) != 0:
+		level_errors.append("별가루 보상 오류: 3성 재클리어")
 	if not level_errors.is_empty():
 		for message in level_errors:
 			push_error("[level validation] " + message)
@@ -61,22 +67,36 @@ func show_map() -> void:
 	current_screen = m
 
 
-func start_level(idx: int) -> void:
+func start_level(idx: int, bypass_energy: bool = false) -> void:
 	if idx >= Levels.LEVELS.size():
 		show_map()
 		return
+	var energy_reserved := false
+	# L1~5는 튜토리얼 보호 구간. 이후에는 입장 시 예약 차감하고 클리어 시 반환한다.
+	if idx >= 5 and not bypass_energy:
+		if not save.reserve_energy():
+			show_map()
+			if current_screen is MapScreen:
+				current_screen.call_deferred("show_energy_empty")
+			return
+		energy_reserved = true
 	_clear_screen()
 	var g := Game.new()
 	g.main = self
 	g.level_idx = idx
+	g.energy_reserved = energy_reserved
 	add_child(g)
 	current_screen = g
 	game = g
 
 
-func on_level_finished(idx: int, stars: int, cleared: bool) -> void:
+func on_level_finished(idx: int, stars: int, cleared: bool, refund_reserved_energy: bool = false) -> int:
+	var stardust_reward := 0
 	if cleared:
-		save.set_stars(idx, stars)
+		stardust_reward = save.award_stars(idx, stars)
+		if refund_reserved_energy:
+			save.refund_energy()
+	return stardust_reward
 
 
 func _screenshot_run() -> void:
@@ -86,7 +106,12 @@ func _screenshot_run() -> void:
 	show_map()
 	await get_tree().create_timer(0.6).timeout
 	await _snap("shot_map.png")
-	start_level(36)
+	if current_screen is MapScreen:
+		current_screen.show_energy_empty()
+	await get_tree().create_timer(0.2).timeout
+	await _snap("shot_energy.png")
+	# 색상별 젤리 배출구가 포함된 L10을 대표 시스템 시각 회귀 테스트 대상으로 사용한다.
+	start_level(9, true)
 	await get_tree().create_timer(1.2).timeout
 	if game:
 		game.debug_capture_one()
@@ -96,6 +121,12 @@ func _screenshot_run() -> void:
 		game.debug_capture_one()
 	await get_tree().create_timer(0.14).timeout
 	await _snap("shot_play.png")
+	# 개발 캡처에서만 임시 잔액을 사용해 별가루 이어하기 팝업을 시각 검수한다(저장하지 않음).
+	if game:
+		save.stardust = 27
+		game._fail()
+	await get_tree().create_timer(1.1).timeout
+	await _snap("shot_fail_stardust.png")
 	get_tree().quit()
 
 
@@ -111,8 +142,8 @@ func _headless_smoke_test() -> void:
 	await get_tree().create_timer(0.4).timeout
 	show_map()
 	await get_tree().create_timer(0.4).timeout
-	for lv in [0, 9, 19, 29, 39, 49]:
-		start_level(lv)
+	for lv in [0, 9, 19, 29, 38, 39, 49]:
+		start_level(lv, true)
 		await get_tree().create_timer(0.5).timeout
 		if game:
 			await game.debug_drive()
