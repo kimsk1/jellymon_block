@@ -8,7 +8,11 @@ const PATH := "user://jellymon_save.json"
 const MAX_ENERGY := 5
 const ENERGY_REGEN_SECONDS := 10 * 60
 const ROOM_GRID_VERSION := 2
-const ATTENDANCE_REWARDS := [10, 20, 30, 40, 50, 60, 100]
+const ATTENDANCE_DAYS_PER_WEEK := 7
+const ATTENDANCE_WEEK1_STARDUST := [10, 20, 30, 40, 50, 60, 100]
+const ATTENDANCE_WEEK1_ENERGY := [5, 5, 5, 5, 5, 5, 5]
+const ATTENDANCE_REPEAT_STARDUST := [10, 0, 15, 0, 20, 0, 20]
+const ATTENDANCE_REPEAT_ENERGY := [0, 5, 0, 7, 0, 10, 10]
 const MAX_NICKNAME_LENGTH := 12
 
 var stars := {}
@@ -36,7 +40,8 @@ func load_data() -> void:
 				stardust = maxi(0, int(d.get("stardust", 0)))
 				room_placements = d.get("room_placements", [])
 				room_grid_version = int(d.get("room_grid_version", 1))
-				attendance_claimed_days = clampi(int(d.get("attendance_claimed_days", 0)), 0, ATTENDANCE_REWARDS.size())
+				# 구버전의 0~7일 기록을 그대로 이어받고, 이후에는 주차 제한 없이 누적한다.
+				attendance_claimed_days = maxi(0, int(d.get("attendance_claimed_days", 0)))
 				attendance_last_claim_date = String(d.get("attendance_last_claim_date", ""))
 				ads_removed = bool(d.get("ads_removed", false))
 				nickname = String(d.get("nickname", ""))
@@ -239,18 +244,20 @@ func grant_stardust(amount: int) -> bool:
 
 
 func can_claim_attendance() -> bool:
-	if attendance_claimed_days >= ATTENDANCE_REWARDS.size():
-		return false
 	var today := Time.get_date_string_from_system()
 	# ISO 날짜 문자열은 사전 순서가 날짜 순서와 같아 시계를 뒤로 돌린 중복 수령도 막는다.
 	return attendance_last_claim_date.is_empty() or today > attendance_last_claim_date
 
 
-func claim_attendance() -> int:
+func claim_attendance() -> Dictionary:
 	if not can_claim_attendance():
-		return 0
-	var reward: int = ATTENDANCE_REWARDS[attendance_claimed_days]
-	stardust += reward
+		return {}
+	var reward := get_attendance_next_reward()
+	stardust += int(reward.get("stardust", 0))
+	energy += int(reward.get("energy", 0))
+	if energy >= MAX_ENERGY:
+		# 최대치를 넘는 출석 하트도 유료 하트처럼 보유하며, 그동안 자연 회복은 멈춘다.
+		energy_updated_at = _now()
 	attendance_claimed_days += 1
 	attendance_last_claim_date = Time.get_date_string_from_system()
 	save_data()
@@ -261,10 +268,39 @@ func get_attendance_claimed_days() -> int:
 	return attendance_claimed_days
 
 
-func get_attendance_next_reward() -> int:
-	if attendance_claimed_days >= ATTENDANCE_REWARDS.size():
-		return 0
-	return ATTENDANCE_REWARDS[attendance_claimed_days]
+func get_attendance_week() -> int:
+	return attendance_claimed_days / ATTENDANCE_DAYS_PER_WEEK + 1
+
+
+func get_attendance_day_in_week() -> int:
+	## 이번 주에 이미 받은 일수(0~6). 7일차 수령 뒤에는 다음 주 0일로 돌아간다.
+	return attendance_claimed_days % ATTENDANCE_DAYS_PER_WEEK
+
+
+static func attendance_reward_for_claim_count(claimed_count: int) -> Dictionary:
+	var safe_count := maxi(0, claimed_count)
+	var day := safe_count % ATTENDANCE_DAYS_PER_WEEK
+	if safe_count < ATTENDANCE_DAYS_PER_WEEK:
+		return {
+			"stardust": ATTENDANCE_WEEK1_STARDUST[day],
+			"energy": ATTENDANCE_WEEK1_ENERGY[day],
+		}
+	return {
+		"stardust": ATTENDANCE_REPEAT_STARDUST[day],
+		"energy": ATTENDANCE_REPEAT_ENERGY[day],
+	}
+
+
+func get_attendance_week_rewards() -> Array[Dictionary]:
+	var rewards: Array[Dictionary] = []
+	var week_start := (get_attendance_week() - 1) * ATTENDANCE_DAYS_PER_WEEK
+	for day in range(ATTENDANCE_DAYS_PER_WEEK):
+		rewards.append(attendance_reward_for_claim_count(week_start + day))
+	return rewards
+
+
+func get_attendance_next_reward() -> Dictionary:
+	return attendance_reward_for_claim_count(attendance_claimed_days)
 
 
 func apply_verified_shop_item(item: Dictionary) -> bool:

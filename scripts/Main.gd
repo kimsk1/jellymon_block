@@ -21,8 +21,30 @@ func _ready() -> void:
 		level_errors.append("별가루 보상 오류: 1성→3성")
 	if SaveGame.calculate_stardust_reward(3, 3) != 0:
 		level_errors.append("별가루 보상 오류: 3성 재클리어")
-	if SaveGame.ATTENDANCE_REWARDS != [10, 20, 30, 40, 50, 60, 100]:
-		level_errors.append("7일 출석 보상 구성 오류")
+	if SaveGame.ATTENDANCE_WEEK1_STARDUST != [10, 20, 30, 40, 50, 60, 100] or SaveGame.ATTENDANCE_WEEK1_ENERGY != [5, 5, 5, 5, 5, 5, 5]:
+		level_errors.append("1주차 출석 보상 구성 오류")
+	if SaveGame.ATTENDANCE_REPEAT_STARDUST != [10, 0, 15, 0, 20, 0, 20] or SaveGame.ATTENDANCE_REPEAT_ENERGY != [0, 5, 0, 7, 0, 10, 10]:
+		level_errors.append("2주차 이후 출석 보상 구성 오류")
+	var attendance_cases := {
+		0: {"stardust": 10, "energy": 5},
+		6: {"stardust": 100, "energy": 5},
+		7: {"stardust": 10, "energy": 0},
+		8: {"stardust": 0, "energy": 5},
+		13: {"stardust": 20, "energy": 10},
+		14: {"stardust": 10, "energy": 0},
+	}
+	for claimed_count in attendance_cases:
+		if SaveGame.attendance_reward_for_claim_count(claimed_count) != attendance_cases[claimed_count]:
+			level_errors.append("출석 순환 보상 오류: 누적 %d일" % claimed_count)
+	var attendance_test_save := SaveGame.new()
+	attendance_test_save.persistence_enabled = false
+	attendance_test_save.energy = 0
+	attendance_test_save.energy_updated_at = int(Time.get_unix_time_from_system())
+	var attendance_grant := attendance_test_save.claim_attendance()
+	if attendance_grant != {"stardust": 10, "energy": 5} or attendance_test_save.get_stardust() != 10 or attendance_test_save.get_energy() != 5:
+		level_errors.append("출석 별가루/하트 동시 지급 오류")
+	if not attendance_test_save.claim_attendance().is_empty():
+		level_errors.append("출석 당일 중복 수령 차단 오류")
 	if SaveGame.is_valid_nickname("") or SaveGame.is_valid_nickname("공백 이름") or SaveGame.is_valid_nickname("전각　공백") or SaveGame.is_valid_nickname("가나다라마바사아자차카타파") or not SaveGame.is_valid_nickname("젤리친구"):
 		level_errors.append("닉네임 입력 규칙 오류")
 	var shop_test_save := SaveGame.new()

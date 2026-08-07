@@ -258,7 +258,7 @@ func _build_header() -> void:
 	home_energy_label.add_theme_color_override("font_color", Color("#ce4e6d"))
 	home_energy_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	energy_panel.add_child(home_energy_label)
-	attendance_button = _button("🎁 출석  %d/7" % main.save.get_attendance_claimed_days(), Color("#8c63c7"), Vector2(195, 43), 17)
+	attendance_button = _button("🎁 출석", Color("#8c63c7"), Vector2(195, 43), 17)
 	attendance_button.position = Vector2(505, 132)
 	attendance_button.size = Vector2(195, 43)
 	attendance_button.pressed.connect(_show_attendance_popup)
@@ -395,13 +395,12 @@ func _refresh_home_energy() -> void:
 func _refresh_attendance_button() -> void:
 	if not attendance_button:
 		return
-	var claimed: int = main.save.get_attendance_claimed_days()
-	if claimed >= SaveGame.ATTENDANCE_REWARDS.size():
-		attendance_button.text = "✓ 7일 출석 완료"
-	elif main.save.can_claim_attendance():
-		attendance_button.text = "🎁 오늘 출석 · %d/7" % claimed
+	var week: int = main.save.get_attendance_week()
+	var claimed: int = main.save.get_attendance_day_in_week()
+	if main.save.can_claim_attendance():
+		attendance_button.text = "🎁 %d주차 · %d일차" % [week, claimed + 1]
 	else:
-		attendance_button.text = "✓ 출석 %d/7 · 내일" % claimed
+		attendance_button.text = "✓ %d주차 %d/7 · 내일" % [week, claimed]
 
 
 func _shop_item_card(item: Dictionary) -> PanelContainer:
@@ -640,7 +639,7 @@ func _close_shop_popup() -> void:
 	shop_status_label = null
 
 
-func _attendance_tile(day: int, reward: int, claimed_days: int, claimable: bool) -> PanelContainer:
+func _attendance_tile(day: int, reward: Dictionary, claimed_days: int, claimable: bool) -> PanelContainer:
 	var tile := PanelContainer.new()
 	tile.custom_minimum_size = Vector2(76, 118)
 	var style := StyleBoxFlat.new()
@@ -667,22 +666,37 @@ func _attendance_tile(day: int, reward: int, claimed_days: int, claimable: bool)
 	day_label.add_theme_font_size_override("font_size", 18)
 	day_label.add_theme_color_override("font_color", Color("#674779"))
 	box.add_child(day_label)
-	# 모든 날짜가 같은 별가루 실루엣을 사용하고 상태는 색과 체크 텍스트로만 구분한다.
-	var gift := TextureRect.new()
-	gift.texture = load("res://assets/fx/ui_star.png")
-	gift.custom_minimum_size = Vector2(38, 38)
-	gift.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	gift.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	gift.modulate = Color("#62b97b") if already_claimed else (Color.WHITE if is_today else Color("#a987c4"))
-	gift.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	box.add_child(gift)
 	var reward_label := Label.new()
-	reward_label.text = "별가루\n%d" % reward
+	reward_label.text = _attendance_reward_compact(reward)
 	reward_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	reward_label.add_theme_font_size_override("font_size", 15)
+	reward_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	reward_label.custom_minimum_size = Vector2(68, 57)
+	reward_label.add_theme_font_size_override("font_size", 16)
 	reward_label.add_theme_color_override("font_color", Color("#71577c"))
 	box.add_child(reward_label)
 	return tile
+
+
+func _attendance_reward_compact(reward: Dictionary) -> String:
+	var lines: Array[String] = []
+	var stardust := int(reward.get("stardust", 0))
+	var energy := int(reward.get("energy", 0))
+	if stardust > 0:
+		lines.append("★ 별 %d" % stardust)
+	if energy > 0:
+		lines.append("♥ 하트 %d" % energy)
+	return "\n".join(lines)
+
+
+func _attendance_reward_sentence(reward: Dictionary) -> String:
+	var parts: Array[String] = []
+	var stardust := int(reward.get("stardust", 0))
+	var energy := int(reward.get("energy", 0))
+	if stardust > 0:
+		parts.append("별가루 %d개" % stardust)
+	if energy > 0:
+		parts.append("하트 %d개" % energy)
+	return " + ".join(parts)
 
 
 func _show_attendance_popup() -> void:
@@ -705,6 +719,7 @@ func _show_attendance_popup() -> void:
 	panel.scale = Vector2(0.72, 0.72)
 	panel.pivot_offset = Vector2(325, 300)
 	panel.create_tween().tween_property(panel, "scale", Vector2.ONE, 0.28).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	var week: int = main.save.get_attendance_week()
 	var content := VBoxContainer.new()
 	content.alignment = BoxContainer.ALIGNMENT_CENTER
 	content.add_theme_constant_override("separation", 15)
@@ -751,13 +766,13 @@ func _show_attendance_popup() -> void:
 		heading.add_theme_constant_override("separation", 2)
 		banner_row.add_child(heading)
 		var title := Label.new()
-		title.text = "첫 7일 출석 선물"
+		title.text = "첫 주 출석 선물" if week == 1 else "%d주차 출석 선물" % week
 		title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		title.add_theme_font_size_override("font_size", 40)
 		title.add_theme_color_override("font_color", Color("#5f387a"))
 		heading.add_child(title)
 		var subtitle := Label.new()
-		subtitle.text = "매일 찾아오면 별가루가 점점 커져요!"
+		subtitle.text = "별가루와 하트를 매일 함께 받아요!" if week == 1 else "매주 새로운 선물이 기다리고 있어요!"
 		subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		subtitle.add_theme_font_size_override("font_size", 20)
 		subtitle.add_theme_color_override("font_color", Color("#7f5d91"))
@@ -766,10 +781,11 @@ func _show_attendance_popup() -> void:
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
 	row.add_theme_constant_override("separation", 7)
 	content.add_child(row)
-	var claimed_days: int = main.save.get_attendance_claimed_days()
+	var claimed_days: int = main.save.get_attendance_day_in_week()
 	var claimable: bool = main.save.can_claim_attendance()
-	for i in range(SaveGame.ATTENDANCE_REWARDS.size()):
-		row.add_child(_attendance_tile(i + 1, SaveGame.ATTENDANCE_REWARDS[i], claimed_days, claimable))
+	var week_rewards: Array[Dictionary] = main.save.get_attendance_week_rewards()
+	for i in range(week_rewards.size()):
+		row.add_child(_attendance_tile(i + 1, week_rewards[i], claimed_days, claimable))
 	var status_panel := PanelContainer.new()
 	var status_style := StyleBoxFlat.new()
 	status_style.bg_color = Color(1, 0.97, 0.88, 0.78)
@@ -784,10 +800,8 @@ func _show_attendance_popup() -> void:
 	status.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	status.add_theme_font_size_override("font_size", 23)
 	status.add_theme_color_override("font_color", Color("#6e5878"))
-	if claimed_days >= SaveGame.ATTENDANCE_REWARDS.size():
-		status.text = "7일 출석 완료! 모든 선물을 받았어요."
-	elif claimable:
-		status.text = "오늘은 별가루 %d개를 받을 수 있어요." % main.save.get_attendance_next_reward()
+	if claimable:
+		status.text = "오늘은 %s를 받을 수 있어요." % _attendance_reward_sentence(main.save.get_attendance_next_reward())
 	else:
 		status.text = "오늘 선물을 받았어요. 내일 다시 만나요!"
 	status_panel.add_child(status)
@@ -796,7 +810,7 @@ func _show_attendance_popup() -> void:
 	action_row.add_theme_constant_override("separation", 12)
 	content.add_child(action_row)
 	if claimable:
-		var claim := _button("선물 받기  ★ %d" % main.save.get_attendance_next_reward(), Color("#f29b45"), Vector2(270, 70), 26)
+		var claim := _button("선물 받기  " + _attendance_reward_compact(main.save.get_attendance_next_reward()).replace("\n", "  "), Color("#f29b45"), Vector2(330, 70), 23)
 		claim.pressed.connect(_claim_attendance)
 		action_row.add_child(claim)
 	var close := _button("닫기", Color("#806aa7"), Vector2(150, 70), 25)
@@ -805,16 +819,17 @@ func _show_attendance_popup() -> void:
 
 
 func _claim_attendance() -> void:
-	var reward: int = main.save.claim_attendance()
-	if reward <= 0:
+	var reward: Dictionary = main.save.claim_attendance()
+	if reward.is_empty():
 		return
 	main.audio.play("shiny", 1.05)
 	G.haptic(18)
 	if stardust_label:
 		stardust_label.text = "★ 별가루 %d" % main.save.get_stardust()
+	_refresh_home_energy()
 	_close_attendance_popup()
 	_refresh_attendance_button()
-	_show_toast("출석 완료!  별가루 +%d" % reward)
+	_show_toast("출석 완료!  " + _attendance_reward_sentence(reward))
 
 
 func _close_attendance_popup() -> void:
