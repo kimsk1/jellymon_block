@@ -263,11 +263,31 @@ class ShapeVisual extends Node2D:
 		draw_polyline(PackedVector2Array(outer + PackedVector2Array([outer[0]])), rim_dark, 3.0, true)
 		draw_polyline(PackedVector2Array(pit + PackedVector2Array([pit[0]])), Color(0.42, 0.48, 0.75, 0.24), 2.0, true)
 
-		# 외곽에 노출된 윗면에만 광택을 넣는다.
+		# 외곽에 노출된 윗면 광택은 연속 구간마다 한 줄로 그려 다칸 블록도 하나처럼 보이게 한다.
+		var exposed_rows := {}
 		for off in shape_cells:
 			if not shape_cells.has(off + Vector2i.UP):
-				var p := Vector2(off) * cell_size
-				draw_line(p + Vector2(14, 7), p + Vector2(cell_size - 14, 7), shine, 4.0, true)
+				var xs: Array = exposed_rows.get(off.y, [])
+				xs.append(off.x)
+				exposed_rows[off.y] = xs
+		for y_key in exposed_rows:
+			var xs: Array = exposed_rows[y_key]
+			xs.sort()
+			var run_start: int = int(xs[0])
+			var run_end: int = run_start
+			for i in range(1, xs.size() + 1):
+				var continues := i < xs.size() and int(xs[i]) == run_end + 1
+				if continues:
+					run_end = int(xs[i])
+					continue
+				var y := float(int(y_key)) * cell_size + 7.0
+				var start := Vector2(float(run_start) * cell_size + 14.0, y)
+				var finish := Vector2(float(run_end + 1) * cell_size - 14.0, y)
+				draw_line(start, finish, shine, 5.0, true)
+				draw_line(start + Vector2(5, 4), finish - Vector2(5, -4), Color(1, 1, 1, 0.24), 2.0, true)
+				if i < xs.size():
+					run_start = int(xs[i])
+					run_end = run_start
 		# 첫 칸에 작은 표정을 넣어 단순 도형이 아니라 살아 있는 몬스터 홀로 보이게 한다.
 		if not shape_cells.is_empty():
 			var face := Vector2(shape_cells[0]) * cell_size + Vector2(cell_size * 0.5, cell_size * 0.52)

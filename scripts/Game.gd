@@ -37,6 +37,8 @@ var score := 0
 var state := "play"
 var shake_amt := 0.0
 var active_absorptions := 0
+var screen_offset := Vector2.ZERO
+var premium_bg: Sprite2D
 
 var jellies_node: Node2D
 var catchers_node: Node2D
@@ -45,6 +47,8 @@ var hud: HUD
 
 
 func _ready() -> void:
+	_apply_responsive_layout()
+	get_viewport().size_changed.connect(_apply_responsive_layout)
 	L = Levels.LEVELS[level_idx]
 	audio = main.audio
 	_add_premium_background()
@@ -90,15 +94,29 @@ func _ready() -> void:
 
 
 func _add_premium_background() -> void:
-	var bg := Sprite2D.new()
-	bg.texture = load("res://assets/backgrounds/jelly_sky_v2.png")
-	bg.centered = true
-	bg.position = Vector2(G.W, G.H) * 0.5
-	var scale_needed := maxf(G.W / float(bg.texture.get_width()), G.H / float(bg.texture.get_height()))
-	bg.scale = Vector2.ONE * scale_needed
-	bg.modulate = Color(1, 1, 1, 0.88)
-	bg.z_index = -100
-	add_child(bg)
+	premium_bg = Sprite2D.new()
+	premium_bg.texture = load("res://assets/backgrounds/jelly_sky_v2.png")
+	premium_bg.centered = true
+	premium_bg.modulate = Color(1, 1, 1, 0.88)
+	premium_bg.z_index = -100
+	add_child(premium_bg)
+	_layout_premium_background()
+
+
+func _apply_responsive_layout() -> void:
+	screen_offset = G.safe_offset(get_viewport_rect().size)
+	position = screen_offset
+	_layout_premium_background()
+
+
+func _layout_premium_background() -> void:
+	if not premium_bg or not premium_bg.texture:
+		return
+	var viewport_size := get_viewport_rect().size
+	# Game 노드가 안전 영역 중앙으로 이동했으므로 배경은 그만큼 반대로 보정한다.
+	premium_bg.position = viewport_size * 0.5 - screen_offset
+	var scale_needed := maxf(viewport_size.x / float(premium_bg.texture.get_width()), viewport_size.y / float(premium_bg.texture.get_height()))
+	premium_bg.scale = Vector2.ONE * scale_needed
 
 
 func cell_pos(c: Vector2i) -> Vector2:
@@ -293,9 +311,9 @@ func _physics_process(delta: float) -> void:
 	_process_drag()
 	if shake_amt > 0.0:
 		shake_amt = max(0.0, shake_amt - delta * 24.0)
-		position = Vector2(randf_range(-1, 1), randf_range(-1, 1)) * shake_amt
+		position = screen_offset + Vector2(randf_range(-1, 1), randf_range(-1, 1)) * shake_amt
 		if shake_amt <= 0.0:
-			position = Vector2.ZERO
+			position = screen_offset
 	queue_redraw()
 
 

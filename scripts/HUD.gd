@@ -9,12 +9,17 @@ var name_label: Label
 var timer_caption: Label
 var goal_items := {}
 var star_tex: Texture2D
+var clear_base_reward := 0
+var clear_bonus_claimed := false
+var clear_reward_label: Label
+var clear_double_button: Button
 
 
 func _ready() -> void:
 	star_tex = load("res://assets/fx/ui_star.png")
 	root = Control.new()
-	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_apply_responsive_layout()
+	get_viewport().size_changed.connect(_apply_responsive_layout)
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(root)
 
@@ -30,6 +35,8 @@ func _ready() -> void:
 	sb.border_color = Color("#2c719f")
 	sb.set_border_width_all(4)
 	sb.set_corner_radius_all(28)
+	sb.corner_detail = 12
+	sb.border_blend = true
 	sb.shadow_color = Color(0.12, 0.2, 0.35, 0.28)
 	sb.shadow_size = 10
 	sb.shadow_offset = Vector2(0, 7)
@@ -78,6 +85,20 @@ func _ready() -> void:
 	time_label.add_theme_color_override("font_outline_color", Color("#214e74"))
 	time_label.add_theme_constant_override("outline_size", 8)
 	mid.add_child(time_label)
+
+
+func _apply_responsive_layout() -> void:
+	if not root:
+		return
+	root.position = G.safe_offset(get_viewport().get_visible_rect().size)
+	root.size = Vector2(G.W, G.H)
+
+
+func _fit_overlay_to_viewport(control: Control) -> void:
+	var viewport_size := get_viewport().get_visible_rect().size
+	control.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	control.position = -G.safe_offset(viewport_size)
+	control.size = viewport_size
 
 func _on_quit_pressed() -> void:
 	if game:
@@ -194,6 +215,8 @@ func _style_button(b: Button, col: Color) -> void:
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = col
 	sb.set_corner_radius_all(18)
+	sb.corner_detail = 10
+	sb.border_blend = true
 	sb.border_color = col.darkened(0.28)
 	sb.set_border_width_all(4)
 	sb.shadow_color = Color(0.1, 0.08, 0.2, 0.3)
@@ -213,12 +236,15 @@ func _style_button(b: Button, col: Color) -> void:
 	b.add_theme_color_override("font_color", Color.WHITE)
 	b.add_theme_color_override("font_hover_color", Color.WHITE)
 	b.add_theme_color_override("font_pressed_color", Color.WHITE)
+	b.add_theme_color_override("font_outline_color", col.darkened(0.42))
+	b.add_theme_constant_override("outline_size", 3)
+	b.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 
 
 func _popup_frame() -> VBoxContainer:
 	var dim := ColorRect.new()
 	dim.color = Color(0.12, 0.06, 0.18, 0.55)
-	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_fit_overlay_to_viewport(dim)
 	dim.mouse_filter = Control.MOUSE_FILTER_STOP
 	root.add_child(dim)
 	var cc := CenterContainer.new()
@@ -261,6 +287,8 @@ func _title_label(text: String, col: Color) -> Label:
 
 
 func show_result(stars_n: int, score: int, stardust_reward: int, stardust_total: int, has_next: bool, on_next: Callable, on_map: Callable, on_retry: Callable) -> void:
+	clear_base_reward = stardust_reward
+	clear_bonus_claimed = false
 	var v := _popup_frame()
 	v.add_child(_title_label("클리어!", Color(1.0, 0.5, 0.35)))
 	# 별 3개 (순차 팝)
@@ -294,11 +322,17 @@ func show_result(stars_n: int, score: int, stardust_reward: int, stardust_total:
 	sc.add_theme_color_override("font_color", G.INK)
 	v.add_child(sc)
 	var dust := Label.new()
-	dust.text = "✦ 별가루 +%d   보유 %d" % [stardust_reward, stardust_total] if stardust_reward > 0 else "✦ 이미 받은 별 보상이에요   보유 %d" % stardust_total
+	clear_reward_label = dust
+	dust.text = "★ 별가루 +%d   보유 %d" % [stardust_reward, stardust_total] if stardust_reward > 0 else "★ 이미 받은 별 보상이에요   보유 %d" % stardust_total
 	dust.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	dust.add_theme_font_size_override("font_size", 25)
 	dust.add_theme_color_override("font_color", Color("#8057b2"))
 	v.add_child(dust)
+	if stardust_reward > 0:
+		clear_double_button = _big_button("보상 2배 받기" if game.main.save.has_removed_ads() else "광고 보고 보상 2배", Color("#8e64c8"))
+		clear_double_button.custom_minimum_size = Vector2(430, 72)
+		clear_double_button.pressed.connect(_request_clear_double_reward)
+		v.add_child(clear_double_button)
 	var btns := HBoxContainer.new()
 	btns.alignment = BoxContainer.ALIGNMENT_CENTER
 	btns.add_theme_constant_override("separation", 12)
@@ -316,6 +350,42 @@ func show_result(stars_n: int, score: int, stardust_reward: int, stardust_total:
 		btns.add_child(b_next)
 
 
+func _request_clear_double_reward() -> void:
+	if clear_bonus_claimed or clear_base_reward <= 0 or not clear_double_button:
+		return
+	clear_double_button.disabled = true
+	if game.main.save.has_removed_ads():
+		clear_double_button.text = "2배 보상 지급 중..."
+	else:
+		clear_double_button.text = "광고 재생 중..."
+	game.main.request_rewarded_ad(_finish_clear_double_reward, _restore_clear_double_button)
+
+
+func _finish_clear_double_reward() -> void:
+	if clear_bonus_claimed or clear_base_reward <= 0 or not is_instance_valid(clear_double_button):
+		return
+	if not game.main.save.grant_stardust(clear_base_reward):
+		_restore_clear_double_button()
+		return
+	clear_bonus_claimed = true
+	clear_double_button.text = "✓ 2배 보상 받음"
+	clear_double_button.disabled = true
+	clear_reward_label.text = "★ 별가루 +%d  · 2배 완료!   보유 %d" % [clear_base_reward * 2, game.main.save.get_stardust()]
+	clear_reward_label.add_theme_color_override("font_color", Color("#d7792e"))
+	game.audio.play("shiny", 1.12)
+	game.fx.sparkle(Vector2(G.W * 0.5, 470), 22)
+	G.haptic(24)
+
+
+func _restore_clear_double_button() -> void:
+	if not is_instance_valid(clear_double_button) or clear_bonus_claimed:
+		return
+	clear_double_button.disabled = false
+	clear_double_button.text = "보상 2배 받기" if game.main.save.has_removed_ads() else "광고 보고 보상 2배"
+	if clear_reward_label:
+		clear_reward_label.text = "광고를 불러오지 못했어요. 잠시 후 다시 시도해 주세요."
+
+
 func show_fail(reason: String, stardust_total: int, on_continue: Callable, on_retry: Callable, on_map: Callable) -> void:
 	var v := _popup_frame()
 	var dim: Control = v.get_parent().get_parent().get_parent()
@@ -327,12 +397,12 @@ func show_fail(reason: String, stardust_total: int, on_continue: Callable, on_re
 	l.add_theme_color_override("font_color", G.INK)
 	v.add_child(l)
 	var tip := Label.new()
-	tip.text = "현재 보드 그대로, 시간만 처음부터 다시 시작해요.\n보유 별가루  ✦ %d" % stardust_total
+	tip.text = "현재 보드 그대로, 시간만 처음부터 다시 시작해요.\n보유 별가루  ★ %d" % stardust_total
 	tip.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	tip.add_theme_font_size_override("font_size", 24)
 	tip.add_theme_color_override("font_color", Color(0.6, 0.55, 0.7))
 	v.add_child(tip)
-	var b_continue := _big_button("✦ 20  이어하기", Color("#9165c7"))
+	var b_continue := _big_button("★ 20  이어하기", Color("#9165c7"))
 	b_continue.custom_minimum_size = Vector2(430, 78)
 	b_continue.disabled = stardust_total < 20
 	if b_continue.disabled:

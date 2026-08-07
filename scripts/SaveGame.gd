@@ -2,14 +2,25 @@ extends RefCounted
 class_name SaveGame
 ## 진행도 저장 (user://jellymon_save.json)
 
+const RoomDataLib = preload("res://scripts/RoomData.gd")
+
 const PATH := "user://jellymon_save.json"
 const MAX_ENERGY := 5
 const ENERGY_REGEN_SECONDS := 10 * 60
+const ROOM_GRID_VERSION := 2
+const ATTENDANCE_REWARDS := [10, 20, 30, 40, 50, 60, 100]
 
 var stars := {}
 var stardust := 0
+var room_placements: Array = []
+var room_grid_version := ROOM_GRID_VERSION
+var rescued_jellies: Array[String] = []
+var attendance_claimed_days := 0
+var attendance_last_claim_date := ""
+var ads_removed := false
 var energy := MAX_ENERGY
 var energy_updated_at := 0
+var persistence_enabled := true
 
 
 func load_data() -> void:
@@ -20,19 +31,53 @@ func load_data() -> void:
 			if typeof(d) == TYPE_DICTIONARY:
 				stars = d.get("stars", {})
 				stardust = maxi(0, int(d.get("stardust", 0)))
-				energy = clampi(int(d.get("energy", MAX_ENERGY)), 0, MAX_ENERGY)
+				room_placements = d.get("room_placements", [])
+				room_grid_version = int(d.get("room_grid_version", 1))
+				attendance_claimed_days = clampi(int(d.get("attendance_claimed_days", 0)), 0, ATTENDANCE_REWARDS.size())
+				attendance_last_claim_date = String(d.get("attendance_last_claim_date", ""))
+				ads_removed = bool(d.get("ads_removed", false))
+				for color in d.get("rescued_jellies", []):
+					if G.COLORS.has(String(color)) and not rescued_jellies.has(String(color)) and rescued_jellies.size() < 5:
+						rescued_jellies.append(String(color))
+				# 구매한 보너스 하트는 최대치 5를 넘어 보유할 수 있다.
+				energy = maxi(0, int(d.get("energy", MAX_ENERGY)))
 				energy_updated_at = int(d.get("energy_updated_at", _now()))
 	if energy_updated_at <= 0:
 		energy_updated_at = _now()
+	if room_placements.is_empty():
+		room_placements = RoomDataLib.default_placements()
+		room_grid_version = ROOM_GRID_VERSION
+	elif room_grid_version < ROOM_GRID_VERSION:
+		# 6×5 구형 방의 화면상 위치를 유지한 채 새 왼쪽 열만 추가한다.
+		for placement in room_placements:
+			placement["x"] = int(placement.get("x", 0)) + 1
+		room_grid_version = ROOM_GRID_VERSION
+		save_data()
+	# 구버전 저장 파일은 주민 목록이 없으므로 완료한 챕터 기록에서 최대 5마리를 복원한다.
+	if rescued_jellies.is_empty() and not stars.is_empty():
+		var chapter_colors := ["R", "Y", "B", "G", "P"]
+		for chapter in range(5):
+			for idx in range(chapter * 10, chapter * 10 + 10):
+				if get_stars(idx) > 0:
+					rescued_jellies.append(chapter_colors[chapter])
+					break
 	refresh_energy()
 
 
 func save_data() -> void:
+	if not persistence_enabled:
+		return
 	var f := FileAccess.open(PATH, FileAccess.WRITE)
 	if f:
 		f.store_string(JSON.stringify({
 			"stars": stars,
 			"stardust": stardust,
+			"room_placements": room_placements,
+			"room_grid_version": room_grid_version,
+			"rescued_jellies": rescued_jellies,
+			"attendance_claimed_days": attendance_claimed_days,
+			"attendance_last_claim_date": attendance_last_claim_date,
+			"ads_removed": ads_removed,
 			"energy": energy,
 			"energy_updated_at": energy_updated_at,
 		}))
@@ -48,7 +93,6 @@ func refresh_energy() -> bool:
 	if energy_updated_at > now:
 		energy_updated_at = now
 	if energy >= MAX_ENERGY:
-		energy = MAX_ENERGY
 		energy_updated_at = now
 		return false
 	var elapsed := now - energy_updated_at
@@ -90,7 +134,8 @@ func reserve_energy() -> bool:
 
 func refund_energy() -> void:
 	refresh_energy()
-	energy = mini(MAX_ENERGY, energy + 1)
+	# 예약 전에 보너스 하트를 보유했다면 클리어 환급 후에도 같은 수량을 복원한다.
+	energy += 1
 	if energy >= MAX_ENERGY:
 		energy_updated_at = _now()
 	save_data()
@@ -135,6 +180,97 @@ func spend_stardust(amount: int) -> bool:
 	stardust -= amount
 	save_data()
 	return true
+
+
+func grant_stardust(amount: int) -> bool:
+	if amount <= 0:
+		return false
+	stardust += amount
+	save_data()
+	return true
+
+
+func can_claim_attendance() -> bool:
+	if attendance_claimed_days >= ATTENDANCE_REWARDS.size():
+		return false
+	var today := Time.get_date_string_from_system()
+	# ISO 날짜 문자열은 사전 순서가 날짜 순서와 같아 시계를 뒤로 돌린 중복 수령도 막는다.
+	return attendance_last_claim_date.is_empty() or today > attendance_last_claim_date
+
+
+func claim_attendance() -> int:
+	if not can_claim_attendance():
+		return 0
+	var reward: int = ATTENDANCE_REWARDS[attendance_claimed_days]
+	stardust += reward
+	attendance_claimed_days += 1
+	attendance_last_claim_date = Time.get_date_string_from_system()
+	save_data()
+	return reward
+
+
+func get_attendance_claimed_days() -> int:
+	return attendance_claimed_days
+
+
+func get_attendance_next_reward() -> int:
+	if attendance_claimed_days >= ATTENDANCE_REWARDS.size():
+		return 0
+	return ATTENDANCE_REWARDS[attendance_claimed_days]
+
+
+func apply_verified_shop_item(item: Dictionary) -> bool:
+	## 결제 공급자가 영수증 검증을 끝낸 뒤에만 호출하는 지급 지점.
+	match String(item.get("type", "")):
+		"stardust":
+			var amount := maxi(0, int(item.get("amount", 0)))
+			if amount <= 0:
+				return false
+			stardust += amount
+		"remove_ads":
+			if ads_removed:
+				return false
+			ads_removed = true
+		"energy":
+			var amount := maxi(0, int(item.get("amount", 0)))
+			if amount <= 0:
+				return false
+			energy += amount
+			energy_updated_at = _now()
+		_:
+			return false
+	save_data()
+	return true
+
+
+func has_removed_ads() -> bool:
+	return ads_removed
+
+
+func get_room_placements() -> Array:
+	if room_placements.is_empty():
+		room_placements = RoomDataLib.default_placements()
+	return room_placements.duplicate(true)
+
+
+func set_room_placements(value: Array) -> void:
+	room_placements = value.duplicate(true)
+	save_data()
+
+
+func register_rescued_jelly(level_idx: int) -> bool:
+	## 각 챕터에서 처음 클리어한 순간 대표 주민 한 마리를 아지트에 초대한다(최대 5마리).
+	var colors := ["R", "Y", "B", "G", "P"]
+	var color: String = colors[clampi(level_idx / 10, 0, 4)]
+	if rescued_jellies.has(color) or rescued_jellies.size() >= 5:
+		return false
+	rescued_jellies.append(color)
+	save_data()
+	return true
+
+
+func get_rescued_jellies() -> Array[String]:
+	return rescued_jellies.duplicate()
 
 
 func is_unlocked(idx: int) -> bool:

@@ -5,6 +5,14 @@ const CELL := 84.0
 const W := 720.0
 const H := 1280.0
 
+
+static func safe_offset(viewport_size: Vector2) -> Vector2:
+	## expand 스트레치가 추가한 폴드폰/태블릿 여백 안에서 720×1280 게임 영역을 중앙에 둔다.
+	return Vector2(
+		maxf(0.0, (viewport_size.x - W) * 0.5),
+		maxf(0.0, (viewport_size.y - H) * 0.5)
+	)
+
 const COLORS := {
 	"R": Color(1.0, 0.353, 0.431),
 	"Y": Color(1.0, 0.788, 0.235),

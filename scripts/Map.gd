@@ -9,6 +9,7 @@ var energy_label: Label
 var energy_timer_label: Label
 var empty_energy_timer_label: Label
 var _last_energy_second := -1
+var background: TextureRect
 
 const BTN_COLORS := [
 	Color(1.0, 0.45, 0.55), Color(1.0, 0.65, 0.3), Color(0.35, 0.7, 0.95),
@@ -18,15 +19,17 @@ const BTN_COLORS := [
 
 func _ready() -> void:
 	star_tex = load("res://assets/fx/ui_star.png")
-	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_apply_responsive_layout()
+	get_viewport().size_changed.connect(_apply_responsive_layout)
 
-	var bg := TextureRect.new()
-	bg.texture = load("res://assets/backgrounds/jelly_sky_v2.png")
-	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	bg.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	bg.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
-	bg.modulate = Color(1, 1, 1, 0.88)
-	add_child(bg)
+	background = TextureRect.new()
+	background.texture = load("res://assets/backgrounds/jelly_sky_v2.png")
+	background.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	background.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	background.modulate = Color(1, 1, 1, 0.88)
+	background.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(background)
+	_layout_background()
 	_add_stardust_panel()
 	_add_energy_panel()
 
@@ -41,19 +44,45 @@ func _ready() -> void:
 	title.size = Vector2(G.W, 80)
 	add_child(title)
 
+	# 레벨 목록과 배경을 명확하게 구분하는 라운드 스크롤 패널.
+	var scroll_frame := PanelContainer.new()
+	scroll_frame.position = Vector2(20, 178)
+	scroll_frame.size = Vector2(G.W - 40, G.H - 382)
+	scroll_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var frame_style := StyleBoxFlat.new()
+	frame_style.bg_color = Color(1.0, 0.98, 1.0, 0.18)
+	frame_style.border_color = Color("#8064a8")
+	frame_style.set_border_width_all(5)
+	frame_style.set_corner_radius_all(30)
+	frame_style.corner_detail = 12
+	frame_style.border_blend = true
+	frame_style.shadow_color = Color(0.12, 0.06, 0.22, 0.28)
+	frame_style.shadow_size = 10
+	frame_style.shadow_offset = Vector2(0, 7)
+	scroll_frame.add_theme_stylebox_override("panel", frame_style)
+	add_child(scroll_frame)
+
 	var scroll := ScrollContainer.new()
 	scroll.position = Vector2(28, 190)
-	scroll.size = Vector2(G.W - 56, G.H - 330)
+	# 하단 홈 버튼의 전용 공간을 확보해 마지막 레벨 카드와 겹치지 않게 한다.
+	scroll.size = Vector2(G.W - 56, G.H - 400)
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_ALWAYS
+	scroll.scroll_deadzone = 8
+	scroll.follow_focus = false
+	scroll.mouse_filter = Control.MOUSE_FILTER_STOP
 	add_child(scroll)
 
 	var chapters := VBoxContainer.new()
-	chapters.custom_minimum_size = Vector2(G.W - 76, 0)
+	# 스크롤 패널의 전체 안쪽 폭을 사용해 5열 카드의 좌우 여백을 동일하게 맞춘다.
+	chapters.custom_minimum_size = Vector2(G.W - 56, 0)
 	chapters.add_theme_constant_override("separation", 34)
+	chapters.mouse_filter = Control.MOUSE_FILTER_PASS
 	scroll.add_child(chapters)
 	for chapter in range(5):
 		var section := VBoxContainer.new()
 		section.add_theme_constant_override("separation", 14)
+		section.mouse_filter = Control.MOUSE_FILTER_PASS
 		chapters.add_child(section)
 		var chapter_title := Label.new()
 		chapter_title.text = "CHAPTER %d  %s" % [chapter + 1, Levels.CHAPTER_NAMES[chapter]]
@@ -65,12 +94,17 @@ func _ready() -> void:
 		grid.columns = 5
 		grid.add_theme_constant_override("h_separation", 12)
 		grid.add_theme_constant_override("v_separation", 12)
-		section.add_child(grid)
+		grid.mouse_filter = Control.MOUSE_FILTER_PASS
+		var grid_center := CenterContainer.new()
+		grid_center.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		grid_center.mouse_filter = Control.MOUSE_FILTER_PASS
+		section.add_child(grid_center)
+		grid_center.add_child(grid)
 		for local in range(10):
 			grid.add_child(_level_button(chapter * 10 + local))
 
 	var back := Button.new()
-	back.text = "처음으로"
+	back.text = "홈으로"
 	back.custom_minimum_size = Vector2(220, 76)
 	back.add_theme_font_size_override("font_size", 30)
 	var sb := StyleBoxFlat.new()
@@ -87,10 +121,32 @@ func _ready() -> void:
 	back.add_theme_stylebox_override("hover", sb2)
 	back.add_theme_stylebox_override("pressed", sb2)
 	back.add_theme_color_override("font_color", Color.WHITE)
-	back.position = Vector2(G.W / 2 - 110, G.H - 150)
+	# 스크롤 패널 아래와 화면 바닥 사이의 여백 중앙에 배치한다.
+	back.position = Vector2(G.W / 2 - 110, G.H - 142)
 	back.pressed.connect(_on_back)
 	add_child(back)
 	_update_energy_display()
+
+
+func _apply_responsive_layout() -> void:
+	position = G.safe_offset(get_viewport_rect().size)
+	size = Vector2(G.W, G.H)
+	_layout_background()
+
+
+func _layout_background() -> void:
+	if not background:
+		return
+	var viewport_size := get_viewport_rect().size
+	background.position = -G.safe_offset(viewport_size)
+	background.size = viewport_size
+
+
+func _fit_overlay_to_viewport(control: Control) -> void:
+	var viewport_size := get_viewport_rect().size
+	control.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	control.position = -G.safe_offset(viewport_size)
+	control.size = viewport_size
 
 
 func _process(_delta: float) -> void:
@@ -165,7 +221,7 @@ func _update_energy_display() -> void:
 	if main == null or energy_label == null:
 		return
 	var current: int = main.save.get_energy()
-	stardust_label.text = "✦ 별가루 %d" % main.save.get_stardust()
+	stardust_label.text = "★ 별가루 %d" % main.save.get_stardust()
 	energy_label.text = "♥ %d/%d" % [current, SaveGame.MAX_ENERGY]
 	energy_timer_label.text = "가득 참" if current >= SaveGame.MAX_ENERGY else "다음 " + _energy_time_text()
 	if empty_energy_timer_label:
@@ -175,7 +231,7 @@ func _update_energy_display() -> void:
 func show_energy_empty() -> void:
 	var dim := ColorRect.new()
 	dim.color = Color(0.1, 0.05, 0.16, 0.58)
-	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_fit_overlay_to_viewport(dim)
 	dim.mouse_filter = Control.MOUSE_FILTER_STOP
 	add_child(dim)
 	var center := CenterContainer.new()
@@ -253,12 +309,17 @@ func _level_button(i: int) -> Button:
 	var earned: int = main.save.get_stars(i)
 	var b := Button.new()
 	b.custom_minimum_size = Vector2(116, 118)
+	# 레벨 카드 위에서 시작한 모바일 드래그도 부모 ScrollContainer로 전달한다.
+	b.mouse_filter = Control.MOUSE_FILTER_PASS
+	b.mouse_force_pass_scroll_events = true
 	var col: Color = BTN_COLORS[i % BTN_COLORS.size()] if unlocked else Color(0.72, 0.7, 0.78)
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = col
 	sb.border_color = col.darkened(0.3)
 	sb.set_border_width_all(4)
 	sb.set_corner_radius_all(22)
+	sb.corner_detail = 10
+	sb.border_blend = true
 	sb.shadow_color = Color(0.1, 0.06, 0.2, 0.3)
 	sb.shadow_size = 7
 	sb.shadow_offset = Vector2(0, 5)
@@ -268,6 +329,7 @@ func _level_button(i: int) -> Button:
 	b.add_theme_stylebox_override("hover", sb2)
 	b.add_theme_stylebox_override("pressed", sb2)
 	b.add_theme_stylebox_override("disabled", sb)
+	b.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 	b.disabled = not unlocked
 
 	var v := VBoxContainer.new()
@@ -281,6 +343,8 @@ func _level_button(i: int) -> Button:
 	num.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	num.add_theme_font_size_override("font_size", 40 if unlocked else 23)
 	num.add_theme_color_override("font_color", Color.WHITE)
+	num.add_theme_color_override("font_outline_color", col.darkened(0.38))
+	num.add_theme_constant_override("outline_size", 4)
 	num.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	v.add_child(num)
 
