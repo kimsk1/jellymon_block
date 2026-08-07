@@ -1,0 +1,3222 @@
+[
+	{
+		"catchers": [
+			{
+				"cell": [
+					2,
+					5
+				],
+				"color": "R",
+				"shape": "S1"
+			}
+		],
+		"grid": [
+			".....",
+			".RR..",
+			"..R..",
+			".R.R.",
+			"..R..",
+			"....."
+		],
+		"hint": "끌어서 같은 색 젤리를 모두 구출하세요!",
+		"name": "첫 만남",
+		"stars": [
+			0.5,
+			0.25
+		],
+		"time": 60.0
+	},
+	{
+		"catchers": [
+			{
+				"cell": [
+					1,
+					5
+				],
+				"color": "B",
+				"shape": "S1"
+			},
+			{
+				"cell": [
+					3,
+					5
+				],
+				"color": "R",
+				"shape": "S1"
+			}
+		],
+		"grid": [
+			"BBBBB",
+			".....",
+			"RRRRR",
+			".....",
+			".....",
+			"....."
+		],
+		"hint": "다른 색은 길을 막아요. 알맞은 캐처를 골라 주세요.",
+		"name": "두 가지 색",
+		"stars": [
+			0.5,
+			0.25
+		],
+		"time": 70.0
+	},
+	{
+		"catchers": [
+			{
+				"cell": [
+					3,
+					6
+				],
+				"color": "R",
+				"shape": "H2"
+			},
+			{
+				"cell": [
+					0,
+					5
+				],
+				"color": "Y",
+				"shape": "V2"
+			}
+		],
+		"grid": [
+			"RRRRRR",
+			"RRRRRR",
+			"......",
+			"Y.Y...",
+			"...Y.Y",
+			"......",
+			"......"
+		],
+		"hint": "넓은 캐처는 한 번에 여러 칸을 쓸어요!",
+		"name": "넓게 쓸기",
+		"stars": [
+			0.5,
+			0.25
+		],
+		"time": 80.0
+	},
+	{
+		"catchers": [
+			{
+				"cell": [
+					0,
+					5
+				],
+				"color": "R",
+				"shape": "S1"
+			},
+			{
+				"cell": [
+					5,
+					5
+				],
+				"color": "B",
+				"shape": "S1"
+			}
+		],
+		"grid": [
+			"......",
+			".BBBB.",
+			".BBBB.",
+			"RRRRRR",
+			"......",
+			"......",
+			"......"
+		],
+		"hint": "앞을 막은 색부터 치우면 길이 열려요.",
+		"name": "순서가 중요해",
+		"stars": [
+			0.5,
+			0.25
+		],
+		"time": 90.0
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 5,
+				"cell": [
+					4,
+					5
+				],
+				"color": "R",
+				"shape": "SQ"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					0,
+					6
+				],
+				"color": "Y",
+				"shape": "H2"
+			}
+		],
+		"grid": [
+			"______",
+			".Y..._",
+			"R.R.R_",
+			"_..Y.Y",
+			"_...R_",
+			"_Y.R..",
+			"......"
+		],
+		"hint": "색의 층과 캐처 모양을 보고 구출 순서를 정하세요.",
+		"name": "젤리 마을 · 한붓 쓸기",
+		"stars": [
+			0.5,
+			0.25
+		],
+		"time": 85.0
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 5,
+				"cell": [
+					1,
+					4
+				],
+				"color": "R",
+				"shape": "H2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					0,
+					3
+				],
+				"color": "Y",
+				"shape": "V4"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					1,
+					5
+				],
+				"color": "Y",
+				"shape": "SQ"
+			}
+		],
+		"grid": [
+			"__R...",
+			"_Y.Y..",
+			"_YRRR.",
+			".YRY.Y",
+			"......",
+			"....._",
+			"....._"
+		],
+		"hint": "색의 층과 캐처 모양을 보고 구출 순서를 정하세요.",
+		"name": "젤리 마을 · 갈림길",
+		"stars": [
+			0.5,
+			0.25
+		],
+		"time": 84.5
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 5,
+				"cell": [
+					4,
+					3
+				],
+				"color": "R",
+				"shape": "V4"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					1,
+					4
+				],
+				"color": "Y",
+				"shape": "SQ"
+			}
+		],
+		"grid": [
+			"___.__",
+			"_Y.Y._",
+			".YYR..",
+			"_R.R.R",
+			"...R..",
+			"_.....",
+			"___.._"
+		],
+		"hint": "색의 층과 캐처 모양을 보고 구출 순서를 정하세요.",
+		"name": "젤리 마을 · 큰 몸 작은 문",
+		"stars": [
+			0.5,
+			0.25
+		],
+		"time": 84.0
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 3,
+				"cell": [
+					1,
+					4
+				],
+				"color": "R",
+				"shape": "SQ"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					2,
+					6
+				],
+				"color": "Y",
+				"shape": "H4"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					3,
+					0
+				],
+				"color": "Y",
+				"shape": "V2"
+			}
+		],
+		"grid": [
+			"__..__",
+			"_...._",
+			"_.RYY.",
+			"YYR.Y_",
+			"...R..",
+			"....Y.",
+			"._...."
+		],
+		"hint": "색의 층과 캐처 모양을 보고 구출 순서를 정하세요.",
+		"name": "젤리 마을 · 색깔 미로",
+		"stars": [
+			0.5,
+			0.25
+		],
+		"time": 83.5
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 5,
+				"cell": [
+					2,
+					5
+				],
+				"color": "R",
+				"shape": "H2"
+			},
+			{
+				"capacity": 2,
+				"cell": [
+					1,
+					3
+				],
+				"color": "Y",
+				"shape": "V2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					2,
+					4
+				],
+				"color": "B",
+				"shape": "H2"
+			}
+		],
+		"grid": [
+			"__.___",
+			".Y._._",
+			"BYB_B.",
+			"_.RR.R",
+			"_.....",
+			".R..R.",
+			"__.._."
+		],
+		"hint": "색의 층과 캐처 모양을 보고 구출 순서를 정하세요.",
+		"name": "젤리 마을 · 연쇄 구출",
+		"stars": [
+			0.5,
+			0.25
+		],
+		"time": 83.0
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 4,
+				"cell": [
+					0,
+					3
+				],
+				"color": "R",
+				"shape": "V2"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					4,
+					4
+				],
+				"color": "Y",
+				"shape": "SQ"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					1,
+					6
+				],
+				"color": "B",
+				"shape": "H4"
+			}
+		],
+		"grid": [
+			"_.....",
+			"_Y.R._",
+			"RBBRY_",
+			".YBRY_",
+			"......",
+			"......",
+			"_...._"
+		],
+		"hint": "젤리 마을의 모든 규칙이 섞인 하이라이트 레벨!",
+		"name": "젤리 마을 · 최종 관문",
+		"stars": [
+			0.45,
+			0.2
+		],
+		"time": 82.5
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 3,
+				"cell": [
+					5,
+					5
+				],
+				"color": "R",
+				"shape": "L4B"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					2,
+					4
+				],
+				"color": "R",
+				"shape": "SQ"
+			},
+			{
+				"capacity": 5,
+				"cell": [
+					2,
+					6
+				],
+				"color": "Y",
+				"shape": "H2"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					0,
+					7
+				],
+				"color": "G",
+				"shape": "H2"
+			}
+		],
+		"grid": [
+			"_______",
+			".Y_.___",
+			"G.G.G.G",
+			".RRR.R_",
+			"YR..Y.Y",
+			"#Y.....",
+			"__..R._",
+			"...._._"
+		],
+		"hint": "색의 층과 캐처 모양을 보고 구출 순서를 정하세요.",
+		"name": "캔디 숲 · 길 열기",
+		"stars": [
+			0.5,
+			0.25
+		],
+		"time": 82.0
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 3,
+				"cell": [
+					2,
+					6
+				],
+				"color": "R",
+				"shape": "L4C"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					4,
+					1
+				],
+				"color": "R",
+				"shape": "L4D"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					2,
+					5
+				],
+				"color": "Y",
+				"shape": "H2"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					1,
+					4
+				],
+				"color": "G",
+				"shape": "V2"
+			}
+		],
+		"grid": [
+			"__G____",
+			"_YGR...",
+			"RYGR...",
+			"_Y.R...",
+			"R.G.Y_R",
+			".....__",
+			"__...._",
+			"__...__"
+		],
+		"hint": "색의 층과 캐처 모양을 보고 구출 순서를 정하세요.",
+		"name": "캔디 숲 · 엇갈린 줄",
+		"stars": [
+			0.5,
+			0.25
+		],
+		"time": 81.5
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 5,
+				"cell": [
+					4,
+					5
+				],
+				"color": "R",
+				"shape": "L4D"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					2,
+					6
+				],
+				"color": "R",
+				"shape": "H4"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					1,
+					4
+				],
+				"color": "Y",
+				"shape": "V2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					3,
+					7
+				],
+				"color": "Y",
+				"shape": "H4"
+			},
+			{
+				"capacity": 2,
+				"cell": [
+					2,
+					7
+				],
+				"color": "G",
+				"shape": "S1"
+			}
+		],
+		"grid": [
+			"____.__",
+			"_Y...._",
+			"R.G.G__",
+			"_YRY.Y#",
+			"R.R.RRR",
+			"_.YR...",
+			".Y.....",
+			"__....."
+		],
+		"hint": "색의 층과 캐처 모양을 보고 구출 순서를 정하세요.",
+		"name": "캔디 숲 · 색의 성",
+		"stars": [
+			0.5,
+			0.25
+		],
+		"time": 81.0
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 5,
+				"cell": [
+					1,
+					5
+				],
+				"color": "R",
+				"shape": "L4D"
+			},
+			{
+				"capacity": 2,
+				"cell": [
+					1,
+					1
+				],
+				"color": "R",
+				"shape": "V2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					1,
+					6
+				],
+				"color": "Y",
+				"shape": "SQ"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					5,
+					4
+				],
+				"color": "Y",
+				"shape": "V2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					3,
+					7
+				],
+				"color": "G",
+				"shape": "H4"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					3,
+					1
+				],
+				"color": "G",
+				"shape": "V2"
+			}
+		],
+		"grid": [
+			".__.._.",
+			"R...G.R",
+			"_.G.R.Y",
+			"YRG.RYY",
+			"GRR.Y.G",
+			"....G._",
+			"....Y__",
+			"......."
+		],
+		"hint": "색의 층과 캐처 모양을 보고 구출 순서를 정하세요.",
+		"name": "캔디 숲 · 굽은 통로",
+		"stars": [
+			0.5,
+			0.25
+		],
+		"time": 80.5
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 5,
+				"cell": [
+					3,
+					4
+				],
+				"color": "R",
+				"shape": "V4"
+			},
+			{
+				"capacity": 5,
+				"cell": [
+					4,
+					5
+				],
+				"color": "Y",
+				"shape": "SQ"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					1,
+					4
+				],
+				"color": "G",
+				"shape": "V2"
+			}
+		],
+		"grid": [
+			"_______",
+			"#_...._",
+			"G.G.G__",
+			".RGR.R.",
+			"Y.R.YYY",
+			"_.R..._",
+			"_Y...._",
+			"_...___"
+		],
+		"hint": "색의 층과 캐처 모양을 보고 구출 순서를 정하세요.",
+		"name": "캔디 숲 · 한붓 쓸기",
+		"stars": [
+			0.5,
+			0.25
+		],
+		"time": 80.0
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 4,
+				"cell": [
+					0,
+					5
+				],
+				"color": "R",
+				"shape": "SQ"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					2,
+					5
+				],
+				"color": "Y",
+				"shape": "V2"
+			},
+			{
+				"capacity": 5,
+				"cell": [
+					4,
+					5
+				],
+				"color": "B",
+				"shape": "SQ"
+			},
+			{
+				"capacity": 2,
+				"cell": [
+					4,
+					0
+				],
+				"color": "G",
+				"shape": "V2"
+			}
+		],
+		"grid": [
+			"__B..._",
+			"_Y.G.._",
+			"R.B.R._",
+			".Y.G.Y.",
+			"RBB.R.B",
+			"......_",
+			"......_",
+			"_______"
+		],
+		"hint": "색의 층과 캐처 모양을 보고 구출 순서를 정하세요.",
+		"name": "캔디 숲 · 갈림길",
+		"stars": [
+			0.5,
+			0.25
+		],
+		"time": 79.5
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 5,
+				"cell": [
+					3,
+					5
+				],
+				"color": "R",
+				"shape": "L4A"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					1,
+					5
+				],
+				"color": "R",
+				"shape": "L4B"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					4,
+					5
+				],
+				"color": "Y",
+				"shape": "V2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					3,
+					0
+				],
+				"color": "Y",
+				"shape": "S1"
+			},
+			{
+				"capacity": 2,
+				"cell": [
+					2,
+					3
+				],
+				"color": "B",
+				"shape": "S1"
+			}
+		],
+		"grid": [
+			"__..___",
+			"#__..__",
+			"R...B.R",
+			".Y.Y.Y_",
+			"RYRRRBR",
+			".....Y#",
+			"_.R..Y.",
+			".._..__"
+		],
+		"hint": "색의 층과 캐처 모양을 보고 구출 순서를 정하세요.",
+		"name": "캔디 숲 · 큰 몸 작은 문",
+		"stars": [
+			0.5,
+			0.25
+		],
+		"time": 79.0
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 3,
+				"cell": [
+					5,
+					5
+				],
+				"color": "R",
+				"shape": "SQ"
+			},
+			{
+				"capacity": 5,
+				"cell": [
+					2,
+					6
+				],
+				"color": "Y",
+				"shape": "SQ"
+			},
+			{
+				"capacity": 5,
+				"cell": [
+					2,
+					5
+				],
+				"color": "B",
+				"shape": "H2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					1,
+					4
+				],
+				"color": "G",
+				"shape": "S1"
+			}
+		],
+		"grid": [
+			"_______",
+			"___.___",
+			"Y.B....",
+			"YGB.G.R",
+			"B.G.RYY",
+			"#R..B..",
+			"_Y..B..",
+			"__...__"
+		],
+		"hint": "색의 층과 캐처 모양을 보고 구출 순서를 정하세요.",
+		"name": "캔디 숲 · 색깔 미로",
+		"stars": [
+			0.5,
+			0.25
+		],
+		"time": 78.5
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 3,
+				"cell": [
+					2,
+					4
+				],
+				"color": "R",
+				"shape": "L4C"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					2,
+					6
+				],
+				"color": "R",
+				"shape": "H2"
+			},
+			{
+				"capacity": 2,
+				"cell": [
+					0,
+					7
+				],
+				"color": "Y",
+				"shape": "H4"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					5,
+					4
+				],
+				"color": "B",
+				"shape": "V2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					1,
+					5
+				],
+				"color": "G",
+				"shape": "S1"
+			}
+		],
+		"grid": [
+			"_._____",
+			".._.__.",
+			"B.B.B.B",
+			"#GRGYG.",
+			"_..RR.R",
+			"_......",
+			".R..RY_",
+			"....___"
+		],
+		"hint": "색의 층과 캐처 모양을 보고 구출 순서를 정하세요.",
+		"name": "캔디 숲 · 연쇄 구출",
+		"stars": [
+			0.5,
+			0.25
+		],
+		"time": 78.0
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 5,
+				"cell": [
+					4,
+					6
+				],
+				"color": "R",
+				"shape": "SQ"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					3,
+					5
+				],
+				"color": "Y",
+				"shape": "L4B"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					1,
+					4
+				],
+				"color": "B",
+				"shape": "V2"
+			},
+			{
+				"capacity": 2,
+				"cell": [
+					2,
+					6
+				],
+				"color": "G",
+				"shape": "S1"
+			}
+		],
+		"grid": [
+			"__...__",
+			"_..G.._",
+			"_R.R.B_",
+			".Y.GYY_",
+			"R.B.RR_",
+			"_.B..__",
+			"_B...._",
+			"__...._"
+		],
+		"hint": "캔디 숲의 모든 규칙이 섞인 하이라이트 레벨!",
+		"name": "캔디 숲 · 최종 관문",
+		"stars": [
+			0.45,
+			0.2
+		],
+		"time": 77.5
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 3,
+				"cell": [
+					2,
+					3
+				],
+				"color": "R",
+				"shape": "V2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					0,
+					5
+				],
+				"color": "R",
+				"shape": "H4"
+			},
+			{
+				"capacity": 2,
+				"cell": [
+					1,
+					6
+				],
+				"color": "Y",
+				"shape": "L4C"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					2,
+					6
+				],
+				"color": "B",
+				"shape": "H2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					4,
+					5
+				],
+				"color": "P",
+				"shape": "S1"
+			}
+		],
+		"grid": [
+			"____.__",
+			"__...._",
+			".BBBB__",
+			"_P.PYP_",
+			"RR.RR.R",
+			".......",
+			"_...RY_",
+			"_...___"
+		],
+		"hint": "색의 층과 캐처 모양을 보고 구출 순서를 정하세요.",
+		"name": "소다 해변 · 길 열기",
+		"stars": [
+			0.5,
+			0.25
+		],
+		"time": 77.0
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 5,
+				"cell": [
+					4,
+					5
+				],
+				"color": "R",
+				"shape": "SQ"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					1,
+					4
+				],
+				"color": "Y",
+				"shape": "V2"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					1,
+					6
+				],
+				"color": "B",
+				"shape": "SQ"
+			},
+			{
+				"capacity": 2,
+				"cell": [
+					4,
+					1
+				],
+				"color": "P",
+				"shape": "S1"
+			}
+		],
+		"grid": [
+			"_....._",
+			"_....._",
+			"_YBBR..",
+			".Y.PRY.",
+			"R.B.RR.",
+			"_..B...",
+			"_..P...",
+			"_..____"
+		],
+		"hint": "색의 층과 캐처 모양을 보고 구출 순서를 정하세요.",
+		"name": "소다 해변 · 엇갈린 줄",
+		"stars": [
+			0.5,
+			0.25
+		],
+		"time": 76.5
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 5,
+				"cell": [
+					0,
+					5
+				],
+				"color": "R",
+				"shape": "V2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					1,
+					5
+				],
+				"color": "R",
+				"shape": "TU"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					4,
+					5
+				],
+				"color": "Y",
+				"shape": "L4D"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					0,
+					7
+				],
+				"color": "Y",
+				"shape": "H4"
+			},
+			{
+				"capacity": 2,
+				"cell": [
+					4,
+					6
+				],
+				"color": "B",
+				"shape": "V2"
+			}
+		],
+		"grid": [
+			"_______",
+			".._____",
+			"RBB.___",
+			"_YRYYY_",
+			"R.R.RYR",
+			".......",
+			".R.R.Y.",
+			"......_"
+		],
+		"hint": "색의 층과 캐처 모양을 보고 구출 순서를 정하세요.",
+		"name": "소다 해변 · 색의 성",
+		"stars": [
+			0.5,
+			0.25
+		],
+		"time": 76.0
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 5,
+				"cell": [
+					3,
+					5
+				],
+				"color": "R",
+				"shape": "L4D"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					0,
+					5
+				],
+				"color": "Y",
+				"shape": "H2"
+			},
+			{
+				"capacity": 5,
+				"cell": [
+					3,
+					7
+				],
+				"color": "B",
+				"shape": "H2"
+			},
+			{
+				"capacity": 5,
+				"cell": [
+					3,
+					1
+				],
+				"color": "P",
+				"shape": "V2"
+			}
+		],
+		"grid": [
+			"_...___",
+			"R...BYP",
+			"_.B.P.R",
+			"Y.B.P.R",
+			"B.P.R.Y",
+			"..P..._",
+			".YRB.._",
+			".....__"
+		],
+		"hint": "색의 층과 캐처 모양을 보고 구출 순서를 정하세요.",
+		"name": "소다 해변 · 굽은 통로",
+		"stars": [
+			0.5,
+			0.25
+		],
+		"time": 75.5
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 5,
+				"cell": [
+					4,
+					6
+				],
+				"color": "R",
+				"shape": "H2"
+			},
+			{
+				"capacity": 2,
+				"cell": [
+					2,
+					3
+				],
+				"color": "Y",
+				"shape": "V4"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					3,
+					5
+				],
+				"color": "B",
+				"shape": "H2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					1,
+					4
+				],
+				"color": "P",
+				"shape": "S1"
+			}
+		],
+		"grid": [
+			"_______",
+			"__B.___",
+			".B.BB__",
+			".P.PYP_",
+			"R..YR.R",
+			".....R.",
+			"...R...",
+			".....__"
+		],
+		"hint": "색의 층과 캐처 모양을 보고 구출 순서를 정하세요.",
+		"name": "소다 해변 · 한붓 쓸기",
+		"stars": [
+			0.5,
+			0.25
+		],
+		"time": 75.0
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 3,
+				"cell": [
+					1,
+					4
+				],
+				"color": "R",
+				"shape": "V2"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					2,
+					7
+				],
+				"color": "Y",
+				"shape": "H4"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					3,
+					5
+				],
+				"color": "B",
+				"shape": "H2"
+			},
+			{
+				"capacity": 2,
+				"cell": [
+					5,
+					1
+				],
+				"color": "G",
+				"shape": "SQ"
+			},
+			{
+				"capacity": 2,
+				"cell": [
+					0,
+					5
+				],
+				"color": "P",
+				"shape": "V2"
+			}
+		],
+		"grid": [
+			"__B.___",
+			"_Y.G...",
+			"R.B.P..",
+			".YYG.R_",
+			"R.B.P.Y",
+			"......_",
+			"......_",
+			"__...._"
+		],
+		"hint": "색의 층과 캐처 모양을 보고 구출 순서를 정하세요.",
+		"name": "소다 해변 · 갈림길",
+		"stars": [
+			0.5,
+			0.25
+		],
+		"time": 74.5
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 5,
+				"cell": [
+					3,
+					5
+				],
+				"color": "R",
+				"shape": "H4"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					1,
+					4
+				],
+				"color": "R",
+				"shape": "V4"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					5,
+					6
+				],
+				"color": "Y",
+				"shape": "H2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					2,
+					5
+				],
+				"color": "Y",
+				"shape": "V2"
+			},
+			{
+				"capacity": 2,
+				"cell": [
+					5,
+					4
+				],
+				"color": "B",
+				"shape": "S1"
+			}
+		],
+		"grid": [
+			"__..___",
+			"_..YY__",
+			"_..RBB_",
+			"..RYYY_",
+			"R.RRR.R",
+			".......",
+			"...RY..",
+			"_._____"
+		],
+		"hint": "색의 층과 캐처 모양을 보고 구출 순서를 정하세요.",
+		"name": "소다 해변 · 큰 몸 작은 문",
+		"stars": [
+			0.5,
+			0.25
+		],
+		"time": 74.0
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 1,
+				"cell": [
+					1,
+					4
+				],
+				"color": "R",
+				"shape": "V2"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					2,
+					5
+				],
+				"color": "Y",
+				"shape": "H2"
+			},
+			{
+				"capacity": 5,
+				"cell": [
+					5,
+					4
+				],
+				"color": "B",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					2,
+					7
+				],
+				"color": "G",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					3,
+					1
+				],
+				"color": "P",
+				"shape": "V4"
+			}
+		],
+		"grid": [
+			"__...__",
+			"__...__",
+			"__...._",
+			"YBB.GB_",
+			"B.G.P.R",
+			"_...YG.",
+			"_YBPYP.",
+			"__....."
+		],
+		"hint": "색의 층과 캐처 모양을 보고 구출 순서를 정하세요.",
+		"name": "소다 해변 · 색깔 미로",
+		"stars": [
+			0.5,
+			0.25
+		],
+		"time": 73.5
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 4,
+				"cell": [
+					2,
+					4
+				],
+				"color": "R",
+				"shape": "SQ"
+			},
+			{
+				"capacity": 2,
+				"cell": [
+					4,
+					5
+				],
+				"color": "Y",
+				"shape": "V2"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					0,
+					6
+				],
+				"color": "B",
+				"shape": "H2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					0,
+					7
+				],
+				"color": "G",
+				"shape": "H2"
+			},
+			{
+				"capacity": 2,
+				"cell": [
+					5,
+					5
+				],
+				"color": "P",
+				"shape": "H2"
+			}
+		],
+		"grid": [
+			"_______",
+			"__.__._",
+			"_B.BBB_",
+			"_GRG.G_",
+			"_R..P.P",
+			"_R.....",
+			"..RY.Y_",
+			".....__"
+		],
+		"hint": "색의 층과 캐처 모양을 보고 구출 순서를 정하세요.",
+		"name": "소다 해변 · 연쇄 구출",
+		"stars": [
+			0.5,
+			0.25
+		],
+		"time": 73.0
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 4,
+				"cell": [
+					5,
+					0
+				],
+				"color": "R",
+				"shape": "L4A"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					0,
+					5
+				],
+				"color": "Y",
+				"shape": "L4B"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					1,
+					6
+				],
+				"color": "B",
+				"shape": "L4C"
+			},
+			{
+				"capacity": 2,
+				"cell": [
+					2,
+					5
+				],
+				"color": "G",
+				"shape": "SQ"
+			},
+			{
+				"capacity": 2,
+				"cell": [
+					5,
+					4
+				],
+				"color": "P",
+				"shape": "V2"
+			}
+		],
+		"grid": [
+			"R___.._",
+			".Y.G.._",
+			"R.B.P..",
+			".Y.G.R_",
+			"RYB.P._",
+			"......_",
+			".....B_",
+			".....__"
+		],
+		"hint": "소다 해변의 모든 규칙이 섞인 하이라이트 레벨!",
+		"name": "소다 해변 · 최종 관문",
+		"stars": [
+			0.45,
+			0.2
+		],
+		"time": 72.5
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 3,
+				"cell": [
+					3,
+					4
+				],
+				"color": "R",
+				"shape": "V2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					2,
+					6
+				],
+				"color": "R",
+				"shape": "SQ"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					0,
+					8
+				],
+				"color": "Y",
+				"shape": "H4"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					6,
+					5
+				],
+				"color": "B",
+				"shape": "V2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					2,
+					1
+				],
+				"color": "G",
+				"shape": "H2"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					7,
+					8
+				],
+				"color": "O",
+				"shape": "S1"
+			}
+		],
+		"grid": [
+			"________",
+			"_...____",
+			"B..BB___",
+			".G.G.G._",
+			"OYO.OBO#",
+			"_RR.RR.R",
+			"_R......",
+			".Y....Y_",
+			"...._..."
+		],
+		"hint": "색의 층과 캐처 모양을 보고 구출 순서를 정하세요.",
+		"name": "아이스 설산 · 길 열기",
+		"stars": [
+			0.5,
+			0.25
+		],
+		"time": 72.0
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 3,
+				"cell": [
+					1,
+					6
+				],
+				"color": "R",
+				"shape": "SQ"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					4,
+					8
+				],
+				"color": "R",
+				"shape": "H4"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					4,
+					7
+				],
+				"color": "Y",
+				"shape": "H4"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					3,
+					6
+				],
+				"color": "Y",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					0,
+					8
+				],
+				"color": "B",
+				"shape": "H4"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					1,
+					4
+				],
+				"color": "B",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					6,
+					3
+				],
+				"color": "G",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					3,
+					2
+				],
+				"color": "O",
+				"shape": "S1"
+			}
+		],
+		"grid": [
+			"___...._",
+			"__B.RRG_",
+			"__B.OYY_",
+			"_Y.G.R.B",
+			"R.BBORY_",
+			"_YYG.R.B",
+			"_......_",
+			"_..O....",
+			"........"
+		],
+		"hint": "색의 층과 캐처 모양을 보고 구출 순서를 정하세요.",
+		"name": "아이스 설산 · 엇갈린 줄",
+		"stars": [
+			0.5,
+			0.25
+		],
+		"time": 71.5
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 5,
+				"cell": [
+					4,
+					6
+				],
+				"color": "R",
+				"shape": "H4"
+			},
+			{
+				"capacity": 5,
+				"cell": [
+					2,
+					5
+				],
+				"color": "R",
+				"shape": "V2"
+			},
+			{
+				"capacity": 5,
+				"cell": [
+					6,
+					7
+				],
+				"color": "Y",
+				"shape": "H2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					3,
+					6
+				],
+				"color": "Y",
+				"shape": "V2"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					0,
+					7
+				],
+				"color": "B",
+				"shape": "SQ"
+			}
+		],
+		"grid": [
+			"________",
+			"_______.",
+			"____B...",
+			".Y._RBBR",
+			"RYYYYBY_",
+			"#R.RRRYR",
+			"_.......",
+			"..Y.RR..",
+			"...___._"
+		],
+		"hint": "색의 층과 캐처 모양을 보고 구출 순서를 정하세요.",
+		"name": "아이스 설산 · 색의 성",
+		"stars": [
+			0.5,
+			0.25
+		],
+		"time": 71.0
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 4,
+				"cell": [
+					5,
+					1
+				],
+				"color": "R",
+				"shape": "V2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					4,
+					6
+				],
+				"color": "Y",
+				"shape": "SQ"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					1,
+					6
+				],
+				"color": "B",
+				"shape": "SQ"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					4,
+					8
+				],
+				"color": "B",
+				"shape": "H4"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					3,
+					5
+				],
+				"color": "G",
+				"shape": "V4"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					1,
+					2
+				],
+				"color": "G",
+				"shape": "V2"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					3,
+					1
+				],
+				"color": "O",
+				"shape": "V2"
+			}
+		],
+		"grid": [
+			"..______",
+			"R.Y.B.G_",
+			"Y.B.G.O#",
+			"_.B.G.O_",
+			"BYG.ORR_",
+			"B.G.O.R_",
+			"......G_",
+			"......B_",
+			"___....."
+		],
+		"hint": "색의 층과 캐처 모양을 보고 구출 순서를 정하세요.",
+		"name": "아이스 설산 · 굽은 통로",
+		"stars": [
+			0.5,
+			0.25
+		],
+		"time": 70.5
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 3,
+				"cell": [
+					2,
+					6
+				],
+				"color": "R",
+				"shape": "H2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					6,
+					5
+				],
+				"color": "R",
+				"shape": "V4"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					4,
+					6
+				],
+				"color": "Y",
+				"shape": "H2"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					1,
+					7
+				],
+				"color": "B",
+				"shape": "V2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					5,
+					7
+				],
+				"color": "G",
+				"shape": "V2"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					2,
+					1
+				],
+				"color": "O",
+				"shape": "H2"
+			}
+		],
+		"grid": [
+			"________",
+			"__....__",
+			"_Y.BBB__",
+			"_G.GBG__",
+			"O.O.OYO_",
+			"_RR.YR.R",
+			"_R......",
+			"_.R.....",
+			"_._....."
+		],
+		"hint": "색의 층과 캐처 모양을 보고 구출 순서를 정하세요.",
+		"name": "아이스 설산 · 한붓 쓸기",
+		"stars": [
+			0.5,
+			0.25
+		],
+		"time": 70.0
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 5,
+				"cell": [
+					4,
+					5
+				],
+				"color": "R",
+				"shape": "L4A"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					2,
+					6
+				],
+				"color": "Y",
+				"shape": "H2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					3,
+					7
+				],
+				"color": "Y",
+				"shape": "V2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					6,
+					5
+				],
+				"color": "B",
+				"shape": "V4"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					0,
+					5
+				],
+				"color": "B",
+				"shape": "V4"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					5,
+					6
+				],
+				"color": "G",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					2,
+					5
+				],
+				"color": "O",
+				"shape": "S1"
+			}
+		],
+		"grid": [
+			"________",
+			"_Y...R__",
+			"R.BYO...",
+			".YBGBRGB",
+			"R.BYOOY.",
+			".Y.G.R.B",
+			"......._",
+			"......._",
+			"......._"
+		],
+		"hint": "색의 층과 캐처 모양을 보고 구출 순서를 정하세요.",
+		"name": "아이스 설산 · 갈림길",
+		"stars": [
+			0.5,
+			0.25
+		],
+		"time": 69.5
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 5,
+				"cell": [
+					1,
+					6
+				],
+				"color": "R",
+				"shape": "L4B"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					5,
+					6
+				],
+				"color": "R",
+				"shape": "L4C"
+			},
+			{
+				"capacity": 5,
+				"cell": [
+					2,
+					7
+				],
+				"color": "Y",
+				"shape": "L4D"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					7,
+					4
+				],
+				"color": "Y",
+				"shape": "S1"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					4,
+					3
+				],
+				"color": "B",
+				"shape": "S1"
+			}
+		],
+		"grid": [
+			"________",
+			"__...___",
+			".B.R..__",
+			".YRB.B..",
+			"RYY.YBY.",
+			"_RRR.RYR",
+			"_..RY.Y.",
+			"_.......",
+			"_.._..._"
+		],
+		"hint": "색의 층과 캐처 모양을 보고 구출 순서를 정하세요.",
+		"name": "아이스 설산 · 큰 몸 작은 문",
+		"stars": [
+			0.5,
+			0.25
+		],
+		"time": 69.0
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 2,
+				"cell": [
+					3,
+					5
+				],
+				"color": "R",
+				"shape": "L4C"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					0,
+					6
+				],
+				"color": "Y",
+				"shape": "L4D"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					5,
+					7
+				],
+				"color": "B",
+				"shape": "TU"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					2,
+					8
+				],
+				"color": "B",
+				"shape": "H2"
+			},
+			{
+				"capacity": 5,
+				"cell": [
+					7,
+					2
+				],
+				"color": "G",
+				"shape": "V2"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					5,
+					2
+				],
+				"color": "O",
+				"shape": "V2"
+			}
+		],
+		"grid": [
+			"________",
+			"__Y.B.._",
+			"Y.B.G.O.",
+			"Y.BGG.O.",
+			"B.GBO.R_",
+			"BYG.O.R_",
+			"......._",
+			"__......",
+			"__.._.._"
+		],
+		"hint": "색의 층과 캐처 모양을 보고 구출 순서를 정하세요.",
+		"name": "아이스 설산 · 색깔 미로",
+		"stars": [
+			0.5,
+			0.25
+		],
+		"time": 68.5
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 5,
+				"cell": [
+					5,
+					7
+				],
+				"color": "R",
+				"shape": "SQ"
+			},
+			{
+				"capacity": 2,
+				"cell": [
+					2,
+					7
+				],
+				"color": "R",
+				"shape": "SQ"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					3,
+					4
+				],
+				"color": "Y",
+				"shape": "TR"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					4,
+					6
+				],
+				"color": "B",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					0,
+					7
+				],
+				"color": "G",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					2,
+					1
+				],
+				"color": "O",
+				"shape": "TU"
+			}
+		],
+		"grid": [
+			"________",
+			"_....___",
+			"__..B___",
+			"_GGGB___",
+			"_BO.OBO#",
+			"_RY..R.R",
+			"_YY..RR.",
+			".R..R.._",
+			"......._"
+		],
+		"hint": "색의 층과 캐처 모양을 보고 구출 순서를 정하세요.",
+		"name": "아이스 설산 · 연쇄 구출",
+		"stars": [
+			0.5,
+			0.25
+		],
+		"time": 68.0
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 3,
+				"cell": [
+					1,
+					6
+				],
+				"color": "R",
+				"shape": "SQ"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					4,
+					5
+				],
+				"color": "R",
+				"shape": "V2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					0,
+					6
+				],
+				"color": "Y",
+				"shape": "V2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					5,
+					7
+				],
+				"color": "Y",
+				"shape": "L4C"
+			},
+			{
+				"capacity": 5,
+				"cell": [
+					2,
+					8
+				],
+				"color": "B",
+				"shape": "H2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					0,
+					8
+				],
+				"color": "G",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					7,
+					7
+				],
+				"color": "O",
+				"shape": "S1"
+			}
+		],
+		"grid": [
+			"____..__",
+			"____R.Y_",
+			"R.B_O.._",
+			".YBGYRG_",
+			"RBBRO.Y_",
+			"_Y.G.R.B",
+			"...Y..._",
+			"...O....",
+			"........"
+		],
+		"hint": "아이스 설산의 모든 규칙이 섞인 하이라이트 레벨!",
+		"name": "아이스 설산 · 최종 관문",
+		"stars": [
+			0.45,
+			0.2
+		],
+		"time": 67.5
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 3,
+				"cell": [
+					3,
+					0
+				],
+				"color": "R",
+				"shape": "TR"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					1,
+					6
+				],
+				"color": "Y",
+				"shape": "V2"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					5,
+					7
+				],
+				"color": "B",
+				"shape": "SQ"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					3,
+					6
+				],
+				"color": "G",
+				"shape": "H4"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					3,
+					7
+				],
+				"color": "P",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					5,
+					4
+				],
+				"color": "O",
+				"shape": "S1"
+			}
+		],
+		"grid": [
+			"___._.__",
+			".Y...YRY",
+			"B.B.B.B.",
+			"_G.G.G..",
+			"PRP.P.P_",
+			"#O...O.O",
+			"_......#",
+			"_...R.._",
+			"_____.._"
+		],
+		"hint": "색의 층과 캐처 모양을 보고 구출 순서를 정하세요.",
+		"name": "초코 화산 · 길 열기",
+		"stars": [
+			0.5,
+			0.25
+		],
+		"time": 67.0
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 3,
+				"cell": [
+					4,
+					5
+				],
+				"color": "R",
+				"shape": "SV"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					2,
+					6
+				],
+				"color": "R",
+				"shape": "H2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					1,
+					8
+				],
+				"color": "Y",
+				"shape": "H2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					6,
+					5
+				],
+				"color": "Y",
+				"shape": "V4"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					2,
+					1
+				],
+				"color": "B",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					1,
+					0
+				],
+				"color": "G",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					5,
+					8
+				],
+				"color": "P",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					2,
+					7
+				],
+				"color": "O",
+				"shape": "S1"
+			}
+		],
+		"grid": [
+			"_.______",
+			"_.....__",
+			"_P....._",
+			"_YRGROBY",
+			"ROBGPYR_",
+			"_YBG.O.Y",
+			"#P....._",
+			"_Y.RR.._",
+			"_..__.._"
+		],
+		"hint": "색의 층과 캐처 모양을 보고 구출 순서를 정하세요.",
+		"name": "초코 화산 · 엇갈린 줄",
+		"stars": [
+			0.5,
+			0.25
+		],
+		"time": 66.5
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 5,
+				"cell": [
+					2,
+					6
+				],
+				"color": "R",
+				"shape": "ZH"
+			},
+			{
+				"capacity": 5,
+				"cell": [
+					4,
+					6
+				],
+				"color": "R",
+				"shape": "H2"
+			},
+			{
+				"capacity": 5,
+				"cell": [
+					4,
+					8
+				],
+				"color": "Y",
+				"shape": "H4"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					1,
+					7
+				],
+				"color": "Y",
+				"shape": "SQ"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					6,
+					5
+				],
+				"color": "B",
+				"shape": "S1"
+			}
+		],
+		"grid": [
+			"________",
+			"__...___",
+			"...R.B__",
+			".YYBRBB_",
+			"R.YYYYY_",
+			".RRRYR.R",
+			"_R....._",
+			"_....R._",
+			"_......."
+		],
+		"hint": "색의 층과 캐처 모양을 보고 구출 순서를 정하세요.",
+		"name": "초코 화산 · 색의 성",
+		"stars": [
+			0.5,
+			0.25
+		],
+		"time": 66.0
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 2,
+				"cell": [
+					3,
+					6
+				],
+				"color": "R",
+				"shape": "H4"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					1,
+					5
+				],
+				"color": "Y",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					6,
+					7
+				],
+				"color": "B",
+				"shape": "SQ"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					2,
+					6
+				],
+				"color": "B",
+				"shape": "L4A"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					1,
+					1
+				],
+				"color": "G",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					5,
+					1
+				],
+				"color": "G",
+				"shape": "V4"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					3,
+					7
+				],
+				"color": "P",
+				"shape": "S1"
+			},
+			{
+				"capacity": 2,
+				"cell": [
+					3,
+					2
+				],
+				"color": "O",
+				"shape": "S1"
+			}
+		],
+		"grid": [
+			"____..__",
+			"R.YR..__",
+			"YGB.G.P_",
+			"_.B.G.P_",
+			"B.GBP.O#",
+			"B.GGPYO_",
+			"_......_",
+			"_...B...",
+			"_..._..."
+		],
+		"hint": "색의 층과 캐처 모양을 보고 구출 순서를 정하세요.",
+		"name": "초코 화산 · 굽은 통로",
+		"stars": [
+			0.5,
+			0.25
+		],
+		"time": 65.5
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 3,
+				"cell": [
+					3,
+					4
+				],
+				"color": "R",
+				"shape": "V2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					5,
+					6
+				],
+				"color": "Y",
+				"shape": "SQ"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					2,
+					6
+				],
+				"color": "B",
+				"shape": "V2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					4,
+					8
+				],
+				"color": "G",
+				"shape": "H4"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					0,
+					7
+				],
+				"color": "P",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					2,
+					1
+				],
+				"color": "O",
+				"shape": "S1"
+			}
+		],
+		"grid": [
+			"________",
+			"__...___",
+			"_B.B.B..",
+			"_GGG..Y.",
+			"PYP.PBP.",
+			"_O...ORO",
+			"_R....._",
+			".Y..R.._",
+			"........"
+		],
+		"hint": "색의 층과 캐처 모양을 보고 구출 순서를 정하세요.",
+		"name": "초코 화산 · 한붓 쓸기",
+		"stars": [
+			0.5,
+			0.25
+		],
+		"time": 65.0
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 5,
+				"cell": [
+					3,
+					7
+				],
+				"color": "R",
+				"shape": "SQ"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					0,
+					6
+				],
+				"color": "Y",
+				"shape": "L4A"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					5,
+					6
+				],
+				"color": "Y",
+				"shape": "H2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					2,
+					5
+				],
+				"color": "B",
+				"shape": "V2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					6,
+					7
+				],
+				"color": "G",
+				"shape": "H2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					1,
+					6
+				],
+				"color": "P",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					2,
+					1
+				],
+				"color": "O",
+				"shape": "S1"
+			}
+		],
+		"grid": [
+			"__....._",
+			"__....._",
+			"__.R.P._",
+			".Y.G.OBY",
+			"RYBRP.R_",
+			"_Y.GGOOY",
+			"...PB.._",
+			".YR.....",
+			".....___"
+		],
+		"hint": "색의 층과 캐처 모양을 보고 구출 순서를 정하세요.",
+		"name": "초코 화산 · 갈림길",
+		"stars": [
+			0.5,
+			0.25
+		],
+		"time": 64.5
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 5,
+				"cell": [
+					6,
+					5
+				],
+				"color": "R",
+				"shape": "L4A"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					3,
+					6
+				],
+				"color": "R",
+				"shape": "L4B"
+			},
+			{
+				"capacity": 5,
+				"cell": [
+					0,
+					7
+				],
+				"color": "Y",
+				"shape": "V2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					4,
+					8
+				],
+				"color": "Y",
+				"shape": "H4"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					1,
+					6
+				],
+				"color": "B",
+				"shape": "H2"
+			}
+		],
+		"grid": [
+			"________",
+			"#__...Y_",
+			"R...B.._",
+			".Y.B.BBR",
+			"R.Y.Y.Y_",
+			"_RYR.R.R",
+			"_....R._",
+			".YY..R..",
+			"........"
+		],
+		"hint": "색의 층과 캐처 모양을 보고 구출 순서를 정하세요.",
+		"name": "초코 화산 · 큰 몸 작은 문",
+		"stars": [
+			0.5,
+			0.25
+		],
+		"time": 64.0
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 4,
+				"cell": [
+					1,
+					6
+				],
+				"color": "Y",
+				"shape": "L4A"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					5,
+					7
+				],
+				"color": "B",
+				"shape": "SQ"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					4,
+					6
+				],
+				"color": "B",
+				"shape": "H2"
+			},
+			{
+				"capacity": 5,
+				"cell": [
+					2,
+					7
+				],
+				"color": "G",
+				"shape": "S1"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					5,
+					2
+				],
+				"color": "P",
+				"shape": "V4"
+			},
+			{
+				"capacity": 2,
+				"cell": [
+					3,
+					3
+				],
+				"color": "O",
+				"shape": "S1"
+			}
+		],
+		"grid": [
+			"__...___",
+			"_..Y.___",
+			"_.BP..__",
+			"YGB.G.P_",
+			"BBGYP.O_",
+			"B.G.P.O#",
+			"..BG..._",
+			"....Y.._",
+			"_..__.._"
+		],
+		"hint": "색의 층과 캐처 모양을 보고 구출 순서를 정하세요.",
+		"name": "초코 화산 · 색깔 미로",
+		"stars": [
+			0.5,
+			0.25
+		],
+		"time": 63.5
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 4,
+				"cell": [
+					4,
+					5
+				],
+				"color": "R",
+				"shape": "V2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					1,
+					6
+				],
+				"color": "Y",
+				"shape": "SQ"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					2,
+					1
+				],
+				"color": "B",
+				"shape": "H2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					4,
+					7
+				],
+				"color": "G",
+				"shape": "H2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					0,
+					8
+				],
+				"color": "P",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					4,
+					8
+				],
+				"color": "O",
+				"shape": "H4"
+			}
+		],
+		"grid": [
+			"________",
+			"__...___",
+			"B....B..",
+			"_GBG.GB.",
+			"_RP.PYP_",
+			"_OR..OYO",
+			"_....RY#",
+			"_.....R_",
+			"........"
+		],
+		"hint": "색의 층과 캐처 모양을 보고 구출 순서를 정하세요.",
+		"name": "초코 화산 · 연쇄 구출",
+		"stars": [
+			0.5,
+			0.25
+		],
+		"time": 63.0
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 3,
+				"cell": [
+					4,
+					6
+				],
+				"color": "R",
+				"shape": "L4D"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					3,
+					7
+				],
+				"color": "R",
+				"shape": "SQ"
+			},
+			{
+				"capacity": 5,
+				"cell": [
+					1,
+					6
+				],
+				"color": "Y",
+				"shape": "L4B"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					0,
+					5
+				],
+				"color": "B",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					2,
+					5
+				],
+				"color": "G",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					1,
+					4
+				],
+				"color": "P",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					4,
+					3
+				],
+				"color": "O",
+				"shape": "S1"
+			}
+		],
+		"grid": [
+			"________",
+			"____YOR_",
+			"R.B.P.._",
+			"_YYG.OG_",
+			"R.B.PRR_",
+			".Y.GROBY",
+			"......._",
+			".....P._",
+			".....___"
+		],
+		"hint": "초코 화산의 모든 규칙이 섞인 하이라이트 레벨!",
+		"name": "초코 화산 · 최종 관문",
+		"stars": [
+			0.45,
+			0.2
+		],
+		"time": 63.0
+	}
+]
