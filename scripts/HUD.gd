@@ -233,12 +233,38 @@ func _style_button(b: Button, col: Color) -> void:
 	pressed.shadow_size = 1
 	pressed.shadow_offset = Vector2(0, 1)
 	b.add_theme_stylebox_override("pressed", pressed)
+	# Godot 기본 disabled 스타일(각진 회색 패널) 대신 밝고 둥근 게임 공통 스타일을 사용한다.
+	var disabled: StyleBoxFlat = sb.duplicate()
+	disabled.bg_color = col.lightened(0.48)
+	disabled.border_color = col.lightened(0.12)
+	disabled.shadow_color = Color(0.1, 0.08, 0.2, 0.18)
+	disabled.shadow_size = 4
+	disabled.shadow_offset = Vector2(0, 3)
+	b.add_theme_stylebox_override("disabled", disabled)
 	b.add_theme_color_override("font_color", Color.WHITE)
 	b.add_theme_color_override("font_hover_color", Color.WHITE)
 	b.add_theme_color_override("font_pressed_color", Color.WHITE)
+	b.add_theme_color_override("font_disabled_color", col.darkened(0.34))
 	b.add_theme_color_override("font_outline_color", col.darkened(0.42))
 	b.add_theme_constant_override("outline_size", 3)
 	b.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
+
+
+func _set_reward_complete_style(button: Button) -> void:
+	var completed := StyleBoxFlat.new()
+	completed.bg_color = Color("#dff7e7")
+	completed.border_color = Color("#69bd7d")
+	completed.set_border_width_all(4)
+	completed.set_corner_radius_all(20)
+	completed.corner_detail = 12
+	completed.shadow_color = Color(0.08, 0.2, 0.12, 0.22)
+	completed.shadow_size = 5
+	completed.shadow_offset = Vector2(0, 4)
+	completed.content_margin_top = 8
+	completed.content_margin_bottom = 12
+	button.add_theme_stylebox_override("disabled", completed)
+	button.add_theme_color_override("font_disabled_color", Color("#31704a"))
+	button.add_theme_color_override("font_outline_color", Color(1, 1, 1, 0.9))
 
 
 func _popup_frame() -> VBoxContainer:
@@ -337,8 +363,8 @@ func show_result(stars_n: int, score: int, stardust_reward: int, stardust_total:
 	btns.alignment = BoxContainer.ALIGNMENT_CENTER
 	btns.add_theme_constant_override("separation", 12)
 	v.add_child(btns)
-	var b_home := _result_button("홈", Color("#55a9d8"))
-	b_home.tooltip_text = "레벨 선택으로"
+	var b_home := _result_button("모험", Color("#55a9d8"))
+	b_home.tooltip_text = "모험 레벨 선택으로"
 	b_home.pressed.connect(on_map)
 	btns.add_child(b_home)
 	var b_retry := _result_button("다시", Color(0.62, 0.56, 0.72))
@@ -369,6 +395,7 @@ func _finish_clear_double_reward() -> void:
 		return
 	clear_bonus_claimed = true
 	clear_double_button.text = "✓ 2배 보상 받음"
+	_set_reward_complete_style(clear_double_button)
 	clear_double_button.disabled = true
 	clear_reward_label.text = "★ 별가루 +%d  · 2배 완료!   보유 %d" % [clear_base_reward * 2, game.main.save.get_stardust()]
 	clear_reward_label.add_theme_color_override("font_color", Color("#d7792e"))
