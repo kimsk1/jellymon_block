@@ -23,10 +23,10 @@ func _ready() -> void:
 	get_viewport().size_changed.connect(_apply_responsive_layout)
 
 	background = TextureRect.new()
-	background.texture = load("res://assets/backgrounds/jelly_sky_v2.png")
+	background.texture = ArtDirection.background_texture()
 	background.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	background.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
-	background.modulate = Color(1, 1, 1, 0.88)
+	background.modulate = Color(1, 1, 1, 0.9)
 	background.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(background)
 	_layout_background()
@@ -49,16 +49,8 @@ func _ready() -> void:
 	scroll_frame.position = Vector2(20, 178)
 	scroll_frame.size = Vector2(G.W - 40, G.H - 382)
 	scroll_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var frame_style := StyleBoxFlat.new()
-	frame_style.bg_color = Color(0.97, 0.94, 1.0, 0.42)
-	frame_style.border_color = Color("#72509f")
-	frame_style.set_border_width_all(6)
-	frame_style.set_corner_radius_all(30)
-	frame_style.corner_detail = 12
-	frame_style.border_blend = true
-	frame_style.shadow_color = Color(0.09, 0.04, 0.2, 0.38)
-	frame_style.shadow_size = 14
-	frame_style.shadow_offset = Vector2(0, 9)
+	var frame_style := ArtDirection.glass_panel(Color("#fff8ef"), 0.76, 32)
+	frame_style.set_border_width_all(5)
 	scroll_frame.add_theme_stylebox_override("panel", frame_style)
 	add_child(scroll_frame)
 

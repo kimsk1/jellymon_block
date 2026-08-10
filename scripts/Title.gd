@@ -83,21 +83,7 @@ func _fit_overlay_to_viewport(control: Control) -> void:
 
 
 func _panel_style(color: Color, border: Color, radius: int = 24) -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = color
-	style.border_color = border
-	style.set_border_width_all(4)
-	style.set_corner_radius_all(radius)
-	style.corner_detail = 12
-	style.border_blend = true
-	style.shadow_color = Color(0.08, 0.03, 0.2, 0.4)
-	style.shadow_size = 12
-	style.shadow_offset = Vector2(0, 7)
-	style.content_margin_left = 14
-	style.content_margin_right = 14
-	style.content_margin_top = 8
-	style.content_margin_bottom = 10
-	return style
+	return ArtDirection.panel(color, border, radius)
 
 
 func _button(text: String, color: Color, size := Vector2(150, 74), font_size := 27) -> Button:
@@ -105,28 +91,9 @@ func _button(text: String, color: Color, size := Vector2(150, 74), font_size := 
 	button.text = text
 	button.custom_minimum_size = size
 	button.add_theme_font_size_override("font_size", font_size)
-	button.add_theme_stylebox_override("normal", _panel_style(color, color.darkened(0.28), 20))
-	var hover: StyleBoxFlat = button.get_theme_stylebox("normal").duplicate()
-	hover.bg_color = color.lightened(0.08)
-	button.add_theme_stylebox_override("hover", hover)
-	var pressed: StyleBoxFlat = button.get_theme_stylebox("normal").duplicate()
-	pressed.bg_color = color.darkened(0.12)
-	pressed.shadow_size = 1
-	button.add_theme_stylebox_override("pressed", pressed)
-	var disabled: StyleBoxFlat = button.get_theme_stylebox("normal").duplicate()
-	disabled.bg_color = color.darkened(0.12)
-	disabled.border_color = color.darkened(0.3)
-	disabled.shadow_size = 3
-	disabled.shadow_offset = Vector2(0, 2)
-	button.add_theme_stylebox_override("disabled", disabled)
-	button.add_theme_color_override("font_color", Color.WHITE)
-	button.add_theme_color_override("font_hover_color", Color.WHITE)
-	button.add_theme_color_override("font_pressed_color", Color.WHITE)
+	ArtDirection.apply_button(button, color, 20)
 	button.add_theme_color_override("font_disabled_color", Color(1, 1, 1, 0.72))
-	button.add_theme_color_override("font_outline_color", color.darkened(0.42))
 	button.add_theme_color_override("font_disabled_outline_color", color.darkened(0.38))
-	button.add_theme_constant_override("outline_size", 3)
-	button.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 	return button
 
 

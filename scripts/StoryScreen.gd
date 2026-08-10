@@ -20,6 +20,10 @@ const ADVANCE_DEBOUNCE_MS := 120
 const AUTO_ADVANCE_DELAY_SEC := 2.5
 
 var background: TextureRect
+var shade: ColorRect
+var header_panel: PanelContainer
+var skip_button: Button
+var dialogue_panel: PanelContainer
 var speaker_label: Label
 var dialogue_label: RichTextLabel
 var progress_label: Label
@@ -47,6 +51,56 @@ func _apply_responsive_layout() -> void:
 	if background:
 		background.position = -G.safe_offset(get_viewport_rect().size)
 		background.size = get_viewport_rect().size
+	if shade:
+		shade.position = background.position
+		shade.size = background.size
+	_layout_story_ui()
+
+
+func _local_safe_insets() -> Vector2:
+	## OS 카메라 홀/둥근 모서리 안전 영역을 720×1280 로컬 캔버스 좌표로 환산한다.
+	if DisplayServer.get_name() == "headless":
+		return Vector2.ZERO
+	var screen_index := DisplayServer.window_get_current_screen()
+	var screen_size := Vector2(DisplayServer.screen_get_size(screen_index))
+	var screen_position := Vector2(DisplayServer.screen_get_position(screen_index))
+	var safe_rect := Rect2(DisplayServer.get_display_safe_area())
+	if screen_size.x <= 0.0 or screen_size.y <= 0.0 or safe_rect.size.x <= 0.0 or safe_rect.size.y <= 0.0:
+		return Vector2.ZERO
+	var viewport_size := get_viewport_rect().size
+	var canvas_offset := G.safe_offset(viewport_size)
+	# macOS 다중 모니터에서는 safe_rect가 전역 화면 좌표이므로 현재 화면 원점을 제거한다.
+	var safe_local_position := safe_rect.position - screen_position
+	var mapped_top := safe_local_position.y * viewport_size.y / screen_size.y
+	var physical_bottom := screen_size.y - (safe_local_position.y + safe_rect.size.y)
+	var mapped_bottom := physical_bottom * viewport_size.y / screen_size.y
+	# 잘못된 플랫폼 리포트가 전체 UI를 밀지 않도록 일반적인 모바일 컷아웃 범위로 제한한다.
+	return Vector2(
+		clampf(mapped_top - canvas_offset.y, 0.0, 140.0),
+		clampf(mapped_bottom - canvas_offset.y, 0.0, 140.0)
+	)
+
+
+func _layout_story_ui() -> void:
+	if not header_panel or not dialogue_panel:
+		return
+	var insets := _local_safe_insets()
+	# 상단 카드는 카메라 홀 아래, 본문 카드는 하단에서 넉넉히 띄워 배경과 균형을 맞춘다.
+	var header_y := maxf(22.0, insets.x + 12.0)
+	header_panel.position = Vector2(22, header_y)
+	skip_button.position = Vector2(548, header_y + 21)
+	var panel_height := 360.0
+	var bottom_air := maxf(150.0, insets.y + 92.0)
+	var panel_min_y := minf(header_y + 390.0, 790.0)
+	var panel_y := clampf(G.H - panel_height - bottom_air, panel_min_y, 790.0)
+	dialogue_panel.position = Vector2(28, panel_y)
+	dialogue_panel.size = Vector2(664, panel_height)
+	portrait.position.y = panel_y - 172.0
+	speaker_label.position = Vector2(60, panel_y + 24)
+	progress_label.position = Vector2(532, panel_y + 34)
+	dialogue_label.position = Vector2(60, panel_y + 82)
+	dialogue_label.size = Vector2(600, 212)
+	continue_label.position = Vector2(380, panel_y + panel_height - 50)
 
 
 func _panel_style(color: Color, border: Color, radius: int) -> StyleBoxFlat:
@@ -76,22 +130,22 @@ func _build_ui() -> void:
 	background.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(background)
 
-	var shade := ColorRect.new()
+	shade = ColorRect.new()
 	shade.color = Color(0.06, 0.02, 0.12, 0.14)
 	shade.position = background.position
 	shade.size = background.size
 	shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(shade)
 
-	var header := PanelContainer.new()
-	header.position = Vector2(22, 22)
-	header.size = Vector2(676, 112)
-	header.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	header.add_theme_stylebox_override("panel", _panel_style(Color(0.18, 0.09, 0.28, 0.86), Color(1, 1, 1, 0.74), 26))
-	add_child(header)
+	header_panel = PanelContainer.new()
+	header_panel.position = Vector2(22, 22)
+	header_panel.size = Vector2(676, 112)
+	header_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	header_panel.add_theme_stylebox_override("panel", _panel_style(Color(0.18, 0.09, 0.28, 0.86), Color(1, 1, 1, 0.74), 26))
+	add_child(header_panel)
 	var heading := VBoxContainer.new()
 	heading.alignment = BoxContainer.ALIGNMENT_CENTER
-	header.add_child(heading)
+	header_panel.add_child(heading)
 	var title := Label.new()
 	title.text = String(sequence.get("title", "젤리몬 이야기"))
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -108,18 +162,18 @@ func _build_ui() -> void:
 	subtitle.visible = not subtitle.text.is_empty()
 	heading.add_child(subtitle)
 
-	var skip := Button.new()
-	skip.text = "건너뛰기  »"
-	skip.position = Vector2(548, 43)
-	skip.size = Vector2(130, 64)
-	skip.add_theme_font_size_override("font_size", 18)
-	skip.add_theme_color_override("font_color", Color.WHITE)
-	skip.add_theme_stylebox_override("normal", _panel_style(Color(0.25, 0.14, 0.34, 0.76), Color(1, 1, 1, 0.42), 18))
-	skip.add_theme_stylebox_override("hover", skip.get_theme_stylebox("normal").duplicate())
-	skip.add_theme_stylebox_override("pressed", skip.get_theme_stylebox("normal").duplicate())
-	skip.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
-	skip.pressed.connect(_finish)
-	add_child(skip)
+	skip_button = Button.new()
+	skip_button.text = "건너뛰기  »"
+	skip_button.position = Vector2(548, 43)
+	skip_button.size = Vector2(130, 64)
+	skip_button.add_theme_font_size_override("font_size", 18)
+	skip_button.add_theme_color_override("font_color", Color.WHITE)
+	skip_button.add_theme_stylebox_override("normal", _panel_style(Color(0.25, 0.14, 0.34, 0.76), Color(1, 1, 1, 0.42), 18))
+	skip_button.add_theme_stylebox_override("hover", skip_button.get_theme_stylebox("normal").duplicate())
+	skip_button.add_theme_stylebox_override("pressed", skip_button.get_theme_stylebox("normal").duplicate())
+	skip_button.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
+	skip_button.pressed.connect(_finish)
+	add_child(skip_button)
 
 	portrait = TextureRect.new()
 	portrait.position = Vector2(42, 674)
@@ -130,12 +184,12 @@ func _build_ui() -> void:
 	portrait.pivot_offset = portrait.size * 0.5
 	add_child(portrait)
 
-	var panel := PanelContainer.new()
-	panel.position = Vector2(28, 846)
-	panel.size = Vector2(664, 380)
-	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	panel.add_theme_stylebox_override("panel", _panel_style(Color(1.0, 0.97, 1.0, 0.95), Color("#765493"), 30))
-	add_child(panel)
+	dialogue_panel = PanelContainer.new()
+	dialogue_panel.position = Vector2(28, 846)
+	dialogue_panel.size = Vector2(664, 380)
+	dialogue_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	dialogue_panel.add_theme_stylebox_override("panel", _panel_style(Color(1.0, 0.97, 1.0, 0.95), Color("#765493"), 30))
+	add_child(dialogue_panel)
 
 	speaker_label = Label.new()
 	speaker_label.position = Vector2(60, 872)
@@ -174,6 +228,7 @@ func _build_ui() -> void:
 	continue_label.add_theme_color_override("font_color", Color("#8b6f96"))
 	continue_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(continue_label)
+	_layout_story_ui()
 
 
 func _process(delta: float) -> void:

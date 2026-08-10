@@ -10,10 +10,12 @@ var cells: Array = []          # Vector2i 오프셋 목록
 var origin_cell := Vector2i.ZERO
 var grabbed := false
 var slide_target := Vector2.ZERO
+var drag_pull_target := Vector2.ZERO
 var base_scale := 1.0
 var phase := 0.0
 var sprite: Sprite2D
 var visual_root: Node2D
+var glow_sprite: Sprite2D
 var bbox_size := Vector2.ONE
 var capacity := 1
 var remaining_capacity := 1
@@ -25,6 +27,9 @@ var badge_panel: PanelContainer
 var badge_style: StyleBoxFlat
 var key_locked := false
 var key_lock_panel: PanelContainer
+
+const SLIDE_SPEED := 1450.0
+const DRAG_PULL_MAX := 20.0
 
 
 func setup(cid: String, shape: String, amount: int = 1) -> void:
@@ -41,6 +46,13 @@ func setup(cid: String, shape: String, amount: int = 1) -> void:
 	bbox_size = bbox
 	visual_root = Node2D.new()
 	add_child(visual_root)
+	glow_sprite = Sprite2D.new()
+	glow_sprite.texture = load("res://assets/fx/soft.png")
+	glow_sprite.position = bbox * G.CELL * 0.5
+	glow_sprite.scale = Vector2(maxf(2.8, bbox.x * 2.55), maxf(2.8, bbox.y * 2.55))
+	glow_sprite.modulate = Color(G.COLORS[cid].r, G.COLORS[cid].g, G.COLORS[cid].b, 0.2)
+	glow_sprite.z_index = -2
+	visual_root.add_child(glow_sprite)
 	# 모든 모양을 동일한 프리미엄 재질로 직접 그려 기존 에셋/생성 모양 간 품질 차이를 없앤다.
 	var generated := ShapeVisual.new()
 	generated.setup(cells, G.COLORS[cid])
@@ -123,7 +135,9 @@ func set_key_locked(value: bool) -> void:
 
 
 func center_px() -> Vector2:
-	return global_position + bbox_size * G.CELL * 0.5
+	# Game 자식인 FX와 같은 로컬 좌표계를 사용한다. global_position을 쓰면
+	# 폴드/태블릿 안전 영역 오프셋이 효과에 두 번 적용된다.
+	return position + bbox_size * G.CELL * 0.5
 
 
 func mouth_px(cell_world: Vector2) -> Vector2:
@@ -133,17 +147,40 @@ func mouth_px(cell_world: Vector2) -> Vector2:
 
 func set_grabbed(g: bool) -> void:
 	grabbed = g
+	if not g:
+		drag_pull_target = Vector2.ZERO
 	visual_root.modulate = Color(1.18, 1.18, 1.18) if g else Color.WHITE
+	if glow_sprite:
+		glow_sprite.modulate.a = 0.4 if g else (0.3 if completed else 0.2)
+
+
+func set_drag_pull(offset: Vector2) -> void:
+	## 격자 판정 전에도 블록이 손가락을 살짝 따라와 입력 지연감을 없앤다.
+	drag_pull_target = offset.limit_length(DRAG_PULL_MAX)
 
 
 func _process(delta: float) -> void:
-	position = position.move_toward(slide_target, 2400.0 * delta)
+	var visual_target := slide_target
+	if grabbed and not arrival_pending:
+		visual_target += drag_pull_target
+	var before := position
+	position = position.move_toward(visual_target, SLIDE_SPEED * delta)
+	var motion := position - before
+	var moving_ratio := clampf(motion.length() / maxf(1.0, SLIDE_SPEED * delta), 0.0, 1.0)
 	var k := 0.04 if grabbed else 0.02
 	var s := sin(Time.get_ticks_msec() / 1000.0 * 2.2 + phase)
+	var motion_scale := Vector2.ONE
+	if motion.length_squared() > 0.01:
+		if absf(motion.x) >= absf(motion.y):
+			motion_scale = Vector2(1.0 + 0.028 * moving_ratio, 1.0 - 0.018 * moving_ratio)
+		else:
+			motion_scale = Vector2(1.0 - 0.018 * moving_ratio, 1.0 + 0.028 * moving_ratio)
 	if sprite:
-		sprite.scale = Vector2(base_scale * (1.0 + k * s), base_scale * (1.0 - k * s))
+		sprite.scale = Vector2(base_scale * (1.0 + k * s), base_scale * (1.0 - k * s)) * motion_scale
 	else:
-		visual_root.scale = Vector2(1.0 + k * s, 1.0 - k * s)
+		visual_root.scale = Vector2(1.0 + k * s, 1.0 - k * s) * motion_scale
+	if glow_sprite:
+		glow_sprite.modulate.a = (0.32 if completed else 0.18) + s * (0.06 if completed else 0.025)
 
 
 func gulp() -> void:
@@ -292,9 +329,10 @@ class ShapeVisual extends Node2D:
 		var joined := _joined_polygon()
 		var outer := _inset(joined, 2.0)
 		var body := _inset(joined, 6.0)
+		var body_glass := _inset(joined, 8.5)
 		var pit_border := _inset(joined, 11.0)
 		var pit := _inset(joined, 16.0)
-		if outer.is_empty() or body.is_empty() or pit_border.is_empty() or pit.is_empty():
+		if outer.is_empty() or body.is_empty() or body_glass.is_empty() or pit_border.is_empty() or pit.is_empty():
 			return
 
 		# 통합된 폴리곤을 겹쳐 그려 셀 경계가 전혀 없는 단일 블록을 만든다.
@@ -305,9 +343,12 @@ class ShapeVisual extends Node2D:
 		draw_polyline(PackedVector2Array(_shifted(outer, Vector2(5, 10)) + PackedVector2Array([outer[0] + Vector2(5, 10)])), shadow_col, 7.0, true)
 		draw_colored_polygon(outer, rim_dark)
 		draw_colored_polygon(body, edge_color)
+		# 반투명 젤리 프레임의 안쪽 산란광. 외곽색과 흰빛을 섞어 단색 띠를 피한다.
+		draw_colored_polygon(body_glass, edge_color.lightened(0.16))
 		draw_colored_polygon(pit_border, inner_light)
 		draw_colored_polygon(pit, inner)
 		draw_polyline(PackedVector2Array(outer + PackedVector2Array([outer[0]])), rim_dark, 3.0, true)
+		draw_polyline(PackedVector2Array(body_glass + PackedVector2Array([body_glass[0]])), Color(1, 1, 1, 0.38), 2.0, true)
 		draw_polyline(PackedVector2Array(pit + PackedVector2Array([pit[0]])), Color(0.64, 0.72, 1.0, 0.32), 3.0, true)
 
 		# 외곽에 노출된 윗면 광택은 연속 구간마다 한 줄로 그려 다칸 블록도 하나처럼 보이게 한다.
@@ -338,6 +379,8 @@ class ShapeVisual extends Node2D:
 		# 첫 칸에 작은 표정을 넣어 단순 도형이 아니라 살아 있는 몬스터 홀로 보이게 한다.
 		if not shape_cells.is_empty():
 			var face := Vector2(shape_cells[0]) * cell_size + Vector2(cell_size * 0.5, cell_size * 0.52)
+			draw_circle(face + Vector2(-22, 9), 7.0, Color(1.0, 0.42, 0.58, 0.42))
+			draw_circle(face + Vector2(22, 9), 7.0, Color(1.0, 0.42, 0.58, 0.42))
 			draw_circle(face + Vector2(-13, -4), 9.5, Color("#f8fbff"))
 			draw_circle(face + Vector2(13, -4), 9.5, Color("#f8fbff"))
 			draw_circle(face + Vector2(-11, -3), 3.8, Color("#25304b"))
@@ -345,3 +388,5 @@ class ShapeVisual extends Node2D:
 			draw_circle(face + Vector2(-15, -7), 2.1, Color.WHITE)
 			draw_circle(face + Vector2(9, -7), 2.1, Color.WHITE)
 			draw_arc(face + Vector2(0, 8), 8.0, 0.15, PI - 0.15, 14, Color("#ff8fa3"), 4.0, true)
+			# 젤리 표면의 작은 스펙큘러가 얼굴과 재질을 한 층 더 분리한다.
+			draw_circle(face + Vector2(-27, -25), 4.0, Color(1, 1, 1, 0.7))

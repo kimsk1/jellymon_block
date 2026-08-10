@@ -4,9 +4,11 @@ class_name RoomBackdrop
 
 var edit_mode := false
 var photo_mode := false
+var world_texture: Texture2D
 
 
 func _ready() -> void:
+	world_texture = ArtDirection.background_texture()
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	get_viewport().size_changed.connect(queue_redraw)
@@ -27,9 +29,13 @@ func _draw() -> void:
 	var viewport_size := get_viewport_rect().size
 	var extra_offset := G.safe_offset(viewport_size)
 	# 부모 Title이 안전 영역만큼 이동하므로 음수 방향부터 실제 뷰포트 끝까지 칠한다.
-	draw_rect(Rect2(-extra_offset, viewport_size), Color("#c8b4ed"))
+	var world_rect := Rect2(-extra_offset, viewport_size)
+	if world_texture:
+		draw_texture_rect(world_texture, world_rect, false, Color(1, 1, 1, 0.78))
+	# 배경 위에 얇은 라일락 공기층을 얹어 UI/방 카드와 대비를 만든다.
+	draw_rect(world_rect, Color(0.48, 0.36, 0.72, 0.3))
 	# 단색 캔버스가 아니라 중앙이 환해지는 층을 겹쳐 아지트에 깊이를 준다.
-	draw_circle(Vector2(360, 560), 430, Color(0.93, 0.86, 1.0, 0.24))
+	draw_circle(Vector2(360, 560), 430, Color(1.0, 0.91, 0.72, 0.2))
 	draw_circle(Vector2(105, 1080), 230, Color(0.58, 0.39, 0.82, 0.09))
 	draw_circle(Vector2(660, 1020), 260, Color(1.0, 0.45, 0.68, 0.08))
 	# 천장 조명과 작은 별 장식으로 빈 상단도 아지트의 일부처럼 보이게 한다.
@@ -51,7 +57,7 @@ func _draw() -> void:
 	shadow.set_corner_radius_all(38)
 	draw_style_box(shadow, Rect2(room.position + Vector2(0, 12), room.size))
 	var wall := StyleBoxFlat.new()
-	wall.bg_color = Color("#fff4f8")
+	wall.bg_color = Color("#fff7f1")
 	wall.border_color = Color("#8061aa")
 	wall.set_border_width_all(5)
 	wall.set_corner_radius_all(38)
@@ -107,7 +113,7 @@ func _draw() -> void:
 	draw_line(Vector2(34, 354), Vector2(686, 354), Color("#b87986"), 3, true)
 	# 바닥과 러그 영역
 	var floor_style := StyleBoxFlat.new()
-	floor_style.bg_color = Color("#e8bc91")
+	floor_style.bg_color = Color("#e6b47f")
 	floor_style.corner_radius_bottom_left = 34
 	floor_style.corner_radius_bottom_right = 34
 	draw_style_box(floor_style, Rect2(33, 365, 654, 488))

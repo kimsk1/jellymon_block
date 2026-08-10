@@ -110,6 +110,59 @@ func ring(pos: Vector2, col: Color, size: float = 1.0) -> void:
 	tw.chain().tween_callback(s.queue_free)
 
 
+func grab_pulse(pos: Vector2, col: Color) -> void:
+	## 선택 순간 블록 아래에서 짧게 차오르는 젤리 후광.
+	ring(pos, col.lightened(0.28), 0.72)
+	var glow := Sprite2D.new()
+	glow.texture = soft_tex
+	glow.position = pos
+	glow.modulate = Color(col.r, col.g, col.b, 0.42)
+	glow.scale = Vector2.ONE * 1.1
+	glow.z_index = 24
+	add_child(glow)
+	var tw := glow.create_tween().set_parallel(true)
+	tw.tween_property(glow, "scale", Vector2.ONE * 2.0, 0.2).set_trans(Tween.TRANS_EXPO).set_ease(Tween.EASE_OUT)
+	tw.tween_property(glow, "modulate:a", 0.0, 0.22)
+	tw.chain().tween_callback(glow.queue_free)
+
+
+func move_streak(from: Vector2, to: Vector2, col: Color) -> void:
+	## 한 칸 이동 방향을 읽기 쉬운 빛 알갱이로 남긴다.
+	var p := CPUParticles2D.new()
+	p.position = from
+	p.one_shot = true
+	p.amount = 8
+	p.lifetime = 0.22
+	p.explosiveness = 1.0
+	p.direction = (to - from).normalized()
+	p.spread = 18.0
+	p.initial_velocity_min = 70.0
+	p.initial_velocity_max = 180.0
+	p.scale_amount_min = 0.18
+	p.scale_amount_max = 0.42
+	p.texture = soft_tex
+	p.color = col.lightened(0.32)
+	p.z_index = 22
+	add_child(p)
+	p.emitting = true
+	_auto_free(p, 0.55)
+
+
+func blocked_bump(pos: Vector2, col: Color) -> void:
+	## 이동 불가 피드백은 성공 효과보다 작고 짧게 표시한다.
+	var s := Sprite2D.new()
+	s.texture = ring_tex
+	s.position = pos
+	s.modulate = Color(col.r, col.g, col.b, 0.62)
+	s.scale = Vector2.ONE * 0.34
+	s.z_index = 25
+	add_child(s)
+	var tw := s.create_tween().set_parallel(true)
+	tw.tween_property(s, "scale", Vector2.ONE * 0.66, 0.13).set_trans(Tween.TRANS_BACK)
+	tw.tween_property(s, "modulate:a", 0.0, 0.15)
+	tw.chain().tween_callback(s.queue_free)
+
+
 func impact(pos: Vector2, col: Color, big: bool = false) -> void:
 	## 흡수 순간 플래시 + 별 파편 + 이중 충격파. 큰 홀 제거는 한 단계 더 강하게 연출한다.
 	var flash := Sprite2D.new()

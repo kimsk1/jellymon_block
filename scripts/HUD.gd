@@ -31,16 +31,7 @@ func _ready() -> void:
 	top.offset_top = 12
 	top.offset_right = -16
 	top.offset_bottom = 142
-	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color("#45b7ef")
-	sb.border_color = Color("#176a9f")
-	sb.set_border_width_all(5)
-	sb.set_corner_radius_all(28)
-	sb.corner_detail = 12
-	sb.border_blend = true
-	sb.shadow_color = Color(0.05, 0.13, 0.28, 0.38)
-	sb.shadow_size = 13
-	sb.shadow_offset = Vector2(0, 8)
+	var sb := ArtDirection.panel(Color("#31b7e6"), Color("#116b9f"), 30, 0.42, 5)
 	sb.content_margin_left = 16
 	sb.content_margin_right = 16
 	sb.content_margin_top = 12
@@ -192,25 +183,35 @@ func set_time(t: float, total: float) -> void:
 func show_hint(text: String) -> void:
 	if text.is_empty():
 		return
+	var hint_card := PanelContainer.new()
+	hint_card.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
+	hint_card.offset_left = 54
+	hint_card.offset_top = 150
+	hint_card.offset_right = -54
+	hint_card.offset_bottom = 216
+	hint_card.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var hint_style := ArtDirection.panel(Color(0.09, 0.13, 0.27, 0.84), Color(1, 1, 1, 0.48), 22, 0.26, 2)
+	hint_style.content_margin_left = 20
+	hint_style.content_margin_right = 20
+	hint_style.content_margin_top = 9
+	hint_style.content_margin_bottom = 10
+	hint_card.add_theme_stylebox_override("panel", hint_style)
+	root.add_child(hint_card)
 	var l := Label.new()
 	l.text = text
-	l.add_theme_font_size_override("font_size", 30)
+	l.add_theme_font_size_override("font_size", 20)
 	l.add_theme_color_override("font_color", Color.WHITE)
-	l.add_theme_color_override("font_outline_color", Color(0.3, 0.2, 0.45, 0.95))
-	l.add_theme_constant_override("outline_size", 10)
+	l.add_theme_color_override("font_outline_color", Color(0.08, 0.05, 0.18, 0.92))
+	l.add_theme_constant_override("outline_size", 4)
 	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	l.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
-	l.offset_left = 40
-	l.offset_top = 155
-	l.offset_right = -40
-	l.offset_bottom = 255
 	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	root.add_child(l)
-	var tw := l.create_tween()
+	hint_card.add_child(l)
+	var tw := hint_card.create_tween()
 	tw.tween_interval(3.2)
-	tw.tween_property(l, "modulate:a", 0.0, 0.5)
-	tw.tween_callback(l.queue_free)
+	tw.tween_property(hint_card, "modulate:a", 0.0, 0.5)
+	tw.tween_callback(hint_card.queue_free)
 
 
 # ────────────────────────── 팝업 ──────────────────────────
@@ -243,42 +244,8 @@ func _result_button(text: String, col: Color) -> Button:
 
 
 func _style_button(b: Button, col: Color) -> void:
-	var sb := StyleBoxFlat.new()
-	sb.bg_color = col
-	sb.set_corner_radius_all(18)
-	sb.corner_detail = 10
-	sb.border_blend = true
-	sb.border_color = col.darkened(0.28)
-	sb.set_border_width_all(4)
-	sb.shadow_color = Color(0.1, 0.08, 0.2, 0.3)
-	sb.shadow_size = 5
-	sb.shadow_offset = Vector2(0, 4)
-	sb.content_margin_top = 8
-	sb.content_margin_bottom = 12
-	b.add_theme_stylebox_override("normal", sb)
-	var sb2: StyleBoxFlat = sb.duplicate()
-	sb2.bg_color = col.lightened(0.08)
-	b.add_theme_stylebox_override("hover", sb2)
-	var pressed: StyleBoxFlat = sb.duplicate()
-	pressed.bg_color = col.darkened(0.12)
-	pressed.shadow_size = 1
-	pressed.shadow_offset = Vector2(0, 1)
-	b.add_theme_stylebox_override("pressed", pressed)
-	# Godot 기본 disabled 스타일(각진 회색 패널) 대신 밝고 둥근 게임 공통 스타일을 사용한다.
-	var disabled: StyleBoxFlat = sb.duplicate()
-	disabled.bg_color = col.lightened(0.48)
-	disabled.border_color = col.lightened(0.12)
-	disabled.shadow_color = Color(0.1, 0.08, 0.2, 0.18)
-	disabled.shadow_size = 4
-	disabled.shadow_offset = Vector2(0, 3)
-	b.add_theme_stylebox_override("disabled", disabled)
-	b.add_theme_color_override("font_color", Color.WHITE)
-	b.add_theme_color_override("font_hover_color", Color.WHITE)
-	b.add_theme_color_override("font_pressed_color", Color.WHITE)
+	ArtDirection.apply_button(b, col, 20)
 	b.add_theme_color_override("font_disabled_color", col.darkened(0.34))
-	b.add_theme_color_override("font_outline_color", col.darkened(0.42))
-	b.add_theme_constant_override("outline_size", 3)
-	b.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 
 
 func _set_reward_complete_style(button: Button) -> void:
@@ -308,12 +275,8 @@ func _popup_frame() -> VBoxContainer:
 	cc.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	dim.add_child(cc)
 	var panel := PanelContainer.new()
-	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color("#fff7fc")
-	sb.border_color = Color("#674493")
+	var sb := ArtDirection.glass_panel(Color("#fff8ed"), 0.98, 34)
 	sb.set_border_width_all(6)
-	sb.set_corner_radius_all(32)
-	sb.shadow_color = Color(0.08, 0.03, 0.18, 0.5)
 	sb.shadow_size = 20
 	sb.shadow_offset = Vector2(0, 12)
 	sb.content_margin_left = 44

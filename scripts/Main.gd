@@ -435,6 +435,9 @@ func _headless_touch_test() -> void:
 		var valid := game != null and game.debug_validate_touch_mapping(offset)
 		print("[touch validation] offset=", offset, " valid=", valid)
 		failed = failed or not valid
+	var smooth_drag_valid := game != null and game.debug_validate_smooth_drag()
+	print("[touch validation] smooth_drag=", smooth_drag_valid)
+	failed = failed or not smooth_drag_valid
 	get_tree().quit(1 if failed else 0)
 
 

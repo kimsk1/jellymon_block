@@ -39,6 +39,7 @@ var grabbed: Catcher = null
 var grab_offset := Vector2.ZERO
 var drag_px := Vector2.ZERO
 var active_touch_index := -1
+var last_blocked_feedback_msec := 0
 
 var time_left := 0.0
 var total_time := 1.0
@@ -109,9 +110,9 @@ func _ready() -> void:
 
 func _add_premium_background() -> void:
 	premium_bg = Sprite2D.new()
-	premium_bg.texture = load("res://assets/backgrounds/jelly_sky_v2.png")
+	premium_bg.texture = ArtDirection.background_texture()
 	premium_bg.centered = true
-	premium_bg.modulate = Color(1, 1, 1, 0.88)
+	premium_bg.modulate = ArtDirection.chapter_tint(level_idx).lerp(Color.WHITE, 0.7)
 	premium_bg.z_index = -100
 	add_child(premium_bg)
 	_layout_premium_background()
@@ -266,6 +267,7 @@ func _unhandled_input(event: InputEvent) -> void:
 				grabbed = c
 				active_touch_index = event.index
 				c.set_grabbed(true)
+				fx.grab_pulse(c.center_px(), G.COLORS[c.color_id])
 				drag_px = local_position
 				grab_offset = (origin + Vector2(c.origin_cell) * G.CELL) - local_position
 				audio.play("grab", 1.0, -8.0)
@@ -327,10 +329,22 @@ func _release() -> void:
 func _process_drag() -> void:
 	if grabbed == null or grabbed.movement_locked:
 		return
-	# 시각 블록이 현재 목표 칸에 도착하기 전에는 다음 격자 이동을 예약하지 않는다.
-	if grabbed.position.distance_to(grabbed.slide_target) > 1.0:
-		return
 	var desired_px := drag_px + grab_offset
+	var grid_anchor := origin + Vector2(grabbed.origin_cell) * G.CELL
+	var pull := desired_px - grid_anchor
+	# 막힌 방향은 짧은 고무 저항만 허용해 벽을 관통해 보이지 않게 한다.
+	if pull.x < 0.0 and not _can_place(grabbed, grabbed.origin_cell + Vector2i.LEFT):
+		pull.x = maxf(pull.x, -9.0)
+	elif pull.x > 0.0 and not _can_place(grabbed, grabbed.origin_cell + Vector2i.RIGHT):
+		pull.x = minf(pull.x, 9.0)
+	if pull.y < 0.0 and not _can_place(grabbed, grabbed.origin_cell + Vector2i.UP):
+		pull.y = maxf(pull.y, -9.0)
+	elif pull.y > 0.0 and not _can_place(grabbed, grabbed.origin_cell + Vector2i.DOWN):
+		pull.y = minf(pull.y, 9.0)
+	grabbed.set_drag_pull(pull)
+	# 시각 블록이 현재 목표 칸에 도착하기 전에는 다음 격자 이동을 예약하지 않는다.
+	if grabbed.arrival_pending and grabbed.position.distance_to(grabbed.slide_target) > 3.5:
+		return
 	var desired := Vector2i(roundi((desired_px.x - origin.x) / G.CELL), roundi((desired_px.y - origin.y) / G.CELL))
 	if grabbed.origin_cell != desired:
 		var d := desired - grabbed.origin_cell
@@ -345,9 +359,15 @@ func _process_drag() -> void:
 				dirs.append(Vector2i(0, signi(d.y)))
 			if d.x != 0:
 				dirs.append(Vector2i(signi(d.x), 0))
+		var moved := false
 		for dir in dirs:
 			if _try_step(grabbed, dir):
+				moved = true
 				break
+		if not moved and Time.get_ticks_msec() - last_blocked_feedback_msec > 180:
+			last_blocked_feedback_msec = Time.get_ticks_msec()
+			fx.blocked_bump(grabbed.center_px(), G.COLORS[grabbed.color_id])
+			G.haptic(5)
 
 
 func _can_place(c: Catcher, org: Vector2i) -> bool:
@@ -377,6 +397,7 @@ func _try_step(c: Catcher, dir: Vector2i) -> bool:
 	var org: Vector2i = c.origin_cell + dir
 	if not _can_place(c, org):
 		return false
+	var from_center := c.center_px()
 	for off in c.cells:
 		catcher_at.erase(c.origin_cell + off)
 	c.origin_cell = org
@@ -384,6 +405,7 @@ func _try_step(c: Catcher, dir: Vector2i) -> bool:
 		catcher_at[org + off] = c
 	c.slide_target = origin + Vector2(org) * G.CELL
 	c.arrival_pending = true
+	fx.move_streak(from_center, from_center + Vector2(dir) * G.CELL, G.COLORS[c.color_id])
 	return true
 
 
@@ -410,7 +432,7 @@ func _physics_process(delta: float) -> void:
 
 func _resolve_catcher_arrivals() -> void:
 	for c in catchers:
-		if is_instance_valid(c) and c.arrival_pending and c.position.distance_to(c.slide_target) <= 1.0:
+		if is_instance_valid(c) and c.arrival_pending and c.position.distance_to(c.slide_target) <= 3.5:
 			c.position = c.slide_target
 			c.arrival_pending = false
 			_check_rescue_switch(c)
@@ -732,6 +754,17 @@ func _continue_with_stardust() -> bool:
 
 func _draw() -> void:
 	# 보드 전체 그림자와 셀별 입체 베벨을 코드로 직접 렌더링한다.
+	# 화려한 챕터 배경 위에서도 퍼즐 실루엣이 즉시 읽히는 서리 낀 젤리 유리판.
+	var board_rect := Rect2(origin - Vector2(17, 17), Vector2(cols, rows) * G.CELL + Vector2(32, 32))
+	var board_plate := StyleBoxFlat.new()
+	board_plate.bg_color = Color(0.93, 0.97, 1.0, 0.22)
+	board_plate.border_color = Color(1, 1, 1, 0.3)
+	board_plate.set_border_width_all(2)
+	board_plate.set_corner_radius_all(34)
+	board_plate.shadow_color = Color(0.07, 0.12, 0.25, 0.2)
+	board_plate.shadow_size = 18
+	board_plate.shadow_offset = Vector2(0, 10)
+	draw_style_box(board_plate, board_rect)
 	for r in range(rows):
 		for c in range(cols):
 			var cell := Vector2i(c, r)
@@ -762,7 +795,8 @@ func _draw() -> void:
 			else:
 				var even := (c + r) % 2 == 0
 				var tile := StyleBoxFlat.new()
-				tile.bg_color = Color("#fffaf0") if even else Color("#f8edda")
+				var chapter_surface := ArtDirection.chapter_tint(level_idx)
+				tile.bg_color = chapter_surface.lerp(Color("#fffaf0"), 0.78 if even else 0.64)
 				tile.border_color = Color(1, 1, 1, 0.9)
 				tile.set_border_width_all(3)
 				tile.set_corner_radius_all(10)
@@ -823,6 +857,21 @@ func _draw() -> void:
 				draw_colored_polygon(crystal, Color(gate_col.r, gate_col.g, gate_col.b, 0.9))
 				draw_polyline(PackedVector2Array(crystal + PackedVector2Array([crystal[0]])), gate_col.darkened(0.32), 5.0, true)
 				draw_line(p + Vector2(G.CELL * 0.48, 15), p + Vector2(G.CELL * 0.3, G.CELL - 18), Color(1, 1, 1, 0.62), 5.0, true)
+	# 잡은 블록이 이동 가능한 방향만 밝게 보여 주어 시행착오와 오입력을 줄인다.
+	if grabbed and is_instance_valid(grabbed) and not grabbed.movement_locked:
+		var base := grabbed.center_px()
+		var hint_col: Color = G.COLORS[grabbed.color_id].lightened(0.28)
+		for dir in [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]:
+			if not _can_place(grabbed, grabbed.origin_cell + dir):
+				continue
+			var center := base + Vector2(dir) * G.CELL
+			draw_circle(center, 18, Color(hint_col.r, hint_col.g, hint_col.b, 0.28))
+			draw_arc(center, 18, 0, TAU, 24, Color(1, 1, 1, 0.82), 3.0, true)
+			var dv := Vector2(dir)
+			var side := dv.rotated(PI * 0.5)
+			draw_line(center - dv * 7, center + dv * 8, Color.WHITE, 4, true)
+			draw_line(center + dv * 8, center + dv * 2 + side * 6, Color.WHITE, 4, true)
+			draw_line(center + dv * 8, center + dv * 2 - side * 6, Color.WHITE, 4, true)
 
 
 # ────────────────────────── 헤드리스/QA 유틸 ──────────────────────────
@@ -865,6 +914,51 @@ func debug_validate_touch_mapping(test_offset := Vector2(0, 160)) -> bool:
 	valid = valid and grabbed == null and active_touch_index == -1
 	position = original_position
 	return valid
+
+
+func debug_validate_smooth_drag() -> bool:
+	## 반 칸 이전에는 탄성 미리보기, 이후에는 실제 격자 이동이 시작되는지 검증한다.
+	if catchers.is_empty() or state != "play":
+		return false
+	var target: Catcher = null
+	var direction := Vector2i.ZERO
+	for candidate in catchers:
+		for test_dir in [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]:
+			if _can_place(candidate, candidate.origin_cell + test_dir):
+				target = candidate
+				direction = test_dir
+				break
+		if target:
+			break
+	if not target:
+		return false
+	var start_cell := target.origin_cell
+	var center := to_global(cell_pos(start_cell + target.cells[0]))
+	var press := InputEventScreenTouch.new()
+	press.index = 7
+	press.pressed = true
+	press.position = center
+	_unhandled_input(press)
+	var small_drag := InputEventScreenDrag.new()
+	small_drag.index = 7
+	small_drag.position = center + Vector2(direction) * 20.0
+	_unhandled_input(small_drag)
+	_process_drag()
+	var preview_valid := target.origin_cell == start_cell and target.drag_pull_target.length() > 8.0
+	target._process(1.0 / 60.0)
+	preview_valid = preview_valid and target.position.distance_to(target.slide_target) > 1.0
+	var step_drag := InputEventScreenDrag.new()
+	step_drag.index = 7
+	step_drag.position = center + Vector2(direction) * (G.CELL * 0.62)
+	_unhandled_input(step_drag)
+	_process_drag()
+	var step_valid := target.origin_cell == start_cell + direction and target.arrival_pending
+	var release := InputEventScreenTouch.new()
+	release.index = 7
+	release.pressed = false
+	release.position = step_drag.position
+	_unhandled_input(release)
+	return preview_valid and step_valid and grabbed == null
 
 func _find_catcher_for(cid: String) -> Catcher:
 	for c in catchers:

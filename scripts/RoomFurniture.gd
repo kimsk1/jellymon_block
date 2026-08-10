@@ -95,7 +95,8 @@ func _round_box(rect: Rect2, fill: Color, border: Color, radius: float = 16.0, w
 func _draw_selection(bounds: Rect2) -> void:
 	if not selected:
 		return
-	_round_box(bounds.grow(-2), Color(0.55, 0.85, 1.0, 0.2), Color.WHITE, 20, 4, false)
+	draw_circle(bounds.get_center(), maxf(bounds.size.x, bounds.size.y) * 0.58, Color(0.35, 0.88, 1.0, 0.13))
+	_round_box(bounds.grow(-2), Color(0.55, 0.9, 1.0, 0.2), Color("#fff5b5"), 20, 5, false)
 
 
 func _draw_cushion(bounds: Rect2, color: Color) -> void:
