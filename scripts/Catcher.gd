@@ -22,6 +22,7 @@ var remaining_capacity := 1
 var completed := false
 var arrival_pending := false
 var movement_locked := false
+var trapped_jellies := 0
 var count_badge: Label
 var badge_panel: PanelContainer
 var badge_style: StyleBoxFlat
@@ -208,9 +209,21 @@ func consume() -> bool:
 	return false
 
 
+func begin_trap() -> bool:
+	## 젤리가 들어오는 즉시 자리를 예약한다. 폭발을 기다리는 동안에도 블록은 이동할 수 있다.
+	trapped_jellies += 1
+	return consume()
+
+
+func finish_trap() -> int:
+	trapped_jellies = maxi(0, trapped_jellies - 1)
+	return trapped_jellies
+
+
 func set_full() -> void:
 	completed = true
-	movement_locked = true
+	# GO는 포획 완료 상태일 뿐 이동 완료 상태가 아니다. 같은 색 출구까지 계속 드래그할 수 있어야 한다.
+	movement_locked = false
 	count_badge.text = "GO"
 	count_badge.add_theme_font_size_override("font_size", 20)
 	badge_style.bg_color = Color("#dfffe6")

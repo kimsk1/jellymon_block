@@ -7,6 +7,7 @@ var color_id := "R"
 var cell := Vector2i.ZERO
 var shiny := false
 var absorbing := false
+var trapped := false
 var base_scale := 1.0
 var phase := 0.0
 var sprite: Sprite2D
@@ -186,6 +187,13 @@ func _shiny_sparkle() -> void:
 
 func _process(_delta: float) -> void:
 	if absorbing:
+		if trapped:
+			var trapped_wave := sin(Time.get_ticks_msec() / 1000.0 * 5.4 + phase)
+			sprite.scale = Vector2(
+				base_scale * (0.61 + trapped_wave * 0.025),
+				base_scale * (0.58 - trapped_wave * 0.018)
+			)
+			sprite.rotation = trapped_wave * 0.035
 		return
 	var s := sin(Time.get_ticks_msec() / 1000.0 * 2.2 + phase)
 	sprite.scale = Vector2(base_scale * (1.0 + 0.035 * s), base_scale * (1.0 - 0.035 * s))
@@ -204,6 +212,40 @@ func absorb_anim(to: Vector2) -> void:
 	tw.tween_property(self, "global_position", to, 0.16).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 	tw.tween_property(sprite, "scale", Vector2.ONE * base_scale * 0.04, 0.16).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
 	tw.tween_property(sprite, "rotation", randf_range(-2.2, 2.2), 0.16)
+	tw.chain().tween_callback(queue_free)
+
+
+func trap_in(catcher: Catcher, local_target: Vector2) -> void:
+	## 젤리를 캐처의 자식으로 옮겨 블록이 계속 움직여도 내부에서 함께 따라가게 한다.
+	absorbing = true
+	trapped = false
+	# 블록 표면보다 위, 숫자 배지보다 아래에 보여 실제로 안에 갇힌 것처럼 보인다.
+	z_index = 3
+	var before := global_position
+	reparent(catcher, true)
+	global_position = before
+	for child in get_children():
+		if child is Control:
+			child.visible = false
+	if shadow_sprite:
+		shadow_sprite.modulate.a = 0.08
+	var tw := create_tween()
+	tw.set_parallel(true)
+	tw.tween_property(self, "position", local_target, 0.16).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tw.tween_property(sprite, "scale", Vector2(base_scale * 0.61, base_scale * 0.58), 0.16).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.tween_property(sprite, "rotation", 0.0, 0.16)
+	tw.tween_property(sprite, "modulate", Color(1.08, 1.08, 1.08, 0.88), 0.16)
+	tw.chain().tween_callback(func(): trapped = true)
+
+
+func pop_trapped() -> void:
+	## 블록 내부에서 잠깐 눌렸다가 터지는 마무리 모션.
+	trapped = false
+	var tw := create_tween()
+	tw.set_parallel(true)
+	tw.tween_property(sprite, "scale", Vector2(base_scale * 0.82, base_scale * 0.18), 0.08).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	tw.tween_property(sprite, "modulate:a", 0.0, 0.1)
+	tw.tween_property(sprite, "rotation", sprite.rotation + randf_range(-0.22, 0.22), 0.1)
 	tw.chain().tween_callback(queue_free)
 
 

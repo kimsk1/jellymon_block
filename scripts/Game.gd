@@ -470,7 +470,8 @@ func _has_rescue_exit(c: Catcher) -> bool:
 
 
 func _try_rescue_exit(c: Catcher) -> bool:
-	if not c.completed:
+	# 내부 포획 연출이 끝나기 전에 블록이 배출되면 자식 젤리도 함께 사라진다.
+	if not c.completed or c.trapped_jellies > 0:
 		return false
 	var footprint := {}
 	for off in c.cells:
@@ -535,7 +536,9 @@ func _absorb_footprint(c: Catcher) -> void:
 	var eaten := 0
 	var cracked := 0
 	for off in c.cells:
-		if c.completed or eaten >= c.remaining_capacity:
+		# _absorb()가 호출 즉시 수용량을 예약하므로 eaten과 감소한 remaining_capacity를
+		# 다시 비교하면 여러 마리를 동시에 잡을 때 마지막 젤리를 건너뛰게 된다.
+		if c.completed:
 			break
 		var cl: Vector2i = c.origin_cell + off
 		var j = jelly_at.get(cl)
@@ -557,10 +560,8 @@ func _absorb_footprint(c: Catcher) -> void:
 		audio.play("shiny", 1.25, -6.0)
 		G.haptic(18)
 	if eaten + cracked > 0:
-		c.movement_locked = true
 		if eaten > 0:
 			c.gulp()
-		_unlock_catcher_after_absorb(c)
 
 
 func _special_jelly_ready(cell: Vector2i) -> bool:
@@ -575,26 +576,22 @@ func _special_jelly_ready(cell: Vector2i) -> bool:
 	return true
 
 
-func _unlock_catcher_after_absorb(c: Catcher) -> void:
-	await get_tree().create_timer(0.2).timeout
-	if is_instance_valid(c):
-		c.movement_locked = false
-
-
 func _absorb(j: Jelly, c: Catcher, cl: Vector2i) -> void:
 	var pts := 100
 	if j.shiny:
 		pts += 500
+	var was_shiny := j.shiny
 	score += pts
 	# 목표
 	goals[j.color_id] = max(0, int(goals[j.color_id]) - 1)
 	hud.set_goals(goals)
 	var col: Color = G.COLORS[j.color_id]
 	var jp := cell_pos(cl)
-	# 블록이 도착한 뒤 젤리가 구멍 위로 떠올라 안쪽으로 빨려 들어간 다음 폭발한다.
+	# 포획 즉시 수용량을 예약해 중복 포획은 막되, 블록 드래그는 잠그지 않는다.
 	active_absorptions += 1
 	jellies.erase(j)
 	jelly_at.erase(cl)
+	c.begin_trap()
 	if chain_at.has(cl):
 		var link: Dictionary = chain_at[cl]
 		chain_progress[int(link.chain)] += 1
@@ -608,22 +605,30 @@ func _absorb(j: Jelly, c: Catcher, cl: Vector2i) -> void:
 					break
 		audio.play("pop_big", 1.32)
 		G.haptic(30)
-	j.absorb_anim(jp + Vector2(0, 5))
-	await get_tree().create_timer(0.12).timeout
-	# ── 가두기 이펙트 패키지 ──
-	fx.burst(jp, col, false)
+	var local_trap_pos := (Vector2(cl - c.origin_cell) + Vector2(0.5, 0.5)) * G.CELL
+	j.trap_in(c, local_trap_pos)
 	fx.swirl(jp, col)
-	fx.ring(jp, col, 0.9)
-	fx.impact(jp, col, false)
+	fx.ring(jp, col, 0.48)
+	audio.play("pop", 1.18, -7.0)
+	# 블록과 함께 이동하며 0.5초간 갇혀 있다가 현재 블록 안의 위치에서 터진다.
+	await get_tree().create_timer(0.5).timeout
+	var burst_pos := jp
+	if is_instance_valid(j):
+		burst_pos = to_local(j.global_position)
+		j.pop_trapped()
+	fx.burst(burst_pos, col, false)
+	fx.ring(burst_pos, col, 0.9)
+	fx.impact(burst_pos, col, false)
 	shake_amt = maxf(shake_amt, 2.8)
-	var txt_col := Color(1.0, 0.95, 0.5) if j.shiny else Color.WHITE
-	fx.float_text(jp, "+%d" % pts, txt_col, 28)
-	if j.shiny:
-		fx.sparkle(jp, 10)
+	var txt_col := Color(1.0, 0.95, 0.5) if was_shiny else Color.WHITE
+	fx.float_text(burst_pos, "+%d" % pts, txt_col, 28)
+	if was_shiny:
+		fx.sparkle(burst_pos, 10)
 		audio.play("shiny")
 	audio.play("pop")
 	G.haptic(10)
-	if c.consume():
+	var traps_left := c.finish_trap() if is_instance_valid(c) else 0
+	if is_instance_valid(c) and c.completed and traps_left == 0:
 		if _has_rescue_exit(c):
 			c.set_full()
 			fx.float_text(c.center_px(), "출구로!", Color("#dcffb4"), 29)
@@ -747,6 +752,8 @@ func _continue_with_stardust() -> bool:
 	state = "play"
 	audio.play("grab", 1.18)
 	G.haptic(18)
+	# 실패 팝업이 열린 동안 마지막 가두기 타이머가 끝난 경우도 즉시 클리어 판정한다.
+	call_deferred("_maybe_clear_level")
 	return true
 
 

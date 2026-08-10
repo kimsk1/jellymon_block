@@ -109,8 +109,14 @@ func _ready() -> void:
 		_headless_story_typing_test()
 	elif OS.get_cmdline_user_args().has("--validate-touch"):
 		_headless_touch_test()
+	elif OS.get_cmdline_user_args().has("--validate-delayed-trap"):
+		_headless_delayed_trap_test()
 	elif OS.get_cmdline_user_args().has("--validate-level-39"):
 		_headless_level_39_test()
+	elif OS.get_cmdline_user_args().has("--validate-level-17"):
+		_headless_level_17_test()
+	elif OS.get_cmdline_user_args().has("--validate-level-7"):
+		_headless_level_7_test()
 	elif OS.get_cmdline_user_args().has("--validate-level-44"):
 		_headless_level_44_test()
 	elif OS.get_cmdline_user_args().has("--validate-expansion"):
@@ -441,6 +447,28 @@ func _headless_touch_test() -> void:
 	get_tree().quit(1 if failed else 0)
 
 
+func _headless_delayed_trap_test() -> void:
+	start_level(0, true, true)
+	await get_tree().create_timer(0.4).timeout
+	var before := game.jellies.size() if game else 0
+	if game:
+		game.debug_capture_one()
+	await get_tree().create_timer(0.08).timeout
+	var reserved := 0
+	var unlocked := true
+	if game:
+		for catcher in game.catchers:
+			reserved += catcher.trapped_jellies
+			unlocked = unlocked and not catcher.movement_locked
+	var started := game != null and game.jellies.size() < before and game.active_absorptions > 0 and reserved > 0 and unlocked
+	await get_tree().create_timer(0.24).timeout
+	var held_before_burst := game != null and game.active_absorptions > 0
+	await get_tree().create_timer(0.34).timeout
+	var finished_after_half_second := game != null and game.active_absorptions == 0
+	print("[delayed trap validation] started=", started, " held=", held_before_burst, " finished=", finished_after_half_second)
+	get_tree().quit(0 if started and held_before_burst and finished_after_half_second else 1)
+
+
 func _headless_level_39_test() -> void:
 	start_level(38, true, true)
 	await get_tree().create_timer(0.3).timeout
@@ -460,6 +488,55 @@ func _headless_level_39_test() -> void:
 	var moved_down: bool = blue != null and game._try_step(blue, Vector2i.DOWN)
 	var valid: bool = center_pick_valid and badge_pick_valid and moved_down and blue.origin_cell == start_cell + Vector2i.DOWN
 	print("[level 39 validation] blue_start=", start_cell, " center_pick=", center_pick_valid, " badge_pick=", badge_pick_valid, " moved_down=", moved_down, " valid=", valid)
+	get_tree().quit(0 if valid else 1)
+
+
+func _headless_level_17_test() -> void:
+	start_level(16, true, true)
+	await get_tree().create_timer(0.3).timeout
+	var blue: Catcher = null
+	if game:
+		for catcher in game.catchers:
+			if catcher.color_id == "B" and catcher.shape_id == "S1":
+				blue = catcher
+				break
+	var start_cell := blue.origin_cell if blue else Vector2i(-1, -1)
+	if blue:
+		blue.set_full()
+	var unlocked := blue != null and not blue.movement_locked
+	var moved_up := blue != null and game._try_step(blue, Vector2i.UP)
+	var valid := unlocked and moved_up and blue.origin_cell == start_cell + Vector2i.UP
+	print("[level 17 validation] full_unlocked=", unlocked, " moved_up=", moved_up, " valid=", valid)
+	get_tree().quit(0 if valid else 1)
+
+
+func _headless_level_7_test() -> void:
+	## 2×2 노랑 블록이 한 번에 겹치는 세 젤리를 빠짐없이 모두 가두는지 검증한다.
+	start_level(6, true, true)
+	await get_tree().create_timer(0.3).timeout
+	var yellow: Catcher = null
+	if game:
+		for catcher in game.catchers:
+			if catcher.color_id == "Y" and catcher.shape_id == "SQ":
+				yellow = catcher
+				break
+	var before := game.jellies.size() if game else 0
+	if yellow:
+		for off in yellow.cells:
+			game.catcher_at.erase(yellow.origin_cell + off)
+		yellow.origin_cell = Vector2i(1, 1)
+		for off in yellow.cells:
+			game.catcher_at[yellow.origin_cell + off] = yellow
+		yellow.position = game.origin + Vector2(yellow.origin_cell) * G.CELL
+		yellow.slide_target = yellow.position
+		game._absorb_footprint(yellow)
+	var captured := before - game.jellies.size() if game else 0
+	var reserved := yellow.trapped_jellies if yellow else 0
+	var valid := yellow != null and captured == 3 and reserved == 3 and yellow.remaining_capacity == 1
+	await get_tree().create_timer(0.65).timeout
+	var burst_finished := game != null and game.active_absorptions == 0 and yellow.trapped_jellies == 0
+	valid = valid and burst_finished
+	print("[level 7 validation] captured=", captured, " reserved=", reserved, " remaining=", yellow.remaining_capacity if yellow else -1, " burst_finished=", burst_finished, " valid=", valid)
 	get_tree().quit(0 if valid else 1)
 
 
