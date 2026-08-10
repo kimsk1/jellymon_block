@@ -21,6 +21,13 @@ func _ready() -> void:
 		level_errors.append("별가루 보상 오류: 1성→3성")
 	if SaveGame.calculate_stardust_reward(3, 3) != 0:
 		level_errors.append("별가루 보상 오류: 3성 재클리어")
+	var continued_reward_test := SaveGame.new()
+	continued_reward_test.persistence_enabled = false
+	var continued_reward := continued_reward_test.award_stars(999, 3, 1)
+	if continued_reward != 1 or continued_reward_test.get_stars(999) != 3 or continued_reward_test.get_stardust() != 1:
+		level_errors.append("이어하기 클리어 별가루 1개 제한 오류")
+	if continued_reward_test.award_stars(999, 3, 1) != 0:
+		level_errors.append("이어하기 클리어 별가루 중복 지급 오류")
 	if SaveGame.ATTENDANCE_WEEK1_STARDUST != [10, 20, 30, 40, 50, 60, 100] or SaveGame.ATTENDANCE_WEEK1_ENERGY != [5, 5, 5, 5, 5, 5, 5]:
 		level_errors.append("1주차 출석 보상 구성 오류")
 	if SaveGame.ATTENDANCE_REPEAT_STARDUST != [10, 0, 15, 0, 20, 0, 20] or SaveGame.ATTENDANCE_REPEAT_ENERGY != [0, 5, 0, 7, 0, 10, 10]:
@@ -80,7 +87,7 @@ func _ready() -> void:
 	audio = AudioMgr.new()
 	add_child(audio)
 	# 자동 QA는 메모리에서만 진행해 개발자의 실제 플레이 계정을 오염시키지 않는다.
-	if OS.get_cmdline_user_args().has("--shots") or OS.get_cmdline_user_args().has("--shot-room-refresh") or OS.get_cmdline_user_args().has("--shot-room-edit") or OS.get_cmdline_user_args().has("--shot-level-51") or OS.get_cmdline_user_args().has("--shot-late-gimmicks") or DisplayServer.get_name() == "headless":
+	if OS.get_cmdline_user_args().has("--shots") or OS.get_cmdline_user_args().has("--shot-room-refresh") or OS.get_cmdline_user_args().has("--shot-room-edit") or OS.get_cmdline_user_args().has("--shot-level-39") or OS.get_cmdline_user_args().has("--shot-level-51") or OS.get_cmdline_user_args().has("--shot-late-gimmicks") or DisplayServer.get_name() == "headless":
 		save.persistence_enabled = false
 	save.load_data()
 	if OS.get_cmdline_user_args().has("--shot-room-refresh") or OS.get_cmdline_user_args().has("--shot-room-edit"):
@@ -94,12 +101,18 @@ func _ready() -> void:
 		_screenshot_room_edit()
 	elif OS.get_cmdline_user_args().has("--shot-level-51"):
 		_screenshot_level_51()
+	elif OS.get_cmdline_user_args().has("--shot-level-39"):
+		_screenshot_level_39()
 	elif OS.get_cmdline_user_args().has("--shot-late-gimmicks"):
 		_screenshot_late_gimmicks()
 	elif OS.get_cmdline_user_args().has("--validate-story-typing"):
 		_headless_story_typing_test()
 	elif OS.get_cmdline_user_args().has("--validate-touch"):
 		_headless_touch_test()
+	elif OS.get_cmdline_user_args().has("--validate-level-39"):
+		_headless_level_39_test()
+	elif OS.get_cmdline_user_args().has("--validate-level-44"):
+		_headless_level_44_test()
 	elif OS.get_cmdline_user_args().has("--validate-expansion"):
 		_headless_expansion_test()
 	elif OS.get_cmdline_user_args().has("--validate-late-play"):
@@ -217,11 +230,11 @@ func play_chapter_end_if_needed(level_idx: int, destination: Callable) -> bool:
 	return false
 
 
-func on_level_finished(idx: int, stars: int, cleared: bool, refund_reserved_energy: bool = false) -> int:
+func on_level_finished(idx: int, stars: int, cleared: bool, refund_reserved_energy: bool = false, reward_cap: int = -1) -> int:
 	var stardust_reward := 0
 	if cleared:
 		var first_clear := save.get_stars(idx) == 0
-		stardust_reward = save.award_stars(idx, stars)
+		stardust_reward = save.award_stars(idx, stars, reward_cap)
 		if first_clear:
 			save.register_rescued_jelly(idx)
 		if refund_reserved_energy:
@@ -383,6 +396,14 @@ func _screenshot_level_51() -> void:
 	get_tree().quit()
 
 
+func _screenshot_level_39() -> void:
+	## 파란 S1 시작 탈출 통로 회귀 검수용 캡처.
+	start_level(38, true, true)
+	await get_tree().create_timer(0.8).timeout
+	await _snap("level_39_blue_escape.png")
+	get_tree().quit()
+
+
 func _screenshot_late_gimmicks() -> void:
 	## 구간별 대표 기믹과 100레벨 복합 관문의 실제 화면을 연속 캡처한다.
 	for level_index in [60, 70, 80, 99]:
@@ -415,6 +436,46 @@ func _headless_touch_test() -> void:
 		print("[touch validation] offset=", offset, " valid=", valid)
 		failed = failed or not valid
 	get_tree().quit(1 if failed else 0)
+
+
+func _headless_level_39_test() -> void:
+	start_level(38, true, true)
+	await get_tree().create_timer(0.3).timeout
+	var blue = null
+	if game:
+		for catcher in game.catchers:
+			if catcher.color_id == "B" and catcher.shape_id == "S1":
+				blue = catcher
+				break
+	var start_cell: Vector2i = blue.origin_cell if blue else Vector2i(-1, -1)
+	var center_pick_valid := false
+	var badge_pick_valid := false
+	if blue:
+		var blue_center := game.to_global(game.cell_pos(blue.origin_cell))
+		center_pick_valid = game._pick_catcher(blue_center) == blue
+		badge_pick_valid = game._pick_catcher(blue.badge_panel.get_global_rect().get_center()) == blue
+	var moved_down: bool = blue != null and game._try_step(blue, Vector2i.DOWN)
+	var valid: bool = center_pick_valid and badge_pick_valid and moved_down and blue.origin_cell == start_cell + Vector2i.DOWN
+	print("[level 39 validation] blue_start=", start_cell, " center_pick=", center_pick_valid, " badge_pick=", badge_pick_valid, " moved_down=", moved_down, " valid=", valid)
+	get_tree().quit(0 if valid else 1)
+
+
+func _headless_level_44_test() -> void:
+	## L44의 큰 초록 V4가 위로 이동한 뒤 왼쪽 통로로 빠질 수 있는지 검증한다.
+	start_level(43, true, true)
+	await get_tree().create_timer(0.3).timeout
+	var green_v4 = null
+	if game:
+		for catcher in game.catchers:
+			if catcher.color_id == "G" and catcher.shape_id == "V4":
+				green_v4 = catcher
+				break
+	var start_cell: Vector2i = green_v4.origin_cell if green_v4 else Vector2i(-1, -1)
+	var moved_up: bool = green_v4 != null and game._try_step(green_v4, Vector2i.UP)
+	var moved_left: bool = moved_up and game._try_step(green_v4, Vector2i.LEFT)
+	var valid: bool = moved_left and green_v4.origin_cell == start_cell + Vector2i.UP + Vector2i.LEFT
+	print("[level 44 validation] green_start=", start_cell, " moved_up=", moved_up, " moved_left=", moved_left, " valid=", valid)
+	get_tree().quit(0 if valid else 1)
 
 
 func _headless_expansion_test() -> void:

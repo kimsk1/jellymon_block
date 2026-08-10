@@ -405,10 +405,16 @@ static func _fix_known_mobility_traps(level: Dictionary, number: int) -> void:
 	## 클릭 고장으로 오해하기 쉽다. 플레이 테스트에서 확인된 배치만 최소 이동으로 보정한다.
 	if number == 39:
 		var board: Array = level.grid
-		# L39 파란 S1의 오른쪽 빨간 젤리를 하단 빈칸으로 옮겨 즉시 한 칸 이동 가능하게 한다.
+		# 이전 생성형 배치에서 사용하던 보정.
 		if board.size() > 8 and board[6].length() > 6 and board[6][5] == "R" and board[8][0] == ".":
 			_put(board, 5, 6, ".")
 			_put(board, 0, 8, "R")
+		# 현재 L39의 파란 S1(4,6)은 오른쪽만 열려 있어 주변 대형 블록 때문에
+		# 터치가 고장 난 것처럼 보인다. 아래 빨간 젤리를 안전한 하단 빈칸으로
+		# 옮겨 오른쪽/아래 두 방향의 확실한 탈출구를 보장한다.
+		if board.size() > 8 and board[7].length() > 4 and board[7][4] == "R" and board[8][1] == ".":
+			_put(board, 4, 7, ".")
+			_put(board, 1, 8, "R")
 
 
 static func _add_rescue_exits(level: Dictionary, number: int) -> void:
@@ -1175,14 +1181,16 @@ static func validate_all() -> PackedStringArray:
 				active.append(true)
 				if specs[ci].color == "B" and specs[ci].shape == "S1":
 					blue_index = ci
-			var blue_can_move := false
+			var blue_move_count := 0
+			var blue_can_move_down := false
 			if blue_index >= 0:
 				for direction in [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]:
 					if _test_can_place(grid, specs, positions, active, blue_index, positions[blue_index] + direction):
-						blue_can_move = true
-						break
-			if not blue_can_move:
-				errors.append("L39: 파란 S1 블록이 시작 위치에서 이동 불가")
+						blue_move_count += 1
+						if direction == Vector2i.DOWN:
+							blue_can_move_down = true
+			if blue_move_count < 2 or not blue_can_move_down:
+				errors.append("L39: 파란 S1 블록의 시작 탈출 경로가 2방향 미만이거나 아래 통로가 막힘")
 		if not _is_greedily_solvable(level):
 			errors.append("L%d: 충돌 규칙 기준 도달 불가능한 젤리 존재" % (idx + 1))
 	return errors

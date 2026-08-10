@@ -7,6 +7,7 @@ var root: Control
 var time_label: Label
 var name_label: Label
 var timer_caption: Label
+var timer_bar: ProgressBar
 var goal_items := {}
 var star_tex: Texture2D
 var clear_base_reward := 0
@@ -31,15 +32,15 @@ func _ready() -> void:
 	top.offset_right = -16
 	top.offset_bottom = 142
 	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color("#58b8ee")
-	sb.border_color = Color("#2c719f")
-	sb.set_border_width_all(4)
+	sb.bg_color = Color("#45b7ef")
+	sb.border_color = Color("#176a9f")
+	sb.set_border_width_all(5)
 	sb.set_corner_radius_all(28)
 	sb.corner_detail = 12
 	sb.border_blend = true
-	sb.shadow_color = Color(0.12, 0.2, 0.35, 0.28)
-	sb.shadow_size = 10
-	sb.shadow_offset = Vector2(0, 7)
+	sb.shadow_color = Color(0.05, 0.13, 0.28, 0.38)
+	sb.shadow_size = 13
+	sb.shadow_offset = Vector2(0, 8)
 	sb.content_margin_left = 16
 	sb.content_margin_right = 16
 	sb.content_margin_top = 12
@@ -50,6 +51,13 @@ func _ready() -> void:
 	var hb := HBoxContainer.new()
 	hb.add_theme_constant_override("separation", 14)
 	top.add_child(hb)
+	var mascot := TextureRect.new()
+	mascot.texture = G.hero_tex()
+	mascot.custom_minimum_size = Vector2(76, 76)
+	mascot.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	mascot.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	mascot.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hb.add_child(mascot)
 
 	var quit_btn := _small_button("⌂", Color("#9c8bc4"))
 	quit_btn.tooltip_text = "레벨 선택"
@@ -85,6 +93,23 @@ func _ready() -> void:
 	time_label.add_theme_color_override("font_outline_color", Color("#214e74"))
 	time_label.add_theme_constant_override("outline_size", 8)
 	mid.add_child(time_label)
+	timer_bar = ProgressBar.new()
+	timer_bar.custom_minimum_size = Vector2(250, 12)
+	timer_bar.show_percentage = false
+	timer_bar.max_value = 100.0
+	var timer_bg := StyleBoxFlat.new()
+	timer_bg.bg_color = Color(0.06, 0.25, 0.43, 0.48)
+	timer_bg.set_corner_radius_all(6)
+	timer_bg.content_margin_top = 2
+	timer_bg.content_margin_bottom = 2
+	timer_bar.add_theme_stylebox_override("background", timer_bg)
+	var timer_fill := StyleBoxFlat.new()
+	timer_fill.bg_color = Color("#fff18a")
+	timer_fill.border_color = Color(1, 1, 1, 0.72)
+	timer_fill.set_border_width_all(2)
+	timer_fill.set_corner_radius_all(6)
+	timer_bar.add_theme_stylebox_override("fill", timer_fill)
+	mid.add_child(timer_bar)
 
 
 func _apply_responsive_layout() -> void:
@@ -150,8 +175,14 @@ func set_time(t: float, total: float) -> void:
 	var m := int(t) / 60
 	var s := int(t) % 60
 	time_label.text = "%d:%02d" % [m, s]
+	if timer_bar:
+		timer_bar.value = clampf(t / maxf(total, 0.01) * 100.0, 0.0, 100.0)
 	if t <= 10.0:
 		time_label.add_theme_color_override("font_color", Color(0.95, 0.25, 0.3))
+		if timer_bar:
+			var danger: StyleBoxFlat = timer_bar.get_theme_stylebox("fill").duplicate()
+			danger.bg_color = Color("#ff667e")
+			timer_bar.add_theme_stylebox_override("fill", danger)
 	elif t <= total * 0.2:
 		time_label.add_theme_color_override("font_color", Color(1.0, 0.55, 0.15))
 	else:
@@ -278,13 +309,13 @@ func _popup_frame() -> VBoxContainer:
 	dim.add_child(cc)
 	var panel := PanelContainer.new()
 	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color(1.0, 0.98, 0.94)
-	sb.border_color = Color("#755c98")
-	sb.set_border_width_all(5)
+	sb.bg_color = Color("#fff7fc")
+	sb.border_color = Color("#674493")
+	sb.set_border_width_all(6)
 	sb.set_corner_radius_all(32)
-	sb.shadow_color = Color(0.08, 0.04, 0.16, 0.4)
-	sb.shadow_size = 16
-	sb.shadow_offset = Vector2(0, 10)
+	sb.shadow_color = Color(0.08, 0.03, 0.18, 0.5)
+	sb.shadow_size = 20
+	sb.shadow_offset = Vector2(0, 12)
 	sb.content_margin_left = 44
 	sb.content_margin_right = 44
 	sb.content_margin_top = 36
@@ -309,6 +340,8 @@ func _title_label(text: String, col: Color) -> Label:
 	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	l.add_theme_font_size_override("font_size", 56)
 	l.add_theme_color_override("font_color", col)
+	l.add_theme_color_override("font_outline_color", Color.WHITE)
+	l.add_theme_constant_override("outline_size", 6)
 	return l
 
 
@@ -316,6 +349,16 @@ func show_result(stars_n: int, score: int, stardust_reward: int, stardust_total:
 	clear_base_reward = stardust_reward
 	clear_bonus_claimed = false
 	var v := _popup_frame()
+	var mascot := TextureRect.new()
+	mascot.texture = G.hero_tex()
+	mascot.custom_minimum_size = Vector2(112, 92)
+	mascot.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	mascot.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	mascot.pivot_offset = Vector2(56, 46)
+	v.add_child(mascot)
+	var mascot_tween := mascot.create_tween().set_loops()
+	mascot_tween.tween_property(mascot, "rotation", -0.08, 0.22).set_trans(Tween.TRANS_SINE)
+	mascot_tween.tween_property(mascot, "rotation", 0.08, 0.22).set_trans(Tween.TRANS_SINE)
 	v.add_child(_title_label("클리어!", Color(1.0, 0.5, 0.35)))
 	# 별 3개 (순차 팝)
 	var row := HBoxContainer.new()

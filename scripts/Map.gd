@@ -50,15 +50,15 @@ func _ready() -> void:
 	scroll_frame.size = Vector2(G.W - 40, G.H - 382)
 	scroll_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var frame_style := StyleBoxFlat.new()
-	frame_style.bg_color = Color(1.0, 0.98, 1.0, 0.18)
-	frame_style.border_color = Color("#8064a8")
-	frame_style.set_border_width_all(5)
+	frame_style.bg_color = Color(0.97, 0.94, 1.0, 0.42)
+	frame_style.border_color = Color("#72509f")
+	frame_style.set_border_width_all(6)
 	frame_style.set_corner_radius_all(30)
 	frame_style.corner_detail = 12
 	frame_style.border_blend = true
-	frame_style.shadow_color = Color(0.12, 0.06, 0.22, 0.28)
-	frame_style.shadow_size = 10
-	frame_style.shadow_offset = Vector2(0, 7)
+	frame_style.shadow_color = Color(0.09, 0.04, 0.2, 0.38)
+	frame_style.shadow_size = 14
+	frame_style.shadow_offset = Vector2(0, 9)
 	scroll_frame.add_theme_stylebox_override("panel", frame_style)
 	add_child(scroll_frame)
 
@@ -315,14 +315,14 @@ func _level_button(i: int) -> Button:
 	var col: Color = BTN_COLORS[i % BTN_COLORS.size()] if unlocked else Color(0.72, 0.7, 0.78)
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = col
-	sb.border_color = col.darkened(0.3)
+	sb.border_color = col.darkened(0.36)
 	sb.set_border_width_all(4)
 	sb.set_corner_radius_all(22)
 	sb.corner_detail = 10
 	sb.border_blend = true
-	sb.shadow_color = Color(0.1, 0.06, 0.2, 0.3)
-	sb.shadow_size = 7
-	sb.shadow_offset = Vector2(0, 5)
+	sb.shadow_color = Color(0.08, 0.04, 0.18, 0.4)
+	sb.shadow_size = 9
+	sb.shadow_offset = Vector2(0, 6)
 	b.add_theme_stylebox_override("normal", sb)
 	var sb2: StyleBoxFlat = sb.duplicate()
 	sb2.bg_color = col.darkened(0.15)

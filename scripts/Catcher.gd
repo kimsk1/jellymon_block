@@ -55,7 +55,15 @@ func setup(cid: String, shape: String, amount: int = 1) -> void:
 	badge_style.shadow_size = 4
 	badge_style.shadow_offset = Vector2(0, 3)
 	badge_panel.add_theme_stylebox_override("panel", badge_style)
-	badge_panel.position = bbox * G.CELL - Vector2(49, 50)
+	# 모양의 bounding box 우하단은 T/L/S/Z 블록에서 실제로 비어 있을 수 있다.
+	# 실제 점유 칸 중 가장 아래·오른쪽 칸 안에 배지를 넣어 숫자/GO가 블록을
+	# 벗어나거나 이웃 타일을 덮지 않도록 한다.
+	var badge_cell: Vector2i = cells[0]
+	for off: Vector2i in cells:
+		if off.y > badge_cell.y or (off.y == badge_cell.y and off.x > badge_cell.x):
+			badge_cell = off
+	# 48px 배지와 최대 7px 그림자까지 84px 점유 칸 안에 들어오는 위치다.
+	badge_panel.position = Vector2(badge_cell) * G.CELL + Vector2(G.CELL - 56, G.CELL - 57)
 	badge_panel.size = Vector2(48, 48)
 	badge_panel.z_index = 5
 	# 숫자 위에서 시작한 드래그도 블록으로 전달되도록 UI 입력을 가로채지 않는다.
@@ -75,7 +83,7 @@ func setup(cid: String, shape: String, amount: int = 1) -> void:
 
 
 func badge_contains(screen_point: Vector2) -> bool:
-	## 오목한 L/T 블록에서는 배지가 실제 점유 셀 밖에 걸칠 수 있으므로 별도 히트 영역으로 처리한다.
+	## 숫자 위에서 시작한 드래그가 작은 배지 가장자리에서도 안정적으로 잡히게 한다.
 	return badge_panel != null and badge_panel.get_global_rect().grow(8.0).has_point(screen_point)
 
 
@@ -276,9 +284,9 @@ class ShapeVisual extends Node2D:
 
 	func _draw() -> void:
 		var cell_size := G.CELL
-		var inner := Color("#11162e")
-		var inner_light := Color("#252752")
-		var rim_dark := edge_color.darkened(0.35)
+		var inner := Color("#172246")
+		var inner_light := edge_color.darkened(0.48).lerp(Color("#34477b"), 0.55)
+		var rim_dark := edge_color.darkened(0.4)
 		var shine := edge_color.lightened(0.42)
 		var shadow_col := Color(0.04, 0.05, 0.14, 0.38)
 		var joined := _joined_polygon()
@@ -291,14 +299,16 @@ class ShapeVisual extends Node2D:
 
 		# 통합된 폴리곤을 겹쳐 그려 셀 경계가 전혀 없는 단일 블록을 만든다.
 		# 두 겹의 부드러운 그림자로 보드 위에서 살짝 떠 있는 깊이를 준다.
-		draw_colored_polygon(_shifted(outer, Vector2(5, 10)), Color(0.04, 0.05, 0.14, 0.18))
+		var glow := Color(edge_color.r, edge_color.g, edge_color.b, 0.18)
+		draw_colored_polygon(_shifted(outer, Vector2(0, 3)), glow)
+		draw_colored_polygon(_shifted(outer, Vector2(5, 10)), Color(0.04, 0.05, 0.14, 0.22))
 		draw_polyline(PackedVector2Array(_shifted(outer, Vector2(5, 10)) + PackedVector2Array([outer[0] + Vector2(5, 10)])), shadow_col, 7.0, true)
 		draw_colored_polygon(outer, rim_dark)
 		draw_colored_polygon(body, edge_color)
 		draw_colored_polygon(pit_border, inner_light)
 		draw_colored_polygon(pit, inner)
 		draw_polyline(PackedVector2Array(outer + PackedVector2Array([outer[0]])), rim_dark, 3.0, true)
-		draw_polyline(PackedVector2Array(pit + PackedVector2Array([pit[0]])), Color(0.42, 0.48, 0.75, 0.24), 2.0, true)
+		draw_polyline(PackedVector2Array(pit + PackedVector2Array([pit[0]])), Color(0.64, 0.72, 1.0, 0.32), 3.0, true)
 
 		# 외곽에 노출된 윗면 광택은 연속 구간마다 한 줄로 그려 다칸 블록도 하나처럼 보이게 한다.
 		var exposed_rows := {}
@@ -328,8 +338,10 @@ class ShapeVisual extends Node2D:
 		# 첫 칸에 작은 표정을 넣어 단순 도형이 아니라 살아 있는 몬스터 홀로 보이게 한다.
 		if not shape_cells.is_empty():
 			var face := Vector2(shape_cells[0]) * cell_size + Vector2(cell_size * 0.5, cell_size * 0.52)
-			draw_circle(face + Vector2(-13, -4), 8.5, Color("#f8fbff"))
-			draw_circle(face + Vector2(13, -4), 8.5, Color("#f8fbff"))
+			draw_circle(face + Vector2(-13, -4), 9.5, Color("#f8fbff"))
+			draw_circle(face + Vector2(13, -4), 9.5, Color("#f8fbff"))
 			draw_circle(face + Vector2(-11, -3), 3.8, Color("#25304b"))
 			draw_circle(face + Vector2(11, -3), 3.8, Color("#25304b"))
+			draw_circle(face + Vector2(-15, -7), 2.1, Color.WHITE)
+			draw_circle(face + Vector2(9, -7), 2.1, Color.WHITE)
 			draw_arc(face + Vector2(0, 8), 8.0, 0.15, PI - 0.15, 14, Color("#ff8fa3"), 4.0, true)

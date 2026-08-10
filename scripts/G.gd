@@ -54,6 +54,12 @@ const SHAPES := {
 
 
 static func jelly_tex(c: String) -> Texture2D:
+	# 퍼즐·방·목표 UI가 모두 같은 고해상도 젤리 재질을 사용한다.
+	# 초록은 크로마키 색 손실을 막기 위해 별도 원본을 사용한다.
+	if c == "G":
+		return load("res://assets/jelly_G_v4.png")
+	if ["R", "Y", "B", "P", "O"].has(c):
+		return load("res://assets/jelly_%s_v5.png" % c)
 	return load("res://assets/jelly_%s.png" % c)
 
 

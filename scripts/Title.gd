@@ -90,9 +90,9 @@ func _panel_style(color: Color, border: Color, radius: int = 24) -> StyleBoxFlat
 	style.set_corner_radius_all(radius)
 	style.corner_detail = 12
 	style.border_blend = true
-	style.shadow_color = Color(0.1, 0.04, 0.2, 0.3)
-	style.shadow_size = 9
-	style.shadow_offset = Vector2(0, 6)
+	style.shadow_color = Color(0.08, 0.03, 0.2, 0.4)
+	style.shadow_size = 12
+	style.shadow_offset = Vector2(0, 7)
 	style.content_margin_left = 14
 	style.content_margin_right = 14
 	style.content_margin_top = 8

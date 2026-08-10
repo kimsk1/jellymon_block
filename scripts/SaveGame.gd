@@ -164,7 +164,7 @@ func set_stars(idx: int, n: int) -> void:
 	award_stars(idx, n)
 
 
-func award_stars(idx: int, n: int) -> int:
+func award_stars(idx: int, n: int, reward_cap: int = -1) -> int:
 	## 처음 달성한 별 단계만 지급한다. 1/2/3단계 보상은 각각 별가루 1/2/3개다.
 	## 예: 기존 1성에서 3성으로 갱신하면 2+3=5개를 한 번에 받는다.
 	var previous := get_stars(idx)
@@ -172,6 +172,8 @@ func award_stars(idx: int, n: int) -> int:
 	if achieved <= previous:
 		return 0
 	var reward := calculate_stardust_reward(previous, achieved)
+	if reward_cap >= 0:
+		reward = mini(reward, reward_cap)
 	stars[str(idx)] = achieved
 	stardust += reward
 	save_data()

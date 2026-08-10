@@ -10,6 +10,7 @@ var main = null
 var audio: AudioMgr
 var level_idx := 0
 var energy_reserved := false
+var continued_after_fail := false
 var L: Dictionary
 var cols := 0
 var rows := 0
@@ -252,9 +253,13 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if event is InputEventScreenTouch:
 		if event.pressed:
-			# 이미 잡은 손가락이 있으면 두 번째 손가락이 드래그 대상을 바꾸지 못하게 한다.
+			# Android에서 앱 전환·시스템 제스처 등으로 release가 누락되면 이전
+			# touch index가 영구히 남을 수 있다. 같은 index의 새 press는 새 접촉이므로
+			# 오래된 드래그를 정리하고 다시 선택한다. 다른 손가락은 계속 무시한다.
 			if active_touch_index >= 0:
-				return
+				if event.index != active_touch_index:
+					return
+				_release()
 			var c = _pick_catcher(event.position)
 			if c != null:
 				var local_position := to_local(event.position)
@@ -273,15 +278,9 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _pick_catcher(viewport_position: Vector2):
-	# 숫자 배지는 모양의 빈 모서리에 걸칠 수 있으므로 격자 판정보다 먼저 소유 블록을 선택한다.
-	for c in catchers:
-		if is_instance_valid(c) and c.badge_contains(viewport_position):
-			if c.key_locked:
-				_show_key_locked_feedback(c)
-				return null
-			return c
 	# 터치 좌표는 Viewport 기준이고 보드는 긴 화면에서 screen_offset만큼 이동하므로,
-	# 셀/거리 판정 전에 Game 노드의 로컬 좌표로 변환한다.
+	# 셀/거리 판정 전에 Game 노드의 로컬 좌표로 변환한다. 실제 점유 셀을 가장
+	# 먼저 선택해야 오목한 T/L 블록의 숫자 배지가 이웃 블록을 가로채지 않는다.
 	var p := to_local(viewport_position)
 	var cell := Vector2i(int(floor((p.x - origin.x) / G.CELL)), int(floor((p.y - origin.y) / G.CELL)))
 	if catcher_at.has(cell):
@@ -290,6 +289,14 @@ func _pick_catcher(viewport_position: Vector2):
 			_show_key_locked_feedback(direct)
 			return null
 		return direct
+	# 숫자 배지가 블록의 빈 모서리에 놓인 경우에는 점유 셀이 없으므로 그때만
+	# 별도 배지 히트 영역을 사용한다. 숫자 위 드래그 기능은 그대로 유지된다.
+	for c in catchers:
+		if is_instance_valid(c) and c.badge_contains(viewport_position):
+			if c.key_locked:
+				_show_key_locked_feedback(c)
+				return null
+			return c
 	var best = null
 	var best_d := G.CELL * 0.85
 	for c in catchers:
@@ -648,7 +655,10 @@ func _clear_level() -> void:
 			c.cheer(0.08 * i)
 			i += 1
 	fx.confetti()
-	var stardust_reward: int = main.on_level_finished(level_idx, stars_n, true, energy_reserved)
+	# 이어하기로 시간을 초기화한 판은 별 기록은 정상 반영하되 신규 별가루
+	# 보상을 최대 1개로 제한한다. 이미 받은 단계는 기존처럼 다시 지급하지 않는다.
+	var reward_cap := 1 if continued_after_fail else -1
+	var stardust_reward: int = main.on_level_finished(level_idx, stars_n, true, energy_reserved, reward_cap)
 	energy_reserved = false
 	await get_tree().create_timer(1.3).timeout
 	var has_next := level_idx + 1 < Levels.LEVELS.size()
@@ -711,6 +721,7 @@ func _continue_with_stardust() -> bool:
 			c.revive()
 	time_left = total_time
 	hud.set_time(time_left, total_time)
+	continued_after_fail = true
 	state = "play"
 	audio.play("grab", 1.18)
 	G.haptic(18)
@@ -728,12 +739,17 @@ func _draw() -> void:
 			if voids.has(cell):
 				continue
 			var shadow_style := StyleBoxFlat.new()
-			shadow_style.bg_color = Color(0.14, 0.24, 0.42, 0.32)
-			shadow_style.set_corner_radius_all(12)
-			draw_style_box(shadow_style, Rect2(p + Vector2(2, 8), Vector2(G.CELL - 1, G.CELL - 1)))
+			shadow_style.bg_color = Color(0.08, 0.19, 0.34, 0.38)
+			shadow_style.set_corner_radius_all(15)
+			shadow_style.shadow_color = Color(0.04, 0.08, 0.18, 0.22)
+			shadow_style.shadow_size = 5
+			shadow_style.shadow_offset = Vector2(0, 4)
+			draw_style_box(shadow_style, Rect2(p + Vector2(2, 7), Vector2(G.CELL - 1, G.CELL - 1)))
 			var rim := StyleBoxFlat.new()
-			rim.bg_color = Color("#5d91b8")
-			rim.set_corner_radius_all(11)
+			rim.bg_color = Color("#4e8fbd")
+			rim.border_color = Color("#9ed9ef")
+			rim.set_border_width_all(2)
+			rim.set_corner_radius_all(14)
 			draw_style_box(rim, Rect2(p, Vector2(G.CELL - 2, G.CELL - 2)))
 			if walls.has(cell):
 				var wall := StyleBoxFlat.new()
@@ -746,10 +762,10 @@ func _draw() -> void:
 			else:
 				var even := (c + r) % 2 == 0
 				var tile := StyleBoxFlat.new()
-				tile.bg_color = Color("#fff8e8") if even else Color("#f8ecd2")
-				tile.border_color = Color(1, 1, 1, 0.72)
-				tile.set_border_width_all(2)
-				tile.set_corner_radius_all(8)
+				tile.bg_color = Color("#fffaf0") if even else Color("#f8edda")
+				tile.border_color = Color(1, 1, 1, 0.9)
+				tile.set_border_width_all(3)
+				tile.set_corner_radius_all(10)
 				draw_style_box(tile, Rect2(p + Vector2(5, 5), Vector2(G.CELL - 12, G.CELL - 12)))
 				draw_rect(Rect2(p + Vector2(12, 11), Vector2(G.CELL - 26, 5)), Color(1, 1, 1, 0.46))
 				# 아래쪽의 은은한 음영과 모서리 광점으로 장난감 타일 같은 재질감을 더한다.
@@ -826,6 +842,14 @@ func debug_validate_touch_mapping(test_offset := Vector2(0, 160)) -> bool:
 	press.position = target_viewport
 	_unhandled_input(press)
 	var valid := grabbed == target and active_touch_index == 3
+	# Android에서 이전 release가 유실된 뒤 같은 index가 재사용되는 상황에서도
+	# 입력 잠금이 풀리고 새 press가 정상적으로 대상을 다시 잡아야 한다.
+	var recovered_press := InputEventScreenTouch.new()
+	recovered_press.index = 3
+	recovered_press.pressed = true
+	recovered_press.position = target_viewport
+	_unhandled_input(recovered_press)
+	valid = valid and grabbed == target and active_touch_index == 3
 	# 다른 손가락이 떨어져도 첫 손가락의 드래그가 유지되어야 한다.
 	var unrelated_release := InputEventScreenTouch.new()
 	unrelated_release.index = 4
