@@ -56,6 +56,7 @@ static func _build_levels() -> Array:
 static func _generated_level(number: int) -> Dictionary:
 	var chapter := (number - 1) / 10
 	var local := (number - 1) % 10
+	var challenge := _is_challenge_level(number)
 	var w := mini(8, 6 + (chapter + 1) / 2)
 	var h := mini(9, 7 + (chapter + 1) / 2)
 	var palette := ["R", "Y", "B", "G", "P", "O"]
@@ -87,6 +88,8 @@ static func _generated_level(number: int) -> Dictionary:
 		_fill_checker_lanes(board, colors, w, h)
 	_carve_irregular_board(board, number, chapter, w, h)
 	_add_walls(board, chapter, local, w, h)
+	if challenge:
+		_densify_challenge_board(board, colors, w, h, number)
 
 	var specs := _capacity_catchers(board, colors, w, h, number)
 
@@ -94,12 +97,21 @@ static func _generated_level(number: int) -> Dictionary:
 	var time_limit := maxf(63.0, 83.0 - float(number - 9) * 0.5)
 	if number >= 51:
 		time_limit = maxf(52.0, 63.0 - float(number - 50) * 0.22)
+	if challenge:
+		time_limit = maxf(48.0, time_limit - 4.0)
 	var chapter_name: String = CHAPTER_NAMES[chapter]
 	var titles := ["길 열기", "엇갈린 줄", "색의 성", "굽은 통로", "한붓 쓸기", "갈림길", "큰 몸 작은 문", "색깔 미로", "연쇄 구출", "최종 관문"]
 	var hint := "색의 층과 캐처 모양을 보고 구출 순서를 정하세요."
 	if local == 9:
 		hint = "%s의 모든 규칙이 섞인 하이라이트 레벨!" % chapter_name
-	var result := _level("%s · %s" % [chapter_name, titles[local]], board, specs, time_limit, hint, [0.45, 0.2] if local == 9 else [0.5, 0.25])
+	if challenge:
+		hint = "★ 도전 스테이지 · 큰 블록과 뒤섞인 색의 이동 순서를 먼저 읽으세요!"
+	var level_name := "%s · %s" % [chapter_name, titles[local]]
+	if challenge:
+		level_name += " ★도전"
+	var result := _level(level_name, board, specs, time_limit, hint, [0.47, 0.22] if challenge else ([0.45, 0.2] if local == 9 else [0.5, 0.25]))
+	if challenge:
+		result["challenge"] = true
 	if not _is_greedily_solvable(result):
 		var changed := true
 		while changed and not _is_greedily_solvable(result):
@@ -111,7 +123,9 @@ static func _generated_level(number: int) -> Dictionary:
 					changed = true
 					if _is_greedily_solvable(result):
 						break
-	_promote_tetrominoes(result, _level_shape_pool(number), 2 + number / 12)
+	_promote_tetrominoes(result, _level_shape_pool(number), 2 + number / 12 + (2 if challenge else 0))
+	if challenge:
+		_ensure_challenge_tetrominoes(result, _level_shape_pool(number), 2)
 	if _is_greedily_solvable(result):
 		_intermix_level(result, number)
 		_add_shape_seal(result, number)
@@ -122,6 +136,33 @@ static func _generated_level(number: int) -> Dictionary:
 		_add_rescue_exits(result, number)
 		_add_late_gimmicks(result, number)
 	return result
+
+
+static func _is_challenge_level(number: int) -> bool:
+	return number >= 10 and number % 5 == 0
+
+
+static func _densify_challenge_board(board: Array, colors: Array, w: int, h: int, number: int) -> void:
+	## L13처럼 한 색이 여러 블록으로 나뉘고 서로 얽히도록 플레이 영역에 젤리를 추가한다.
+	## 캐처 배치용 하단 3행은 건드리지 않아 큰 블록의 시작 공간을 보존한다.
+	var candidates: Array[Vector2i] = []
+	for y in range(maxi(0, h - 3)):
+		for x in range(w):
+			if board[y][x] == ".":
+				candidates.append(Vector2i(x, y))
+	candidates.sort_custom(func(a: Vector2i, b: Vector2i) -> bool:
+		var a_score := (a.x * 19 + a.y * 31 + number * 7) % 101
+		var b_score := (b.x * 19 + b.y * 31 + number * 7) % 101
+		return a_score < b_score
+	)
+	var extra := mini(candidates.size(), 2 + mini(2, number / 40))
+	if extra <= 0 or colors.is_empty():
+		return
+	var focus_index := (number / 5) % colors.size()
+	for i in range(extra):
+		var color_index := focus_index if i < extra - 1 else (focus_index + 1) % colors.size()
+		var cell := candidates[i]
+		_put(board, cell.x, cell.y, colors[color_index])
 
 
 static func _add_late_gimmicks(level: Dictionary, number: int) -> void:
@@ -699,6 +740,8 @@ static func _reduce_empty_space(level: Dictionary, number: int) -> void:
 		target = 6
 	if number >= 91:
 		target = 5
+	if _is_challenge_level(number):
+		target = maxi(4, target - 2)
 	var safety := w * h
 	while free_empty > target and safety > 0:
 		safety -= 1
@@ -762,10 +805,58 @@ static func _promote_tetrominoes(level: Dictionary, pool: Array[String], target_
 				spec.shape = original
 
 
-static func _shape_fits_level(level: Dictionary, spec_index: int, shape: String) -> bool:
+static func _ensure_challenge_tetrominoes(level: Dictionary, pool: Array[String], minimum_count: int) -> void:
+	## 시작 위치가 좁아 일반 승격에 실패한 도전 맵은 블록의 시작 위치도 함께 탐색한다.
+	## 매 시도마다 전체 자동 풀이를 통과시켜 큰 블록 때문에 막히는 맵은 저장하지 않는다.
+	var tetrominoes := 0
+	for spec in level.catchers:
+		if G.SHAPES[spec.shape].size() == 4:
+			tetrominoes += 1
+	if tetrominoes >= minimum_count:
+		return
 	var board: Array = level.grid
+	for si in range(level.catchers.size()):
+		if tetrominoes >= minimum_count:
+			return
+		var spec: Dictionary = level.catchers[si]
+		if G.SHAPES[spec.shape].size() == 4:
+			continue
+		var original_shape: String = spec.shape
+		var original_cell: Array = spec.cell.duplicate()
+		var promoted := false
+		for candidate in pool:
+			if G.SHAPES[candidate].size() != 4:
+				continue
+			for y in range(board.size()):
+				for x in range(board[y].length()):
+					var origin := Vector2i(x, y)
+					if not _shape_fits_level_at(level, si, candidate, origin):
+						continue
+					spec.shape = candidate
+					spec.cell = [x, y]
+					if _is_greedily_solvable(level):
+						tetrominoes += 1
+						promoted = true
+						break
+					spec.shape = original_shape
+					spec.cell = original_cell.duplicate()
+				if promoted:
+					break
+			if promoted:
+				break
+		if not promoted:
+			spec.shape = original_shape
+			spec.cell = original_cell
+
+
+static func _shape_fits_level(level: Dictionary, spec_index: int, shape: String) -> bool:
 	var spec: Dictionary = level.catchers[spec_index]
 	var org := Vector2i(spec.cell[0], spec.cell[1])
+	return _shape_fits_level_at(level, spec_index, shape, org)
+
+
+static func _shape_fits_level_at(level: Dictionary, spec_index: int, shape: String, org: Vector2i) -> bool:
+	var board: Array = level.grid
 	var occupied := {}
 	for oi in range(level.catchers.size()):
 		if oi == spec_index:
@@ -806,7 +897,7 @@ static func _intermix_level(level: Dictionary, number: int) -> void:
 			var cell := Vector2i(x, y)
 			if x > 0 and y > 0 and x < w - 1 and y < h - 1 and board[y][x] == "." and not occupied.has(cell) and not near_holes.has(cell):
 				near_holes.append(cell)
-	var move_goal := mini(12, 2 + number / 4)
+	var move_goal := mini(16, 2 + number / 4 + (4 if _is_challenge_level(number) else 0))
 	var moved := 0
 	for target in near_holes:
 		if moved >= move_goal:
@@ -1053,6 +1144,7 @@ static func validate_all() -> PackedStringArray:
 			continue
 		var width: int = grid[0].length()
 		var jelly_colors := {}
+		var total_jellies := 0
 		for y in range(grid.size()):
 			if grid[y].length() != width:
 				errors.append("L%d: 행 길이 불일치" % (idx + 1))
@@ -1060,14 +1152,18 @@ static func validate_all() -> PackedStringArray:
 				var ch: String = grid[y][x]
 				if G.COLORS.has(ch):
 					jelly_colors[ch] = true
+					total_jellies += 1
 		var occupied := {}
 		var catcher_colors := {}
 		var capacity_by_color := {}
+		var large_catchers := 0
 		for spec in level.get("catchers", []):
 			if not G.SHAPES.has(spec.shape):
 				errors.append("L%d: 알 수 없는 캐처 모양 %s" % [idx + 1, spec.shape])
 				continue
 			catcher_colors[spec.color] = true
+			if G.SHAPES[spec.shape].size() >= 4:
+				large_catchers += 1
 			capacity_by_color[spec.color] = int(capacity_by_color.get(spec.color, 0)) + int(spec.get("capacity", 0))
 			var org := Vector2i(spec.cell[0], spec.cell[1])
 			for off in G.SHAPES[spec.shape]:
@@ -1136,6 +1232,14 @@ static func validate_all() -> PackedStringArray:
 		if idx < 50 and level.has("frozen"):
 			errors.append("L%d: 신규 얼음 기믹이 50레벨 이전에 등장함" % (idx + 1))
 		var number := idx + 1
+		var expected_challenge := _is_challenge_level(number)
+		if bool(level.get("challenge", false)) != expected_challenge:
+			errors.append("L%d: 5단위 도전 스테이지 표시 오류" % number)
+		if expected_challenge:
+			if total_jellies < 13:
+				errors.append("L%d: 도전 스테이지 젤리 밀도 부족(%d)" % [number, total_jellies])
+			if large_catchers < 2:
+				errors.append("L%d: 도전 스테이지 대형 블록 부족(%d)" % [number, large_catchers])
 		var expected := _gimmick_flags(number)
 		if bool(expected.frost) != level.has("frozen"):
 			errors.append("L%d: 얼음 기믹 구간 구성 오류" % number)

@@ -8,6 +8,17 @@ const CELL := 76.0
 const ORIGIN := Vector2(56, 390)
 const SCREEN_Y_OFFSET := 50.0
 
+const STARTER_ITEM_IDS := ["cushion_r", "lamp_y", "table_b", "shelf_g"]
+const FURNITURE_PRICES := {
+	"sofa_p": 120, "bench_o": 180, "rug_r": 260, "cabinet_b": 340,
+	"plant_g": 430, "screen_p": 540, "counter_y": 680, "slide_b": 840,
+	"bed_r": 1000, "book_g": 1200, "tea_o": 1450, "piano_p": 1700,
+	"fountain_b": 2000, "garden_g": 2350, "stage_y": 2700, "castle_p": 3000,
+	"ach_first": 480, "ach_five": 700, "ach_ch1": 920, "ach_15": 1180,
+	"ach_25": 1460, "ach_ch3": 1780, "ach_3x10": 2150, "ach_3x25": 2600,
+	"ach_clear": 3200, "ach_perfect": 4000,
+}
+
 const REGULAR_ITEMS := [
 	{"id":"cushion_r", "name":"딸기 쿠션", "shape":"S1", "color":"#ff788f", "stars":0, "mark":"♥"},
 	{"id":"lamp_y", "name":"별빛 스탠드", "shape":"V2", "color":"#ffd45e", "stars":0, "mark":"★"},
@@ -53,6 +64,37 @@ const ACHIEVEMENT_NAMES := [
 
 static func all_items() -> Array:
 	return REGULAR_ITEMS + ACHIEVEMENT_ITEMS
+
+
+static func starter_items() -> Array:
+	## 현재 실제로 지급되는 가구 인벤토리. 별/업적 가구는 획득 시스템이 연결되기 전까지
+	## 배치 목록에 잠금 미리보기로 노출하지 않는다.
+	var items: Array = []
+	for id in STARTER_ITEM_IDS:
+		var item := item_by_id(id)
+		if not item.is_empty():
+			items.append(item)
+	return items
+
+
+static func purchasable_items() -> Array:
+	var items: Array = []
+	for item in all_items():
+		if not STARTER_ITEM_IDS.has(String(item.id)):
+			items.append(item)
+	return items
+
+
+static func owned_items(save) -> Array:
+	var items: Array = []
+	for item in all_items():
+		if save.has_furniture(String(item.id)):
+			items.append(item)
+	return items
+
+
+static func furniture_price(id: String) -> int:
+	return int(FURNITURE_PRICES.get(id, 0))
 
 
 static func item_by_id(id: String) -> Dictionary:
@@ -103,9 +145,7 @@ static func achievement_unlocked(index: int, save) -> bool:
 
 
 static func item_unlocked(item: Dictionary, save) -> bool:
-	if item.has("achievement"):
-		return achievement_unlocked(int(item.achievement), save)
-	return total_stars(save) >= int(item.get("stars", 0))
+	return save.has_furniture(String(item.get("id", "")))
 
 
 static func growth_stage(save) -> int:
@@ -164,4 +204,13 @@ static func validate_catalog() -> PackedStringArray:
 		ids[item.id] = true
 		if not G.SHAPES.has(item.shape):
 			errors.append("알 수 없는 아지트 가구 모양: %s" % item.shape)
+	for id in STARTER_ITEM_IDS:
+		var item := item_by_id(id)
+		if item.is_empty():
+			errors.append("기본 지급 가구 ID 누락: %s" % id)
+		elif item.has("achievement") or int(item.get("stars", -1)) != 0:
+			errors.append("기본 지급 가구 조건 오류: %s" % id)
+	for item in purchasable_items():
+		if furniture_price(String(item.id)) <= 0:
+			errors.append("가구 별가루 가격 누락: %s" % item.id)
 	return errors

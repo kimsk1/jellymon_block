@@ -179,6 +179,128 @@ func _draw_soft_furniture(bounds: Rect2, color: Color) -> void:
 	var back := Rect2(bounds.position + Vector2(12, 8), Vector2(bounds.size.x - 24, bounds.size.y * 0.48))
 	_round_box(back, color.lightened(0.08), color.darkened(0.3), 22, 4)
 	draw_line(Vector2(bounds.get_center().x, back.position.y + 8), Vector2(bounds.get_center().x, back.end.y - 7), Color(1, 1, 1, 0.24), 3, true)
+	draw_circle(Vector2(seat.position.x + 10, seat.end.y + 3), 6, color.darkened(0.42))
+	draw_circle(Vector2(seat.end.x - 10, seat.end.y + 3), 6, color.darkened(0.42))
+
+
+func _draw_cabinet(bounds: Rect2, color: Color) -> void:
+	var frame := bounds.grow(-6)
+	_round_box(frame, color.darkened(0.2), color.darkened(0.43), 18, 4)
+	var door := frame.grow(-9)
+	_round_box(door, color.lightened(0.1), color.darkened(0.28), 12, 3, false)
+	draw_line(Vector2(door.get_center().x, door.position.y + 3), Vector2(door.get_center().x, door.end.y - 3), color.darkened(0.25), 3, true)
+	draw_circle(door.get_center() + Vector2(-7, 0), 3.5, Color("#fff1c7"))
+	draw_circle(door.get_center() + Vector2(7, 0), 3.5, Color("#fff1c7"))
+
+
+func _draw_screen(bounds: Rect2, color: Color) -> void:
+	var panels := maxi(2, cells.size())
+	var width := (bounds.size.x - 10.0) / panels
+	for i in range(panels):
+		var panel := Rect2(bounds.position + Vector2(5 + width * i, 7), Vector2(width - 3, bounds.size.y - 16))
+		_round_box(panel, color.lightened(0.12 if i % 2 == 0 else 0.03), color.darkened(0.32), 12, 3)
+		draw_line(panel.position + Vector2(9, 11), Vector2(panel.end.x - 9, panel.position.y + 11), Color(1, 1, 1, 0.38), 3, true)
+
+
+func _draw_counter(bounds: Rect2, color: Color) -> void:
+	var base := Rect2(bounds.position + Vector2(8, 24), bounds.size - Vector2(16, 32))
+	_round_box(base, color, color.darkened(0.38), 15, 4)
+	var top := Rect2(bounds.position + Vector2(2, 12), Vector2(bounds.size.x - 4, 24))
+	_round_box(top, color.lightened(0.18), color.darkened(0.32), 12, 4)
+	for i in range(1, maxi(2, cells.size())):
+		var x := base.position.x + base.size.x * i / float(maxi(2, cells.size()))
+		draw_line(Vector2(x, base.position.y + 8), Vector2(x, base.end.y - 8), color.darkened(0.2), 3, true)
+
+
+func _draw_slide(bounds: Rect2, color: Color) -> void:
+	var left := bounds.position.x + 16
+	var top_y := bounds.position.y + 15
+	var bottom := bounds.end - Vector2(15, 16)
+	draw_line(Vector2(left, top_y), Vector2(left, bounds.end.y - 12), color.darkened(0.36), 8, true)
+	for y in range(int(top_y + 15), int(bounds.end.y - 12), 18):
+		draw_line(Vector2(left - 9, y), Vector2(left + 9, y), Color("#fff0c9"), 4, true)
+	var chute := PackedVector2Array([Vector2(left + 7, top_y), Vector2(left + 30, top_y), bottom, bottom + Vector2(-24, 0)])
+	draw_colored_polygon(chute, color)
+	draw_polyline(PackedVector2Array(chute + PackedVector2Array([chute[0]])), color.darkened(0.34), 5, true)
+	draw_line(Vector2(left + 18, top_y + 7), bottom - Vector2(10, 7), Color(1, 1, 1, 0.35), 3, true)
+
+
+func _draw_tea_set(bounds: Rect2, color: Color) -> void:
+	_draw_table(bounds, color)
+	var c := bounds.get_center() + Vector2(0, -7)
+	draw_circle(c, 17, Color("#fff4df"))
+	draw_arc(c, 17, 0, TAU, 20, color.darkened(0.25), 3, true)
+	draw_circle(c + Vector2(0, -18), 5, color)
+	draw_arc(c + Vector2(19, 0), 10, -PI * 0.5, PI * 0.5, 12, color.darkened(0.25), 4, true)
+	for dx in [-34, 34]:
+		_round_box(Rect2(c + Vector2(dx - 10, 9), Vector2(20, 14)), color.lightened(0.15), color.darkened(0.25), 7, 2, false)
+
+
+func _draw_piano(bounds: Rect2, color: Color) -> void:
+	var body := bounds.grow(-7)
+	_round_box(body, color.darkened(0.08), color.darkened(0.42), 18, 4)
+	var keys := Rect2(body.position + Vector2(12, body.size.y * 0.5), Vector2(body.size.x - 24, body.size.y * 0.3))
+	_round_box(keys, Color("#fffaf0"), color.darkened(0.35), 7, 2, false)
+	var key_count := maxi(5, int(keys.size.x / 22.0))
+	for i in range(1, key_count):
+		var x := keys.position.x + keys.size.x * i / key_count
+		draw_line(Vector2(x, keys.position.y), Vector2(x, keys.end.y), Color("#7a6683"), 2)
+	draw_string(ThemeDB.fallback_font, body.get_center() + Vector2(-14, -10), "♪", HORIZONTAL_ALIGNMENT_CENTER, 28, 25, Color("#fff1b7"))
+
+
+func _draw_fountain(bounds: Rect2, color: Color) -> void:
+	var c := bounds.get_center()
+	draw_circle(c + Vector2(0, 14), minf(bounds.size.x, bounds.size.y) * 0.36, color.darkened(0.18))
+	draw_circle(c + Vector2(0, 10), minf(bounds.size.x, bounds.size.y) * 0.28, Color("#bff3ff"))
+	draw_line(c + Vector2(0, 8), c - Vector2(0, 31), color.darkened(0.28), 7, true)
+	for dx in [-20, 0, 20]:
+		draw_arc(c + Vector2(dx * 0.25, -6), 19 + abs(dx) * 0.25, PI + 0.35, TAU - 0.35, 14, Color("#e8fbff"), 4, true)
+
+
+func _draw_garden(bounds: Rect2, color: Color) -> void:
+	var planter := Rect2(bounds.position + Vector2(5, bounds.size.y * 0.58), Vector2(bounds.size.x - 10, bounds.size.y * 0.3))
+	_round_box(planter, Color("#d99058"), Color("#985535"), 13, 4)
+	var count := maxi(3, cells.size() + 1)
+	for i in range(count):
+		var x := bounds.position.x + bounds.size.x * (i + 1) / float(count + 1)
+		var y := planter.position.y
+		draw_line(Vector2(x, y + 8), Vector2(x, y - 21), Color("#3d9b58"), 4, true)
+		draw_circle(Vector2(x - 7, y - 21), 9, color.lightened(0.06))
+		draw_circle(Vector2(x + 7, y - 25), 9, color)
+
+
+func _draw_stage(bounds: Rect2, color: Color) -> void:
+	var frame := bounds.grow(-5)
+	_round_box(frame, color.darkened(0.28), color.darkened(0.48), 20, 4)
+	var opening := frame.grow(-11)
+	_round_box(opening, Color("#4b315f"), color.darkened(0.42), 14, 2, false)
+	var curtain_left := PackedVector2Array([opening.position, opening.position + Vector2(opening.size.x * 0.3, 0), opening.position + Vector2(opening.size.x * 0.18, opening.size.y), Vector2(opening.position.x, opening.end.y)])
+	draw_colored_polygon(curtain_left, color)
+	var curtain_right := PackedVector2Array([Vector2(opening.end.x - opening.size.x * 0.3, opening.position.y), Vector2(opening.end.x, opening.position.y), opening.end, Vector2(opening.end.x - opening.size.x * 0.18, opening.end.y)])
+	draw_colored_polygon(curtain_right, color)
+	draw_string(ThemeDB.fallback_font, opening.get_center() + Vector2(-16, 13), "★", HORIZONTAL_ALIGNMENT_CENTER, 32, 29, Color("#ffe47c"))
+
+
+func _draw_castle(bounds: Rect2, color: Color) -> void:
+	var base := Rect2(bounds.position + Vector2(8, bounds.size.y * 0.32), Vector2(bounds.size.x - 16, bounds.size.y * 0.58))
+	_round_box(base, color, color.darkened(0.38), 12, 4)
+	var tower_w := minf(48, bounds.size.x * 0.24)
+	for x in [base.position.x, base.end.x - tower_w]:
+		var tower := Rect2(x, bounds.position.y + 10, tower_w, base.end.y - bounds.position.y - 10)
+		_round_box(tower, color.lightened(0.08), color.darkened(0.38), 10, 4)
+	var door := Rect2(base.get_center() + Vector2(-17, 4), Vector2(34, base.size.y * 0.48))
+	_round_box(door, Color("#5b3d73"), color.darkened(0.45), 16, 3, false)
+	for x in range(int(base.position.x + 12), int(base.end.x - 8), 30):
+		draw_rect(Rect2(x, base.position.y - 9, 16, 16), color.lightened(0.08), true)
+
+
+func _draw_keepsake(bounds: Rect2, color: Color, symbol: String) -> void:
+	var frame := bounds.grow(-8)
+	_round_box(frame, Color("#fff0d5"), color.darkened(0.38), 17, 5)
+	var inner := frame.grow(-9)
+	_round_box(inner, color.lightened(0.12), color.darkened(0.24), 11, 2, false)
+	var font_size := int(clampf(minf(inner.size.x, inner.size.y) * 0.42, 22, 58))
+	draw_string(ThemeDB.fallback_font, inner.get_center() + Vector2(-font_size * 0.32, font_size * 0.32), symbol, HORIZONTAL_ALIGNMENT_CENTER, font_size, font_size, Color.WHITE)
 
 
 func _draw_candy_furniture(_bounds_rect: Rect2, color: Color) -> void:
@@ -203,12 +325,23 @@ func _draw() -> void:
 	var bounds := _bounds()
 	var id := String(item.id)
 	match id:
-		"cushion_r", "ach_first", "ach_3x10": _draw_cushion(bounds, color)
+		"cushion_r": _draw_cushion(bounds, color)
 		"lamp_y": _draw_lamp(bounds, color)
 		"table_b": _draw_table(bounds, color)
-		"shelf_g", "ach_15": _draw_shelf(bounds, color)
+		"shelf_g", "book_g", "ach_15": _draw_shelf(bounds, color)
 		"rug_r": _draw_rug(bounds, color)
 		"plant_g": _draw_plant(bounds, color)
-		"bench_o", "bed_r": _draw_soft_furniture(bounds, color)
+		"garden_g": _draw_garden(bounds, color)
+		"sofa_p", "bench_o", "bed_r", "ach_3x25": _draw_soft_furniture(bounds, color)
+		"cabinet_b": _draw_cabinet(bounds, color)
+		"screen_p", "ach_ch3": _draw_screen(bounds, color)
+		"counter_y": _draw_counter(bounds, color)
+		"slide_b": _draw_slide(bounds, color)
+		"tea_o": _draw_tea_set(bounds, color)
+		"piano_p": _draw_piano(bounds, color)
+		"fountain_b": _draw_fountain(bounds, color)
+		"stage_y": _draw_stage(bounds, color)
+		"castle_p", "ach_25", "ach_clear": _draw_castle(bounds, color)
+		"ach_first", "ach_five", "ach_ch1", "ach_3x10", "ach_perfect": _draw_keepsake(bounds, color, String(item.mark))
 		_: _draw_candy_furniture(bounds, color)
 	_draw_selection(bounds)

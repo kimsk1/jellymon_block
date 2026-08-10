@@ -360,6 +360,17 @@ func show_result(stars_n: int, score: int, stardust_reward: int, stardust_total:
 	dust.add_theme_font_size_override("font_size", 25)
 	dust.add_theme_color_override("font_color", Color("#8057b2"))
 	v.add_child(dust)
+	var furniture_reward: Dictionary = game.main.last_furniture_reward
+	if not furniture_reward.is_empty():
+		var furniture := RoomData.item_by_id(String(furniture_reward.get("furniture_id", "")))
+		var reward_label := Label.new()
+		reward_label.text = "🎁 %d레벨 기념 가구 · %s 획득!" % [int(furniture_reward.get("level", game.level_idx + 1)), String(furniture.get("name", furniture_reward.get("title", "기념 가구")))]
+		reward_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		reward_label.add_theme_font_size_override("font_size", 23)
+		reward_label.add_theme_color_override("font_color", Color("#397fa5"))
+		reward_label.add_theme_color_override("font_outline_color", Color.WHITE)
+		reward_label.add_theme_constant_override("outline_size", 3)
+		v.add_child(reward_label)
 	if stardust_reward > 0:
 		clear_double_button = _big_button("보상 2배 받기" if game.main.save.has_removed_ads() else "광고 보고 보상 2배", Color("#8e64c8"))
 		clear_double_button.custom_minimum_size = Vector2(430, 72)

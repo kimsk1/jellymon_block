@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "rewards": [
+    {"level": 10, "furniture_id": "ach_first", "title": "첫 구출 액자"},
+    {"level": 20, "furniture_id": "ach_five", "title": "다섯 발자국"},
+    {"level": 30, "furniture_id": "ach_ch1", "title": "젤리 마을 깃발"},
+    {"level": 40, "furniture_id": "ach_15", "title": "구출 대원 선반"},
+    {"level": 50, "furniture_id": "ach_25", "title": "은빛 구조탑"},
+    {"level": 60, "furniture_id": "ach_ch3", "title": "소다 해변 창문"},
+    {"level": 70, "furniture_id": "ach_3x10", "title": "금별 트로피"},
+    {"level": 80, "furniture_id": "ach_3x25", "title": "왕관 소파"},
+    {"level": 90, "furniture_id": "ach_clear", "title": "구출 기념문"},
+    {"level": 100, "furniture_id": "ach_perfect", "title": "별의 성좌"}
+  ]
+}

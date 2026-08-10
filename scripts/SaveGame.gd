@@ -3,6 +3,7 @@ class_name SaveGame
 ## 진행도 저장 (user://jellymon_save.json)
 
 const RoomDataLib = preload("res://scripts/RoomData.gd")
+const FurnitureRewardCatalogLib = preload("res://scripts/FurnitureRewardCatalog.gd")
 
 const PATH := "user://jellymon_save.json"
 const MAX_ENERGY := 5
@@ -18,6 +19,8 @@ const MAX_NICKNAME_LENGTH := 12
 var stars := {}
 var stardust := 0
 var room_placements: Array = []
+var owned_furniture: Array[String] = []
+var claimed_furniture_reward_levels: Array[int] = []
 var room_grid_version := ROOM_GRID_VERSION
 var rescued_jellies: Array[String] = []
 var attendance_claimed_days := 0
@@ -39,6 +42,14 @@ func load_data() -> void:
 				stars = d.get("stars", {})
 				stardust = maxi(0, int(d.get("stardust", 0)))
 				room_placements = d.get("room_placements", [])
+				for raw_id in d.get("owned_furniture", []):
+					var furniture_id := String(raw_id)
+					if not furniture_id.is_empty() and not owned_furniture.has(furniture_id):
+						owned_furniture.append(furniture_id)
+				for raw_level in d.get("claimed_furniture_reward_levels", []):
+					var reward_level := int(raw_level)
+					if reward_level > 0 and not claimed_furniture_reward_levels.has(reward_level):
+						claimed_furniture_reward_levels.append(reward_level)
 				room_grid_version = int(d.get("room_grid_version", 1))
 				# 구버전의 0~7일 기록을 그대로 이어받고, 이후에는 주차 제한 없이 누적한다.
 				attendance_claimed_days = maxi(0, int(d.get("attendance_claimed_days", 0)))
@@ -57,6 +68,11 @@ func load_data() -> void:
 				energy_updated_at = int(d.get("energy_updated_at", _now()))
 	if energy_updated_at <= 0:
 		energy_updated_at = _now()
+	# 구버전 저장 데이터도 기본 지급 4종만 소유한 상태에서 시작한다.
+	for starter_id in RoomDataLib.STARTER_ITEM_IDS:
+		if not owned_furniture.has(starter_id):
+			owned_furniture.append(starter_id)
+	_sync_furniture_milestone_rewards()
 	if room_placements.is_empty():
 		room_placements = RoomDataLib.default_placements()
 		room_grid_version = ROOM_GRID_VERSION
@@ -86,6 +102,8 @@ func save_data() -> void:
 			"stars": stars,
 			"stardust": stardust,
 			"room_placements": room_placements,
+			"owned_furniture": owned_furniture,
+			"claimed_furniture_reward_levels": claimed_furniture_reward_levels,
 			"room_grid_version": room_grid_version,
 			"rescued_jellies": rescued_jellies,
 			"attendance_claimed_days": attendance_claimed_days,
@@ -333,9 +351,73 @@ func has_removed_ads() -> bool:
 	return ads_removed
 
 
+func has_furniture(id: String) -> bool:
+	return owned_furniture.has(id)
+
+
+func get_owned_furniture() -> Array[String]:
+	return owned_furniture.duplicate()
+
+
+func purchase_furniture(id: String, price: int) -> bool:
+	## 가구는 별/업적 진행도로 자동 해금하지 않고 별가루로 영구 구매한다.
+	if id.is_empty() or price <= 0 or has_furniture(id) or RoomDataLib.item_by_id(id).is_empty():
+		return false
+	if stardust < price:
+		return false
+	stardust -= price
+	owned_furniture.append(id)
+	save_data()
+	return true
+
+
+func claim_level_furniture_reward(level_number: int) -> Dictionary:
+	## JSON에 등록된 10단위 보상은 계정당 한 번만 지급한다.
+	if claimed_furniture_reward_levels.has(level_number):
+		return {}
+	var reward := FurnitureRewardCatalogLib.reward_for_level(level_number)
+	if reward.is_empty():
+		return {}
+	var id := String(reward.furniture_id)
+	if RoomDataLib.item_by_id(id).is_empty():
+		return {}
+	claimed_furniture_reward_levels.append(level_number)
+	var newly_owned := not owned_furniture.has(id)
+	if newly_owned:
+		owned_furniture.append(id)
+	var result: Dictionary = reward.duplicate(true)
+	result["newly_owned"] = newly_owned
+	save_data()
+	return result
+
+
+func _sync_furniture_milestone_rewards() -> void:
+	## 기능 추가 전 이미 완료한 10단위 레벨 보상도 다음 실행 시 소급 지급한다.
+	var changed := false
+	for reward in FurnitureRewardCatalogLib.load_rewards():
+		var level_number := int(reward.level)
+		if get_stars(level_number - 1) <= 0 or claimed_furniture_reward_levels.has(level_number):
+			continue
+		claimed_furniture_reward_levels.append(level_number)
+		var id := String(reward.furniture_id)
+		if not owned_furniture.has(id) and not RoomDataLib.item_by_id(id).is_empty():
+			owned_furniture.append(id)
+		changed = true
+	if changed:
+		save_data()
+
+
 func get_room_placements() -> Array:
 	if room_placements.is_empty():
 		room_placements = RoomDataLib.default_placements()
+	# 과거 별/업적 자동 해금 시 배치했던 미보유 가구는 충돌 판정에서도 제외한다.
+	var owned_placements: Array = []
+	for placement in room_placements:
+		if has_furniture(String(placement.get("id", ""))):
+			owned_placements.append(placement)
+	if owned_placements.size() != room_placements.size():
+		room_placements = owned_placements
+		save_data()
 	return room_placements.duplicate(true)
 
 

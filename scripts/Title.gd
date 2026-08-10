@@ -2,6 +2,8 @@ extends Control
 class_name Title
 ## 메인 화면 = 플레이 기록이 살아 움직이는 '젤리 아지트'.
 
+const FurnitureRewards = preload("res://scripts/FurnitureRewardCatalog.gd")
+
 var main = null
 var backdrop: RoomBackdrop
 var furniture_layer: Node2D
@@ -95,6 +97,16 @@ func _button(text: String, color: Color, size := Vector2(150, 74), font_size := 
 	button.add_theme_color_override("font_disabled_color", Color(1, 1, 1, 0.72))
 	button.add_theme_color_override("font_disabled_outline_color", color.darkened(0.38))
 	return button
+
+
+func _format_number(value: int) -> String:
+	var digits := str(maxi(0, value))
+	var formatted := ""
+	for i in range(digits.length()):
+		if i > 0 and (digits.length() - i) % 3 == 0:
+			formatted += ","
+		formatted += digits[i]
+	return formatted
 
 
 func _nav_button(icon_text: String, title_text: String, color: Color, width: float = 150.0) -> Button:
@@ -388,11 +400,12 @@ func _refresh_attendance_button() -> void:
 func _shop_item_card(item: Dictionary) -> PanelContainer:
 	var is_ads := String(item.get("type", "")) == "remove_ads"
 	var is_energy := String(item.get("type", "")) == "energy"
+	var is_furniture := String(item.get("type", "")) == "furniture"
 	var card := PanelContainer.new()
-	card.custom_minimum_size = Vector2(590, 138)
+	card.custom_minimum_size = Vector2(570, 128)
 	var style := StyleBoxFlat.new()
-	style.bg_color = Color("#efe4ff") if is_ads else (Color("#ffe3e9") if is_energy else Color("#fff3ce"))
-	style.border_color = Color("#805caf") if is_ads else (Color("#d45f7b") if is_energy else Color("#d69a35"))
+	style.bg_color = Color("#e4f4ff") if is_furniture else (Color("#efe4ff") if is_ads else (Color("#ffe3e9") if is_energy else Color("#fff3ce")))
+	style.border_color = Color("#4d91bd") if is_furniture else (Color("#805caf") if is_ads else (Color("#d45f7b") if is_energy else Color("#d69a35")))
 	style.set_border_width_all(3)
 	style.set_corner_radius_all(24)
 	style.corner_detail = 12
@@ -406,13 +419,21 @@ func _shop_item_card(item: Dictionary) -> PanelContainer:
 	var icon_frame := PanelContainer.new()
 	icon_frame.custom_minimum_size = Vector2(92, 92)
 	var icon_style := StyleBoxFlat.new()
-	icon_style.bg_color = Color("#7c5ab0") if is_ads else (Color("#f06b88") if is_energy else Color("#ffd660"))
+	icon_style.bg_color = Color(String(item.get("color", "#5fa9d6"))) if is_furniture else (Color("#7c5ab0") if is_ads else (Color("#f06b88") if is_energy else Color("#ffd660")))
 	icon_style.set_corner_radius_all(25)
 	icon_style.border_color = Color("#5b3f83") if is_ads else (Color("#b74260") if is_energy else Color("#d18c27"))
 	icon_style.set_border_width_all(3)
 	icon_frame.add_theme_stylebox_override("panel", icon_style)
 	row.add_child(icon_frame)
-	if is_ads:
+	if is_furniture:
+		var furniture_icon := Label.new()
+		furniture_icon.text = String(item.get("mark", "◆"))
+		furniture_icon.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		furniture_icon.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		furniture_icon.add_theme_font_size_override("font_size", 45)
+		furniture_icon.add_theme_color_override("font_color", Color.WHITE)
+		icon_frame.add_child(furniture_icon)
+	elif is_ads:
 		var ad_icon := Label.new()
 		ad_icon.text = "AD\nOFF"
 		ad_icon.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -458,12 +479,26 @@ func _shop_item_card(item: Dictionary) -> PanelContainer:
 	description.add_theme_color_override("font_color", Color("#816d89"))
 	description.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	info.add_child(description)
-	var purchased: bool = is_ads and bool(main.save.has_removed_ads())
-	var buy := _button("구매 완료" if purchased else String(item.get("display_price", "")), Color("#77b984") if purchased else Color("#eb8650"), Vector2(135, 68), 23)
+	var purchased: bool = (is_ads and bool(main.save.has_removed_ads())) or (is_furniture and main.save.has_furniture(String(item.get("furniture_id", ""))))
+	var buy := _button("보유 중" if purchased and is_furniture else ("구매 완료" if purchased else String(item.get("display_price", ""))), Color("#77b984") if purchased else Color("#eb8650"), Vector2(135, 68), 23)
 	buy.disabled = purchased
 	buy.pressed.connect(func(): _show_purchase_confirmation(item, buy))
 	row.add_child(buy)
 	return card
+
+
+func _furniture_shop_product(item: Dictionary) -> Dictionary:
+	var id := String(item.id)
+	return {
+		"id": "furniture_" + id,
+		"type": "furniture",
+		"furniture_id": id,
+		"name": String(item.name),
+		"display_price": "★ %s" % _format_number(RoomData.furniture_price(id)),
+		"description": "한 번 구매하면 젤리 아지트에서 영구적으로 배치할 수 있어요.",
+		"color": String(item.color),
+		"mark": String(item.mark),
+	}
 
 
 func _show_shop_popup() -> void:
@@ -480,11 +515,11 @@ func _show_shop_popup() -> void:
 	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	dim.add_child(center)
 	var panel := PanelContainer.new()
-	panel.custom_minimum_size = Vector2(650, 930)
+	panel.custom_minimum_size = Vector2(650, 1020)
 	panel.add_theme_stylebox_override("panel", _panel_style(Color("#f5e9ff"), Color("#70499e"), 34))
 	center.add_child(panel)
 	panel.scale = Vector2(0.72, 0.72)
-	panel.pivot_offset = Vector2(325, 465)
+	panel.pivot_offset = Vector2(325, 510)
 	panel.create_tween().tween_property(panel, "scale", Vector2.ONE, 0.28).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	var content := VBoxContainer.new()
 	content.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -502,8 +537,74 @@ func _show_shop_popup() -> void:
 	shop_balance_label.add_theme_font_size_override("font_size", 22)
 	shop_balance_label.add_theme_color_override("font_color", Color("#7d5a91"))
 	content.add_child(shop_balance_label)
+	var tabs := HBoxContainer.new()
+	tabs.alignment = BoxContainer.ALIGNMENT_CENTER
+	tabs.add_theme_constant_override("separation", 12)
+	content.add_child(tabs)
+	var tab_group := ButtonGroup.new()
+	tab_group.allow_unpress = false
+	var currency_tab := _button("★ 별가루·하트", Color("#e48a48"), Vector2(275, 64), 23)
+	currency_tab.toggle_mode = true
+	currency_tab.button_group = tab_group
+	currency_tab.button_pressed = true
+	tabs.add_child(currency_tab)
+	var furniture_tab := _button("▦ 가구", Color("#4c9dcc"), Vector2(275, 64), 23)
+	furniture_tab.toggle_mode = true
+	furniture_tab.button_group = tab_group
+	tabs.add_child(furniture_tab)
+
+	# 두 상품군은 같은 영역을 공유하고 선택한 탭의 목록만 표시한다.
+	var tab_content := Control.new()
+	tab_content.custom_minimum_size = Vector2(600, 620)
+	tab_content.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	content.add_child(tab_content)
+	var currency_scroll := ScrollContainer.new()
+	currency_scroll.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	currency_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	currency_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_ALWAYS
+	currency_scroll.scroll_deadzone = 8
+	tab_content.add_child(currency_scroll)
+	var currency_products := VBoxContainer.new()
+	currency_products.custom_minimum_size = Vector2(570, 0)
+	currency_products.add_theme_constant_override("separation", 10)
+	currency_scroll.add_child(currency_products)
+	var currency_guide := Label.new()
+	currency_guide.text = "모험에 필요한 별가루와 하트를 충전하세요."
+	currency_guide.add_theme_font_size_override("font_size", 20)
+	currency_guide.add_theme_color_override("font_color", Color("#7a5b83"))
+	currency_products.add_child(currency_guide)
 	for item in ShopCatalog.load_items():
-		content.add_child(_shop_item_card(item))
+		currency_products.add_child(_shop_item_card(item))
+
+	var furniture_scroll := ScrollContainer.new()
+	furniture_scroll.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	furniture_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	furniture_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_ALWAYS
+	furniture_scroll.scroll_deadzone = 8
+	furniture_scroll.visible = false
+	tab_content.add_child(furniture_scroll)
+	var furniture_products := VBoxContainer.new()
+	furniture_products.custom_minimum_size = Vector2(570, 0)
+	furniture_products.add_theme_constant_override("separation", 10)
+	furniture_scroll.add_child(furniture_products)
+	var furniture_guide := Label.new()
+	furniture_guide.text = "별가루로 구매한 가구는 영구적으로 보유해요."
+	furniture_guide.add_theme_font_size_override("font_size", 20)
+	furniture_guide.add_theme_color_override("font_color", Color("#477c9c"))
+	furniture_products.add_child(furniture_guide)
+	var milestone_reward_ids := FurnitureRewards.reward_item_ids()
+	for furniture in RoomData.purchasable_items():
+		if milestone_reward_ids.has(String(furniture.id)):
+			continue
+		furniture_products.add_child(_shop_item_card(_furniture_shop_product(furniture)))
+	currency_tab.pressed.connect(func():
+		currency_scroll.visible = true
+		furniture_scroll.visible = false
+	)
+	furniture_tab.pressed.connect(func():
+		currency_scroll.visible = false
+		furniture_scroll.visible = true
+	)
 	shop_status_label = Label.new()
 	shop_status_label.text = "개발 빌드에서는 실제 결제 없이 테스트 상품이 지급됩니다." if OS.is_debug_build() else "구매 가격은 스토어 결제창에서 최종 확인할 수 있어요."
 	shop_status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -542,14 +643,15 @@ func _show_purchase_confirmation(item: Dictionary, buy_button: Button) -> void:
 	var badge := PanelContainer.new()
 	badge.custom_minimum_size = Vector2(96, 96)
 	var badge_style := StyleBoxFlat.new()
-	badge_style.bg_color = Color("#f6cc63") if String(item.get("type", "")) == "stardust" else (Color("#ef718d") if String(item.get("type", "")) == "energy" else Color("#8062b7"))
+	var item_type := String(item.get("type", ""))
+	badge_style.bg_color = Color(String(item.get("color", "#56a4d1"))) if item_type == "furniture" else (Color("#f6cc63") if item_type == "stardust" else (Color("#ef718d") if item_type == "energy" else Color("#8062b7")))
 	badge_style.border_color = badge_style.bg_color.darkened(0.25)
 	badge_style.set_border_width_all(3)
 	badge_style.set_corner_radius_all(30)
 	badge.add_theme_stylebox_override("panel", badge_style)
 	content.add_child(badge)
 	var badge_icon := Label.new()
-	badge_icon.text = "★" if String(item.get("type", "")) == "stardust" else ("♥" if String(item.get("type", "")) == "energy" else "AD\nOFF")
+	badge_icon.text = String(item.get("mark", "◆")) if item_type == "furniture" else ("★" if item_type == "stardust" else ("♥" if item_type == "energy" else "AD\nOFF"))
 	badge_icon.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	badge_icon.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	badge_icon.add_theme_font_size_override("font_size", 48 if String(item.get("type", "")) != "remove_ads" else 21)
@@ -568,7 +670,7 @@ func _show_purchase_confirmation(item: Dictionary, buy_button: Button) -> void:
 	product.add_theme_color_override("font_color", Color("#6e4d7f"))
 	content.add_child(product)
 	var notice := Label.new()
-	notice.text = "구매 버튼을 누르면 결제가 진행됩니다."
+	notice.text = "보유 별가루에서 즉시 차감됩니다." if item_type == "furniture" else "구매 버튼을 누르면 결제가 진행됩니다."
 	notice.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	notice.add_theme_font_size_override("font_size", 17)
 	notice.add_theme_color_override("font_color", Color("#907694"))
@@ -595,6 +697,26 @@ func _close_purchase_confirmation() -> void:
 
 
 func _purchase_shop_item(item: Dictionary, buy_button: Button) -> void:
+	if String(item.get("type", "")) == "furniture":
+		var furniture_id := String(item.get("furniture_id", ""))
+		var price := RoomData.furniture_price(furniture_id)
+		if main.save.has_furniture(furniture_id):
+			shop_status_label.text = "이미 보유한 가구예요."
+			return
+		if main.save.get_stardust() < price:
+			shop_status_label.text = "별가루가 부족해요.  ★ %s 필요" % _format_number(price)
+			return
+		if not main.save.purchase_furniture(furniture_id, price):
+			shop_status_label.text = "가구를 구매하지 못했어요."
+			return
+		main.audio.play("shiny", 1.05)
+		G.haptic(18)
+		stardust_label.text = "★ 별가루 %d" % main.save.get_stardust()
+		shop_balance_label.text = "보유 별가루  ★ %d" % main.save.get_stardust()
+		buy_button.text = "보유 중"
+		buy_button.disabled = true
+		shop_status_label.text = "%s 구매 완료! 꾸미기에서 배치할 수 있어요." % String(item.get("name", ""))
+		return
 	if not OS.is_debug_build():
 		shop_status_label.text = "플랫폼 결제 공급자를 연결한 뒤 구매할 수 있어요."
 		return
@@ -1035,14 +1157,16 @@ func _build_palette() -> void:
 	list.add_theme_constant_override("separation", 8)
 	list.mouse_filter = Control.MOUSE_FILTER_PASS
 	scroll.add_child(list)
-	for item in RoomData.all_items():
+	# 배치 팔레트는 실제 지급된 시작 가구만 보여준다. 별/업적 보상은
+	# 별도의 획득·보유 처리가 구현되기 전까지 잠금 슬롯으로도 노출하지 않는다.
+	for item in RoomData.owned_items(main.save):
 		var unlocked := RoomData.item_unlocked(item, main.save)
 		var already_placed := false
 		for placement in placements:
 			if placement.id == item.id:
 				already_placed = true
 				break
-		var label := String(item.name) if unlocked else "🔒 " + ("업적" if item.has("achievement") else "별 %d" % int(item.stars))
+		var label := String(item.name)
 		var button := _button(label, Color(String(item.color)) if unlocked else Color("#aaa1b3"), Vector2(126, 100), 18)
 		# 아이템 위에서 시작한 터치도 부모 ScrollContainer로 전달한다.
 		# ScrollContainer가 deadzone을 넘으면 버튼 클릭을 취소하고 좌우 드래그로 전환한다.
@@ -1196,7 +1320,7 @@ func _show_album() -> void:
 	for i in range(RoomData.ACHIEVEMENT_NAMES.size()):
 		var unlocked := RoomData.achievement_unlocked(i, main.save)
 		var row := Label.new()
-		row.text = ("✓  " if unlocked else "○  ") + RoomData.ACHIEVEMENT_NAMES[i] + ("  · 가구 획득" if unlocked else "")
+		row.text = ("✓  " if unlocked else "○  ") + RoomData.ACHIEVEMENT_NAMES[i] + ("  · 달성" if unlocked else "")
 		row.add_theme_font_size_override("font_size", 23)
 		row.add_theme_color_override("font_color", Color("#6bac79") if unlocked else Color("#9b929f"))
 		list.add_child(row)

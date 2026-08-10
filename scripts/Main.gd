@@ -7,6 +7,7 @@ var audio: AudioMgr
 var save := SaveGame.new()
 var current_screen: Node = null
 var game: Game = null
+var last_furniture_reward: Dictionary = {}
 
 
 func _ready() -> void:
@@ -14,6 +15,7 @@ func _ready() -> void:
 	var level_errors := Levels.validate_all()
 	level_errors.append_array(RoomData.validate_catalog())
 	level_errors.append_array(ShopCatalog.validate_catalog())
+	level_errors.append_array(FurnitureRewardCatalog.validate())
 	level_errors.append_array(ScenarioCatalog.validate())
 	if SaveGame.calculate_stardust_reward(0, 1) != 1:
 		level_errors.append("별가루 보상 오류: 0성→1성")
@@ -66,6 +68,21 @@ func _ready() -> void:
 		level_errors.append("광고 제거 상점 지급 오류")
 	if shop_test_save.apply_verified_shop_item(ShopCatalog.item_by_id("remove_ads")):
 		level_errors.append("광고 제거 중복 구매 차단 오류")
+	var furniture_test_save := SaveGame.new()
+	furniture_test_save.persistence_enabled = false
+	furniture_test_save.grant_stardust(1000)
+	var sofa_price := RoomData.furniture_price("sofa_p")
+	if not furniture_test_save.purchase_furniture("sofa_p", sofa_price) or not furniture_test_save.has_furniture("sofa_p") or furniture_test_save.get_stardust() != 1000 - sofa_price:
+		level_errors.append("가구 별가루 구매/영구 보유 오류")
+	if furniture_test_save.purchase_furniture("sofa_p", sofa_price):
+		level_errors.append("가구 중복 구매 차단 오류")
+	var milestone_test_save := SaveGame.new()
+	milestone_test_save.persistence_enabled = false
+	var milestone_reward := milestone_test_save.claim_level_furniture_reward(10)
+	if String(milestone_reward.get("furniture_id", "")) != "ach_first" or not milestone_test_save.has_furniture("ach_first"):
+		level_errors.append("10단위 가구 보상 지급 오류")
+	if not milestone_test_save.claim_level_furniture_reward(10).is_empty():
+		level_errors.append("10단위 가구 보상 중복 지급 차단 오류")
 	if not level_errors.is_empty():
 		for message in level_errors:
 			push_error("[level validation] " + message)
@@ -240,11 +257,13 @@ func play_chapter_end_if_needed(level_idx: int, destination: Callable) -> bool:
 
 func on_level_finished(idx: int, stars: int, cleared: bool, refund_reserved_energy: bool = false, reward_cap: int = -1) -> int:
 	var stardust_reward := 0
+	last_furniture_reward = {}
 	if cleared:
 		var first_clear := save.get_stars(idx) == 0
 		stardust_reward = save.award_stars(idx, stars, reward_cap)
 		if first_clear:
 			save.register_rescued_jelly(idx)
+			last_furniture_reward = save.claim_level_furniture_reward(idx + 1)
 		if refund_reserved_energy:
 			save.refund_energy()
 	return stardust_reward
