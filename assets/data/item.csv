@@ -1,5 +1,0 @@
-id,type,name,amount,price_krw,display_price,consumable,android_product_id,ios_product_id,description
-stardust_50,stardust,별가루 50개,50,1000,"₩1,000",true,jellymon.stardust.50,jellymon.stardust.50,이어하기와 특별 콘텐츠에 사용할 수 있어요.
-stardust_110,stardust,별가루 110개,110,2000,"₩2,000",true,jellymon.stardust.110,jellymon.stardust.110,10개를 더 담은 알뜰 별가루 묶음이에요.
-heart_5,energy,하트 5개,5,500,"₩500",true,jellymon.energy.5,jellymon.energy.5,모험에 바로 사용할 수 있는 하트 5개예요.
-remove_ads,remove_ads,광고 제거,0,3000,"₩3,000",false,jellymon.remove_ads,jellymon.remove_ads,한 번 구매하면 광고 없이 쾌적하게 즐겨요.

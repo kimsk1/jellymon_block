@@ -57,6 +57,11 @@ static func jelly_tex(c: String) -> Texture2D:
 	return load("res://assets/jelly_%s.png" % c)
 
 
+static func hero_tex() -> Texture2D:
+	## 메인 캐릭터 전용 고해상도 아트. 퍼즐판 젤리는 기존 색상 세트의 통일감을 유지한다.
+	return load("res://assets/jelly_R_v2.png")
+
+
 static func catcher_tex(shape: String, c: String) -> Texture2D:
 	return load("res://assets/catchers/%s_%s.png" % [shape, c])
 

@@ -13,8 +13,11 @@ var revealed := 0.0
 var typing := false
 var typing_speed := 32.0
 var last_advance_msec := -1000
+var auto_advance_token := 0
+var auto_advance_due_msec := -1
 
 const ADVANCE_DEBOUNCE_MS := 120
+const AUTO_ADVANCE_DELAY_SEC := 2.5
 
 var background: TextureRect
 var speaker_label: Label
@@ -178,10 +181,12 @@ func _process(delta: float) -> void:
 		revealed += typing_speed * delta
 		dialogue_label.visible_characters = mini(full_text.length(), int(revealed))
 		if dialogue_label.visible_characters >= full_text.length():
-			typing = false
-			continue_label.visible = true
+			_complete_current_line()
 	if continue_label and continue_label.visible:
 		continue_label.modulate.a = 0.7 + sin(Time.get_ticks_msec() * 0.006) * 0.25
+		if auto_advance_due_msec > 0:
+			var remaining := maxf(0.0, float(auto_advance_due_msec - Time.get_ticks_msec()) / 1000.0)
+			continue_label.text = "▼  %.1f초 후 다음 · 탭해서 계속" % remaining
 
 
 func _on_gui_input(event: InputEvent) -> void:
@@ -204,9 +209,7 @@ func _request_advance(now_msec: int) -> bool:
 
 func _advance() -> void:
 	if typing:
-		dialogue_label.visible_characters = full_text.length()
-		typing = false
-		continue_label.visible = true
+		_complete_current_line()
 		return
 	if line_index + 1 >= lines.size():
 		_finish()
@@ -215,6 +218,9 @@ func _advance() -> void:
 
 
 func _show_line(index: int) -> void:
+	# 이전 문장에 예약된 자동 진행 콜백을 무효화한다.
+	auto_advance_token += 1
+	auto_advance_due_msec = -1
 	line_index = index
 	var line: Dictionary = lines[line_index]
 	var speaker_id := String(line.get("speaker", "narrator"))
@@ -234,6 +240,26 @@ func _show_line(index: int) -> void:
 	main.audio.play("grab", 1.0 + float(line_index % 3) * 0.04, -8.0)
 
 
+func _complete_current_line() -> void:
+	if not typing:
+		return
+	dialogue_label.visible_characters = full_text.length()
+	typing = false
+	continue_label.visible = true
+	_schedule_auto_advance()
+
+
+func _schedule_auto_advance() -> void:
+	## 타이핑 완료 시점(탭으로 즉시 완성한 경우 포함)부터 정확히 2.5초를 센다.
+	var token := auto_advance_token
+	auto_advance_due_msec = Time.get_ticks_msec() + int(AUTO_ADVANCE_DELAY_SEC * 1000.0)
+	await get_tree().create_timer(AUTO_ADVANCE_DELAY_SEC).timeout
+	if token != auto_advance_token or typing or sequence.is_empty():
+		return
+	auto_advance_due_msec = -1
+	_advance()
+
+
 func debug_validate_typewriter_advance() -> bool:
 	## 다음 탭과 함께 들어오는 중복 이벤트가 새 문장을 즉시 완성하지 않는지 검증한다.
 	if lines.size() < 2:
@@ -246,6 +272,11 @@ func debug_validate_typewriter_advance() -> bool:
 	var first_accepted := _request_advance(1000)
 	var duplicate_accepted := _request_advance(1001)
 	return first_accepted and not duplicate_accepted and line_index == 1 and typing and revealed == 0.0 and dialogue_label.visible_characters == 0
+
+
+func debug_start_auto_advance_test() -> void:
+	_show_line(0)
+	_complete_current_line()
 
 
 func _replace_variables(value: String) -> String:
@@ -263,7 +294,8 @@ func _update_portrait(speaker_id: String, side: String) -> void:
 	portrait.visible = color_by_speaker.has(speaker_id)
 	if not portrait.visible:
 		return
-	portrait.texture = G.jelly_tex(String(color_by_speaker[speaker_id]))
+	var portrait_color := String(color_by_speaker[speaker_id])
+	portrait.texture = G.hero_tex() if portrait_color == "R" else G.jelly_tex(portrait_color)
 	portrait.modulate = Color("#60445f") if speaker_id == "cacao_king" else Color.WHITE
 	portrait.position.x = 488 if side == "right" else 42
 	portrait.scale = Vector2(1.08, 1.08)
@@ -273,6 +305,8 @@ func _update_portrait(speaker_id: String, side: String) -> void:
 func _finish() -> void:
 	if sequence.is_empty():
 		return
+	auto_advance_token += 1
+	auto_advance_due_msec = -1
 	var sequence_id := String(sequence.get("sequence_id", ""))
 	sequence = {}
 	if not sequence_id.is_empty():

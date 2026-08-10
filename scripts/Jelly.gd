@@ -14,11 +14,16 @@ var shadow_sprite: Sprite2D
 var shadow_base_scale := Vector2.ONE
 var art_offset := Vector2.ZERO
 var fx = null
+var frost_layers := 0
+var frost_panel: PanelContainer
+var frost_label: Label
+var seal_panel: PanelContainer
 
 
-func setup(cid: String, p_shiny: bool) -> void:
+func setup(cid: String, p_shiny: bool, p_frost_layers: int = 0) -> void:
 	color_id = cid
 	shiny = p_shiny
+	frost_layers = maxi(0, p_frost_layers)
 	phase = randf() * TAU
 	sprite = Sprite2D.new()
 	sprite.texture = G.jelly_tex(cid)
@@ -44,13 +49,133 @@ func setup(cid: String, p_shiny: bool) -> void:
 	sprite.position = art_offset
 	sprite.scale = Vector2.ONE * base_scale
 	add_child(sprite)
+	if frost_layers > 0:
+		_build_frost_shell()
 	if shiny:
-		sprite.modulate = Color(1.35, 1.32, 1.05)
+		# 반짝이 개체도 같은 색 ID라면 원본 색을 유지한다.
+		# 기존의 비균일 RGB 증폭은 파란 젤리를 청록색처럼 보이게 했다.
+		sprite.modulate = Color.WHITE
 		var t := Timer.new()
 		t.wait_time = 0.6
 		t.autostart = true
 		t.timeout.connect(_shiny_sparkle)
 		add_child(t)
+
+
+func _build_frost_shell() -> void:
+	frost_panel = PanelContainer.new()
+	frost_panel.position = Vector2(-38, -39)
+	frost_panel.size = Vector2(76, 76)
+	frost_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	frost_panel.z_index = 3
+	var ice := StyleBoxFlat.new()
+	ice.bg_color = Color(0.55, 0.91, 1.0, 0.2)
+	ice.border_color = Color("#bff7ff")
+	ice.set_border_width_all(5 if frost_layers == 1 else 7)
+	ice.set_corner_radius_all(21)
+	ice.corner_detail = 10
+	ice.shadow_color = Color(0.17, 0.48, 0.72, 0.3)
+	ice.shadow_size = 5
+	ice.shadow_offset = Vector2(0, 3)
+	frost_panel.add_theme_stylebox_override("panel", ice)
+	add_child(frost_panel)
+	frost_label = Label.new()
+	frost_label.position = Vector2(43, -8)
+	frost_label.size = Vector2(38, 34)
+	frost_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	frost_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	frost_label.add_theme_font_size_override("font_size", 21)
+	frost_label.add_theme_color_override("font_color", Color.WHITE)
+	frost_label.add_theme_color_override("font_outline_color", Color("#4388b6"))
+	frost_label.add_theme_constant_override("outline_size", 5)
+	frost_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	frost_label.text = "❄" if frost_layers == 1 else "❄%d" % frost_layers
+	frost_panel.add_child(frost_label)
+
+
+func hit_frost() -> bool:
+	## true면 이번 접촉은 얼음만 깨고 젤리는 아직 흡수하지 않는다.
+	if frost_layers <= 0:
+		return false
+	frost_layers -= 1
+	if frost_panel and is_instance_valid(frost_panel):
+		var pulse := frost_panel.create_tween()
+		pulse.tween_property(frost_panel, "scale", Vector2(1.13, 0.88), 0.08).set_trans(Tween.TRANS_BACK)
+		pulse.tween_property(frost_panel, "scale", Vector2.ONE, 0.13).set_trans(Tween.TRANS_BOUNCE)
+		if frost_layers > 0:
+			frost_label.text = "❄%d" % frost_layers
+		else:
+			pulse.parallel().tween_property(frost_panel, "modulate:a", 0.0, 0.18)
+			pulse.tween_callback(frost_panel.queue_free)
+	return true
+
+
+func _status_badge(text: String, color: Color, position_offset: Vector2) -> PanelContainer:
+	var panel := PanelContainer.new()
+	panel.position = position_offset
+	panel.size = Vector2(34, 34)
+	panel.z_index = 6
+	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var style := StyleBoxFlat.new()
+	style.bg_color = color
+	style.border_color = Color.WHITE
+	style.set_border_width_all(3)
+	style.set_corner_radius_all(17)
+	style.shadow_color = Color(0.08, 0.04, 0.18, 0.35)
+	style.shadow_size = 3
+	panel.add_theme_stylebox_override("panel", style)
+	add_child(panel)
+	var label := Label.new()
+	label.text = text
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.add_theme_font_size_override("font_size", 19)
+	label.add_theme_color_override("font_color", Color.WHITE)
+	label.add_theme_color_override("font_outline_color", color.darkened(0.4))
+	label.add_theme_constant_override("outline_size", 3)
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panel.add_child(label)
+	return panel
+
+
+func set_chain_badge(order: int) -> void:
+	_status_badge(str(order), Color("#ee9d38"), Vector2(-42, -43))
+
+
+func set_key_marker(value: bool) -> void:
+	if value:
+		_status_badge("◆", Color("#e0aa35"), Vector2(9, 10))
+
+
+func set_rescue_sealed(value: bool) -> void:
+	if not value:
+		if seal_panel and is_instance_valid(seal_panel):
+			var tw := seal_panel.create_tween()
+			tw.tween_property(seal_panel, "modulate:a", 0.0, 0.2)
+			tw.tween_callback(seal_panel.queue_free)
+		return
+	seal_panel = PanelContainer.new()
+	seal_panel.position = Vector2(-38, -39)
+	seal_panel.size = Vector2(76, 76)
+	seal_panel.z_index = 4
+	seal_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.55, 0.28, 0.8, 0.13)
+	style.border_color = Color("#b987ef")
+	style.set_border_width_all(5)
+	style.set_corner_radius_all(22)
+	style.shadow_color = Color(0.25, 0.08, 0.42, 0.32)
+	style.shadow_size = 5
+	seal_panel.add_theme_stylebox_override("panel", style)
+	add_child(seal_panel)
+	var lock := Label.new()
+	lock.text = "◆"
+	lock.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lock.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	lock.add_theme_font_size_override("font_size", 22)
+	lock.add_theme_color_override("font_color", Color("#f4dcff"))
+	lock.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	seal_panel.add_child(lock)
 
 
 func _shiny_sparkle() -> void:
@@ -92,5 +217,6 @@ func sad() -> void:
 
 func revive() -> void:
 	set_process(true)
-	sprite.modulate = Color(1.35, 1.32, 1.05) if shiny else Color.WHITE
+	# 실패 연출에서 복귀할 때도 반짝이 여부와 관계없이 원본 색상으로 돌아온다.
+	sprite.modulate = Color.WHITE
 	sprite.scale = Vector2.ONE * base_scale

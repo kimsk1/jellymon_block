@@ -23,6 +23,8 @@ var movement_locked := false
 var count_badge: Label
 var badge_panel: PanelContainer
 var badge_style: StyleBoxFlat
+var key_locked := false
+var key_lock_panel: PanelContainer
 
 
 func setup(cid: String, shape: String, amount: int = 1) -> void:
@@ -75,6 +77,41 @@ func setup(cid: String, shape: String, amount: int = 1) -> void:
 func badge_contains(screen_point: Vector2) -> bool:
 	## 오목한 L/T 블록에서는 배지가 실제 점유 셀 밖에 걸칠 수 있으므로 별도 히트 영역으로 처리한다.
 	return badge_panel != null and badge_panel.get_global_rect().grow(8.0).has_point(screen_point)
+
+
+func set_key_locked(value: bool) -> void:
+	key_locked = value
+	if not value:
+		if key_lock_panel and is_instance_valid(key_lock_panel):
+			var unlock_tween := key_lock_panel.create_tween()
+			unlock_tween.tween_property(key_lock_panel, "scale", Vector2(1.35, 0.2), 0.16).set_trans(Tween.TRANS_BACK)
+			unlock_tween.parallel().tween_property(key_lock_panel, "modulate:a", 0.0, 0.16)
+			unlock_tween.tween_callback(key_lock_panel.queue_free)
+		visual_root.modulate = Color.WHITE
+		return
+	visual_root.modulate = Color(0.72, 0.74, 0.86)
+	key_lock_panel = PanelContainer.new()
+	key_lock_panel.position = bbox_size * G.CELL * 0.5 - Vector2(28, 28)
+	key_lock_panel.size = Vector2(56, 56)
+	key_lock_panel.pivot_offset = Vector2(28, 28)
+	key_lock_panel.z_index = 8
+	key_lock_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color("#62498d")
+	style.border_color = Color("#e9d7ff")
+	style.set_border_width_all(4)
+	style.set_corner_radius_all(20)
+	style.shadow_color = Color(0.08, 0.03, 0.16, 0.42)
+	style.shadow_size = 5
+	key_lock_panel.add_theme_stylebox_override("panel", style)
+	add_child(key_lock_panel)
+	var icon := Label.new()
+	icon.text = "🔒"
+	icon.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	icon.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	icon.add_theme_font_size_override("font_size", 27)
+	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	key_lock_panel.add_child(icon)
 
 
 func center_px() -> Vector2:
@@ -181,7 +218,7 @@ func sad() -> void:
 
 func revive() -> void:
 	set_process(true)
-	visual_root.modulate = Color(1.14, 1.14, 1.2) if completed else Color.WHITE
+	visual_root.modulate = Color(0.72, 0.74, 0.86) if key_locked else (Color(1.14, 1.14, 1.2) if completed else Color.WHITE)
 	visual_root.scale = Vector2.ONE
 
 

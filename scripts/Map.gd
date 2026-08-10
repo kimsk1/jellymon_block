@@ -79,7 +79,7 @@ func _ready() -> void:
 	chapters.add_theme_constant_override("separation", 34)
 	chapters.mouse_filter = Control.MOUSE_FILTER_PASS
 	scroll.add_child(chapters)
-	for chapter in range(5):
+	for chapter in range(Levels.visible_chapter_count(main.save)):
 		var section := VBoxContainer.new()
 		section.add_theme_constant_override("separation", 14)
 		section.mouse_filter = Control.MOUSE_FILTER_PASS

@@ -27,11 +27,16 @@ func _draw() -> void:
 	var viewport_size := get_viewport_rect().size
 	var extra_offset := G.safe_offset(viewport_size)
 	# 부모 Title이 안전 영역만큼 이동하므로 음수 방향부터 실제 뷰포트 끝까지 칠한다.
-	draw_rect(Rect2(-extra_offset, viewport_size), Color("#d2c0f0"))
+	draw_rect(Rect2(-extra_offset, viewport_size), Color("#c8b4ed"))
 	# 단색 캔버스가 아니라 중앙이 환해지는 층을 겹쳐 아지트에 깊이를 준다.
 	draw_circle(Vector2(360, 560), 430, Color(0.93, 0.86, 1.0, 0.24))
 	draw_circle(Vector2(105, 1080), 230, Color(0.58, 0.39, 0.82, 0.09))
 	draw_circle(Vector2(660, 1020), 260, Color(1.0, 0.45, 0.68, 0.08))
+	# 천장 조명과 작은 별 장식으로 빈 상단도 아지트의 일부처럼 보이게 한다.
+	for lamp_x in [148.0, 572.0]:
+		draw_line(Vector2(lamp_x, 124), Vector2(lamp_x, 160), Color("#735990"), 4, true)
+		draw_circle(Vector2(lamp_x, 168), 22, Color(1.0, 0.82, 0.35, 0.13))
+		draw_circle(Vector2(lamp_x, 168), 9, Color("#ffe59a"))
 	for i in range(10):
 		var p := Vector2(42 + (i * 83) % 660, 145 + (i % 3) * 54)
 		draw_circle(p, 22 + (i % 4) * 7, Color(1, 1, 1, 0.2))
@@ -46,7 +51,7 @@ func _draw() -> void:
 	shadow.set_corner_radius_all(38)
 	draw_style_box(shadow, Rect2(room.position + Vector2(0, 12), room.size))
 	var wall := StyleBoxFlat.new()
-	wall.bg_color = Color("#fff0f7")
+	wall.bg_color = Color("#fff4f8")
 	wall.border_color = Color("#8061aa")
 	wall.set_border_width_all(5)
 	wall.set_corner_radius_all(38)
@@ -86,9 +91,23 @@ func _draw() -> void:
 	# 창틀 받침과 작은 반사광
 	draw_line(Vector2(278, 306), Vector2(442, 306), Color("#5679aa"), 9, true)
 	draw_line(Vector2(289, 302), Vector2(431, 302), Color("#d8f3ff"), 3, true)
+	# 젤리 방다운 양옆 커튼. 창문보다 뒤로 물러난 실루엣과 타이백을 준다.
+	var curtain := Color("#e87fa5")
+	var curtain_dark := Color("#a94f79")
+	var left_curtain := PackedVector2Array([Vector2(247, 166), Vector2(280, 166), Vector2(274, 290), Vector2(244, 317), Vector2(252, 246)])
+	var right_curtain := PackedVector2Array([Vector2(440, 166), Vector2(473, 166), Vector2(468, 246), Vector2(476, 317), Vector2(446, 290)])
+	draw_colored_polygon(left_curtain, curtain)
+	draw_colored_polygon(right_curtain, curtain)
+	draw_polyline(PackedVector2Array(left_curtain + PackedVector2Array([left_curtain[0]])), curtain_dark, 3, true)
+	draw_polyline(PackedVector2Array(right_curtain + PackedVector2Array([right_curtain[0]])), curtain_dark, 3, true)
+	draw_circle(Vector2(256, 255), 7, Color("#ffd469"))
+	draw_circle(Vector2(464, 255), 7, Color("#ffd469"))
+	# 벽과 바닥 사이의 몰딩으로 방 구조를 또렷하게 분리한다.
+	draw_rect(Rect2(33, 354, 654, 16), Color("#f7d7ce"), true)
+	draw_line(Vector2(34, 354), Vector2(686, 354), Color("#b87986"), 3, true)
 	# 바닥과 러그 영역
 	var floor_style := StyleBoxFlat.new()
-	floor_style.bg_color = Color("#e9c39d")
+	floor_style.bg_color = Color("#e8bc91")
 	floor_style.corner_radius_bottom_left = 34
 	floor_style.corner_radius_bottom_right = 34
 	draw_style_box(floor_style, Rect2(33, 365, 654, 488))
@@ -98,9 +117,11 @@ func _draw() -> void:
 	for x in range(62, 680, 92):
 		draw_line(Vector2(x, 367), Vector2(x - 45, 850), Color(0.65, 0.45, 0.38, 0.1), 2)
 	# 주인공을 받쳐주는 젤리 모양 러그. 가구보다 뒤에 있어 화면 중심을 자연스럽게 묶는다.
-	draw_circle(Vector2(360, 676), 132, Color(0.5, 0.28, 0.7, 0.09))
-	draw_circle(Vector2(360, 668), 118, Color(1.0, 0.72, 0.84, 0.2))
-	draw_arc(Vector2(360, 668), 118, PI * 0.1, PI * 0.9, 32, Color(1, 1, 1, 0.34), 4, true)
+	draw_circle(Vector2(360, 684), 138, Color(0.35, 0.18, 0.5, 0.14))
+	draw_circle(Vector2(360, 675), 124, Color("#ef9fc3"))
+	draw_circle(Vector2(360, 675), 109, Color("#f8c5da"))
+	draw_arc(Vector2(360, 675), 112, PI * 1.08, PI * 1.9, 34, Color(1, 1, 1, 0.54), 5, true)
+	draw_circle(Vector2(360, 675), 18, Color(1, 1, 1, 0.34))
 	# 편집 모드에서만 실제 배치 셀을 표시한다.
 	if edit_mode:
 		for y in range(RoomData.GRID_H):

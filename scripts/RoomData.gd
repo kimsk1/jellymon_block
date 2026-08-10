@@ -127,10 +127,10 @@ static func next_growth_stars(stage: int) -> int:
 
 static func default_placements() -> Array:
 	return [
-		{"id":"cushion_r", "x":1, "y":3, "rotation":0},
-		{"id":"lamp_y", "x":6, "y":1, "rotation":0},
-		{"id":"table_b", "x":3, "y":3, "rotation":0},
-		{"id":"shelf_g", "x":1, "y":0, "rotation":0},
+		{"id":"cushion_r", "x":1, "y":4, "rotation":0},
+		{"id":"lamp_y", "x":6, "y":0, "rotation":0},
+		{"id":"table_b", "x":3, "y":1, "rotation":0},
+		{"id":"shelf_g", "x":0, "y":0, "rotation":0},
 	]
 
 

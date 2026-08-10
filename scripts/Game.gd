@@ -25,6 +25,14 @@ var seal_at := {}           # Vector2i -> 봉인 데이터
 var seal_gates := {}        # 닫힌 수정 장벽 셀
 var rescue_exits: Array = []
 var exit_at := {}            # Vector2i -> 출구 데이터 목록
+var frozen_at := {}          # Vector2i -> 남은 얼음 겹 수
+var chain_at := {}           # Vector2i -> {chain, index}
+var chain_progress: Array[int] = []
+var sealed_at := {}          # 스위치 전까지 흡수할 수 없는 젤리
+var switch_at := {}          # 구조 스위치 타일
+var rescue_switch_active := false
+var key_unlock_at := {}      # 열쇠 젤리 셀 -> 잠금 캐처 인덱스 배열
+var locked_catcher_indices := {}
 
 var grabbed: Catcher = null
 var grab_offset := Vector2.ZERO
@@ -63,6 +71,10 @@ func _ready() -> void:
 	origin.y = top_h + max(0.0, (G.H - top_h - bottom_h - rows * G.CELL) / 2.0)
 	_setup_shape_seals()
 	_setup_rescue_exits()
+	_setup_frozen_jellies()
+	_setup_rescue_chains()
+	_setup_rescue_switches()
+	_setup_key_locks()
 
 	jellies_node = Node2D.new()
 	add_child(jellies_node)
@@ -127,7 +139,13 @@ func cell_pos(c: Vector2i) -> Vector2:
 func _spawn_jelly(cid: String, cell: Vector2i) -> void:
 	var j := Jelly.new()
 	j.fx = fx
-	j.setup(cid, randf() < 0.02)
+	j.setup(cid, randf() < 0.02, int(frozen_at.get(cell, 0)))
+	if chain_at.has(cell):
+		j.set_chain_badge(int(chain_at[cell].index) + 1)
+	if sealed_at.has(cell):
+		j.set_rescue_sealed(true)
+	if key_unlock_at.has(cell):
+		j.set_key_marker(true)
 	j.cell = cell
 	j.position = cell_pos(cell)
 	jellies_node.add_child(j)
@@ -144,6 +162,7 @@ func _spawn_catcher(cid: String, shape: String, org: Vector2i, capacity: int, sp
 	var c := Catcher.new()
 	c.setup(cid, shape, capacity)
 	c.spec_index = spec_index
+	c.set_key_locked(locked_catcher_indices.has(spec_index))
 	c.origin_cell = org
 	c.position = origin + Vector2(org) * G.CELL
 	c.slide_target = c.position
@@ -187,9 +206,48 @@ func _setup_rescue_exits() -> void:
 		exit_at[exit.cell] = list
 
 
+func _setup_frozen_jellies() -> void:
+	for raw in L.get("frozen", []):
+		if raw is Array and raw.size() >= 3:
+			frozen_at[Vector2i(int(raw[0]), int(raw[1]))] = int(raw[2])
+
+
+func _setup_rescue_chains() -> void:
+	for raw in L.get("chains", []):
+		var chain_index := chain_progress.size()
+		chain_progress.append(0)
+		for order in range(raw.cells.size()):
+			var pair: Array = raw.cells[order]
+			chain_at[Vector2i(int(pair[0]), int(pair[1]))] = {"chain": chain_index, "index": order}
+
+
+func _setup_rescue_switches() -> void:
+	for pair in L.get("switches", []):
+		switch_at[Vector2i(int(pair[0]), int(pair[1]))] = true
+	for pair in L.get("sealed_jellies", []):
+		sealed_at[Vector2i(int(pair[0]), int(pair[1]))] = true
+
+
+func _setup_key_locks() -> void:
+	for raw in L.get("key_locks", []):
+		var catcher_index := int(raw.catcher)
+		var pair: Array = raw.key
+		var cell := Vector2i(int(pair[0]), int(pair[1]))
+		locked_catcher_indices[catcher_index] = true
+		var indices: Array = key_unlock_at.get(cell, [])
+		indices.append(catcher_index)
+		key_unlock_at[cell] = indices
+
+
 # ────────────────────────── 입력 ──────────────────────────
 
 func _unhandled_input(event: InputEvent) -> void:
+	# PC 디버그 빌드 전용: C를 누르면 1성 클리어로 저장하고 즉시 다음 레벨을 연다.
+	if event is InputEventKey and event.pressed and not event.echo and OS.is_debug_build() and not OS.has_feature("mobile"):
+		if event.keycode == KEY_C or event.physical_keycode == KEY_C:
+			_debug_clear_one_star_and_next()
+			get_viewport().set_input_as_handled()
+			return
 	if state != "play":
 		return
 	if event is InputEventScreenTouch:
@@ -218,22 +276,36 @@ func _pick_catcher(viewport_position: Vector2):
 	# 숫자 배지는 모양의 빈 모서리에 걸칠 수 있으므로 격자 판정보다 먼저 소유 블록을 선택한다.
 	for c in catchers:
 		if is_instance_valid(c) and c.badge_contains(viewport_position):
+			if c.key_locked:
+				_show_key_locked_feedback(c)
+				return null
 			return c
 	# 터치 좌표는 Viewport 기준이고 보드는 긴 화면에서 screen_offset만큼 이동하므로,
 	# 셀/거리 판정 전에 Game 노드의 로컬 좌표로 변환한다.
 	var p := to_local(viewport_position)
 	var cell := Vector2i(int(floor((p.x - origin.x) / G.CELL)), int(floor((p.y - origin.y) / G.CELL)))
 	if catcher_at.has(cell):
-		return catcher_at[cell]
+		var direct: Catcher = catcher_at[cell]
+		if direct.key_locked:
+			_show_key_locked_feedback(direct)
+			return null
+		return direct
 	var best = null
 	var best_d := G.CELL * 0.85
 	for c in catchers:
+		if c.key_locked:
+			continue
 		for off in c.cells:
 			var d: float = cell_pos(c.origin_cell + off).distance_to(p)
 			if d < best_d:
 				best_d = d
 				best = c
 	return best
+
+
+func _show_key_locked_feedback(c: Catcher) -> void:
+	fx.float_text(c.center_px(), "열쇠가 필요해요!", Color("#f1d7ff"), 24)
+	audio.play("grab", 0.75, -9.0)
 
 
 func _release() -> void:
@@ -293,6 +365,8 @@ func _can_place(c: Catcher, org: Vector2i) -> bool:
 
 
 func _try_step(c: Catcher, dir: Vector2i) -> bool:
+	if c.key_locked:
+		return false
 	var org: Vector2i = c.origin_cell + dir
 	if not _can_place(c, org):
 		return false
@@ -332,10 +406,31 @@ func _resolve_catcher_arrivals() -> void:
 		if is_instance_valid(c) and c.arrival_pending and c.position.distance_to(c.slide_target) <= 1.0:
 			c.position = c.slide_target
 			c.arrival_pending = false
+			_check_rescue_switch(c)
 			if _try_rescue_exit(c):
 				continue
 			_check_shape_seals(c)
 			_absorb_footprint(c)
+
+
+func _check_rescue_switch(c: Catcher) -> void:
+	if rescue_switch_active or switch_at.is_empty():
+		return
+	for off in c.cells:
+		var cell: Vector2i = c.origin_cell + off
+		if not switch_at.has(cell):
+			continue
+		rescue_switch_active = true
+		for sealed_cell in sealed_at:
+			var jelly = jelly_at.get(sealed_cell)
+			if jelly != null:
+				jelly.set_rescue_sealed(false)
+		fx.impact(cell_pos(cell), Color("#bd8cf4"), true)
+		fx.float_text(cell_pos(cell), "봉인 해제!", Color("#f5e4ff"), 29)
+		audio.play("pop_big", 1.2)
+		G.haptic(32)
+		queue_redraw()
+		return
 
 
 func _has_rescue_exit(c: Catcher) -> bool:
@@ -409,20 +504,46 @@ func _check_shape_seals(c: Catcher) -> void:
 func _absorb_footprint(c: Catcher) -> void:
 	## 캐처가 밟은 셀의 같은 색 젤리를 전부 흡수
 	var eaten := 0
+	var cracked := 0
 	for off in c.cells:
 		if c.completed or eaten >= c.remaining_capacity:
 			break
 		var cl: Vector2i = c.origin_cell + off
 		var j = jelly_at.get(cl)
 		if j != null and not j.absorbing and j.color_id == c.color_id:
-			_absorb(j, c, cl)
-			eaten += 1
+			if not _special_jelly_ready(cl):
+				continue
+			if j.hit_frost():
+				cracked += 1
+				frozen_at[cl] = j.frost_layers
+				fx.impact(cell_pos(cl), Color("#bff7ff"), false)
+				fx.float_text(cell_pos(cl), "얼음 파괴!", Color("#e8fdff"), 25)
+			else:
+				_absorb(j, c, cl)
+				eaten += 1
 	if eaten >= 3:
 		shake_amt = 5.0
-	if eaten > 0:
+	if cracked > 0:
+		shake_amt = maxf(shake_amt, 3.5)
+		audio.play("shiny", 1.25, -6.0)
+		G.haptic(18)
+	if eaten + cracked > 0:
 		c.movement_locked = true
-		c.gulp()
+		if eaten > 0:
+			c.gulp()
 		_unlock_catcher_after_absorb(c)
+
+
+func _special_jelly_ready(cell: Vector2i) -> bool:
+	if sealed_at.has(cell) and not rescue_switch_active:
+		fx.float_text(cell_pos(cell), "스위치 먼저!", Color("#e8ceff"), 23)
+		return false
+	if chain_at.has(cell):
+		var link: Dictionary = chain_at[cell]
+		if chain_progress[int(link.chain)] != int(link.index):
+			fx.float_text(cell_pos(cell), "%d번부터!" % (chain_progress[int(link.chain)] + 1), Color("#ffe5a6"), 23)
+			return false
+	return true
 
 
 func _unlock_catcher_after_absorb(c: Catcher) -> void:
@@ -445,6 +566,19 @@ func _absorb(j: Jelly, c: Catcher, cl: Vector2i) -> void:
 	active_absorptions += 1
 	jellies.erase(j)
 	jelly_at.erase(cl)
+	if chain_at.has(cl):
+		var link: Dictionary = chain_at[cl]
+		chain_progress[int(link.chain)] += 1
+	if key_unlock_at.has(cl):
+		for catcher_index in key_unlock_at[cl]:
+			locked_catcher_indices.erase(int(catcher_index))
+			for locked in catchers:
+				if locked.spec_index == int(catcher_index):
+					locked.set_key_locked(false)
+					fx.float_text(locked.center_px(), "잠금 해제!", Color("#f4e2ff"), 27)
+					break
+		audio.play("pop_big", 1.32)
+		G.haptic(30)
 	j.absorb_anim(jp + Vector2(0, 5))
 	await get_tree().create_timer(0.12).timeout
 	# ── 가두기 이펙트 패키지 ──
@@ -530,6 +664,23 @@ func _clear_level() -> void:
 	show_clear_result.call()
 
 
+func _debug_clear_one_star_and_next() -> void:
+	if state != "play":
+		return
+	state = "debug_clear"
+	_release()
+	main.on_level_finished(level_idx, 1, true, energy_reserved)
+	energy_reserved = false
+	audio.play("clear", 1.15)
+	G.haptic(25)
+	var next_level := level_idx + 1
+	await get_tree().create_timer(0.12).timeout
+	if next_level < Levels.LEVELS.size():
+		main.start_level(next_level, true, true)
+	else:
+		main.show_map()
+
+
 func _fail() -> void:
 	state = "fail"
 	_release()
@@ -604,6 +755,20 @@ func _draw() -> void:
 				# 아래쪽의 은은한 음영과 모서리 광점으로 장난감 타일 같은 재질감을 더한다.
 				draw_line(p + Vector2(13, G.CELL - 11), p + Vector2(G.CELL - 15, G.CELL - 11), Color(0.61, 0.48, 0.3, 0.12), 3.0, true)
 				draw_circle(p + Vector2(G.CELL - 17, 16), 2.5, Color(1, 1, 1, 0.62))
+			# 봉인 젤리를 깨우는 구조 스위치. 활성화 후에는 밝은 체크 링으로 남는다.
+			if switch_at.has(cell):
+				var center := p + Vector2.ONE * G.CELL * 0.5
+				var switch_color := Color("#79d58c") if rescue_switch_active else Color("#a66de0")
+				draw_circle(center + Vector2(0, 4), G.CELL * 0.29, Color(0.1, 0.05, 0.18, 0.25))
+				draw_circle(center, G.CELL * 0.28, switch_color.darkened(0.28))
+				draw_circle(center, G.CELL * 0.21, switch_color)
+				draw_arc(center, G.CELL * 0.18, PI * 1.1, PI * 1.9, 18, Color(1, 1, 1, 0.62), 4, true)
+				if rescue_switch_active:
+					draw_line(center + Vector2(-12, 0), center + Vector2(-3, 10), Color.WHITE, 6, true)
+					draw_line(center + Vector2(-3, 10), center + Vector2(15, -12), Color.WHITE, 6, true)
+				else:
+					var diamond := PackedVector2Array([center + Vector2(0, -14), center + Vector2(14, 0), center + Vector2(0, 14), center + Vector2(-14, 0)])
+					draw_colored_polygon(diamond, Color.WHITE)
 			# FULL 블록을 보드 밖으로 보내는 색상별 구조 통로.
 			if exit_at.has(cell):
 				var exit: Dictionary = exit_at[cell][0]
@@ -679,7 +844,7 @@ func debug_validate_touch_mapping(test_offset := Vector2(0, 160)) -> bool:
 
 func _find_catcher_for(cid: String) -> Catcher:
 	for c in catchers:
-		if c.color_id == cid and not c.completed and c.remaining_capacity > 0:
+		if c.color_id == cid and not c.completed and not c.key_locked and c.remaining_capacity > 0:
 			return c
 	return null
 
@@ -688,7 +853,35 @@ func debug_capture_one() -> void:
 	## 젤리 하나 위로 같은 색 캐처를 순간이동시켜 흡수 파이프라인 실행
 	if jellies.is_empty():
 		return
-	var j = jellies[0]
+	if not rescue_switch_active and not switch_at.is_empty() and not catchers.is_empty():
+		var switch_cell: Vector2i = switch_at.keys()[0]
+		var switch_catcher: Catcher = catchers[0]
+		for off in switch_catcher.cells:
+			catcher_at.erase(switch_catcher.origin_cell + off)
+		switch_catcher.origin_cell = switch_cell - switch_catcher.cells[0]
+		for off in switch_catcher.cells:
+			catcher_at[switch_catcher.origin_cell + off] = switch_catcher
+		switch_catcher.position = origin + Vector2(switch_catcher.origin_cell) * G.CELL
+		switch_catcher.slide_target = switch_catcher.position
+		_check_rescue_switch(switch_catcher)
+	var j = null
+	# 열쇠 → 현재 체인 번호 → 일반 젤리 순서로 골라 신규 기믹도 자동 검증한다.
+	for candidate in jellies:
+		if key_unlock_at.has(candidate.cell) and _find_catcher_for(candidate.color_id) != null:
+			j = candidate
+			break
+	if j == null:
+		for candidate in jellies:
+			if chain_at.has(candidate.cell) and _special_jelly_ready(candidate.cell) and _find_catcher_for(candidate.color_id) != null:
+				j = candidate
+				break
+	if j == null:
+		for candidate in jellies:
+			if _special_jelly_ready(candidate.cell) and _find_catcher_for(candidate.color_id) != null:
+				j = candidate
+				break
+	if j == null:
+		return
 	var c := _find_catcher_for(j.color_id)
 	if c == null:
 		return

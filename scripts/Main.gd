@@ -80,16 +80,30 @@ func _ready() -> void:
 	audio = AudioMgr.new()
 	add_child(audio)
 	# 자동 QA는 메모리에서만 진행해 개발자의 실제 플레이 계정을 오염시키지 않는다.
-	if OS.get_cmdline_user_args().has("--shots") or DisplayServer.get_name() == "headless":
+	if OS.get_cmdline_user_args().has("--shots") or OS.get_cmdline_user_args().has("--shot-room-refresh") or OS.get_cmdline_user_args().has("--shot-room-edit") or OS.get_cmdline_user_args().has("--shot-level-51") or OS.get_cmdline_user_args().has("--shot-late-gimmicks") or DisplayServer.get_name() == "headless":
 		save.persistence_enabled = false
 	save.load_data()
+	if OS.get_cmdline_user_args().has("--shot-room-refresh") or OS.get_cmdline_user_args().has("--shot-room-edit"):
+		save.room_placements = RoomData.default_placements()
 	show_title()
 	if OS.get_cmdline_user_args().has("--shots"):
 		_screenshot_run()
+	elif OS.get_cmdline_user_args().has("--shot-room-refresh"):
+		_screenshot_room_refresh()
+	elif OS.get_cmdline_user_args().has("--shot-room-edit"):
+		_screenshot_room_edit()
+	elif OS.get_cmdline_user_args().has("--shot-level-51"):
+		_screenshot_level_51()
+	elif OS.get_cmdline_user_args().has("--shot-late-gimmicks"):
+		_screenshot_late_gimmicks()
 	elif OS.get_cmdline_user_args().has("--validate-story-typing"):
 		_headless_story_typing_test()
 	elif OS.get_cmdline_user_args().has("--validate-touch"):
 		_headless_touch_test()
+	elif OS.get_cmdline_user_args().has("--validate-expansion"):
+		_headless_expansion_test()
+	elif OS.get_cmdline_user_args().has("--validate-late-play"):
+		_headless_late_play_test()
 	elif DisplayServer.get_name() == "headless":
 		_headless_smoke_test()
 
@@ -164,7 +178,8 @@ func start_level(idx: int, bypass_energy: bool = false, skip_story: bool = false
 	if idx >= Levels.LEVELS.size():
 		show_map()
 		return
-	if not bypass_energy and not skip_story and idx % 10 == 0:
+	# 현재 제작된 시나리오는 1~5장까지이며, 확장 챕터는 바로 게임으로 진입한다.
+	if not bypass_energy and not skip_story and idx % 10 == 0 and idx < 50:
 		var chapter_index := idx / 10
 		var sequence_id := "chapter_%02d_start" % (chapter_index + 1)
 		if not save.has_seen_scenario(sequence_id):
@@ -193,7 +208,7 @@ func play_chapter_end_if_needed(level_idx: int, destination: Callable) -> bool:
 	# 자동 플레이는 입력을 만들지 않으므로 이야기 오버레이를 건너뛴다.
 	if OS.get_cmdline_user_args().has("--shots") or DisplayServer.get_name() == "headless":
 		return false
-	var is_chapter_end := level_idx % 10 == 9
+	var is_chapter_end := level_idx % 10 == 9 and level_idx < 50
 	var chapter_index := level_idx / 10
 	var sequence_id := "chapter_%02d_end" % (chapter_index + 1)
 	if is_chapter_end and not save.has_seen_scenario(sequence_id):
@@ -343,12 +358,51 @@ func _snap(fname: String) -> void:
 	print("[snap] ", fname)
 
 
+func _screenshot_room_refresh() -> void:
+	## 첫 방 그래픽만 빠르게 검수하는 전용 캡처. 실제 저장 데이터는 변경하지 않는다.
+	await get_tree().create_timer(0.8).timeout
+	await _snap("room_refresh.png")
+	get_tree().quit()
+
+
+func _screenshot_room_edit() -> void:
+	## 꾸미기 메뉴의 하단 정렬을 빠르게 검수한다.
+	await get_tree().create_timer(0.4).timeout
+	if current_screen is Title:
+		current_screen._enter_edit_mode()
+	await get_tree().create_timer(0.4).timeout
+	await _snap("room_edit_bottom.png")
+	get_tree().quit()
+
+
+func _screenshot_level_51() -> void:
+	## 확장 캠페인의 얼음 젤리 가독성을 빠르게 검수한다.
+	start_level(50, true, true)
+	await get_tree().create_timer(0.8).timeout
+	await _snap("level_51_frost.png")
+	get_tree().quit()
+
+
+func _screenshot_late_gimmicks() -> void:
+	## 구간별 대표 기믹과 100레벨 복합 관문의 실제 화면을 연속 캡처한다.
+	for level_index in [60, 70, 80, 99]:
+		start_level(level_index, true, true)
+		await get_tree().create_timer(0.45).timeout
+		await _snap("level_%d_gimmick.png" % (level_index + 1))
+	get_tree().quit()
+
+
 func _headless_story_typing_test() -> void:
 	show_story(ScenarioCatalog.intro(), Callable())
 	await get_tree().create_timer(0.2).timeout
-	var valid: bool = current_screen is StoryScreen and current_screen.debug_validate_typewriter_advance()
-	print("[story typing validation] next_line_retypes=", valid)
-	get_tree().quit(0 if valid else 1)
+	var typing_valid: bool = current_screen is StoryScreen and current_screen.debug_validate_typewriter_advance()
+	var auto_valid := false
+	if current_screen is StoryScreen:
+		current_screen.debug_start_auto_advance_test()
+		await get_tree().create_timer(StoryScreen.AUTO_ADVANCE_DELAY_SEC + 0.2).timeout
+		auto_valid = current_screen is StoryScreen and current_screen.line_index == 1 and current_screen.typing
+	print("[story typing validation] next_line_retypes=", typing_valid, " auto_advance_2_5s=", auto_valid)
+	get_tree().quit(0 if typing_valid and auto_valid else 1)
 
 
 func _headless_touch_test() -> void:
@@ -360,6 +414,54 @@ func _headless_touch_test() -> void:
 		var valid := game != null and game.debug_validate_touch_mapping(offset)
 		print("[touch validation] offset=", offset, " valid=", valid)
 		failed = failed or not valid
+	get_tree().quit(1 if failed else 0)
+
+
+func _headless_expansion_test() -> void:
+	## 10레벨 단위 공개, 4종 후반 기믹, 복합 관문, PC C 테스트 클리어를 검증한다.
+	var test_save := SaveGame.new()
+	test_save.persistence_enabled = false
+	var visibility_valid := Levels.visible_chapter_count(test_save) == 5
+	for chapter_end in [49, 59, 69, 79, 89]:
+		test_save.award_stars(chapter_end, 1)
+		visibility_valid = visibility_valid and Levels.visible_chapter_count(test_save) == 6 + (chapter_end - 49) / 10
+	save = test_save
+	var runtime_valid := true
+	for level_index in [50, 60, 70, 80, 90, 91, 96, 99]:
+		start_level(level_index, true, true)
+		await get_tree().create_timer(0.25).timeout
+		var flags := Levels._gimmick_flags(level_index + 1)
+		var valid := game != null
+		if valid:
+			valid = (not game.frozen_at.is_empty()) == bool(flags.frost)
+			valid = valid and ((not game.chain_at.is_empty()) == bool(flags.chain))
+			valid = valid and ((not game.switch_at.is_empty() and not game.sealed_at.is_empty()) == bool(flags.switch))
+			valid = valid and ((not game.key_unlock_at.is_empty() and not game.locked_catcher_indices.is_empty()) == bool(flags.key))
+		print("[expansion validation] level=", level_index + 1, " flags=", flags, " runtime=", valid)
+		runtime_valid = runtime_valid and valid
+	start_level(50, true, true)
+	await get_tree().create_timer(0.25).timeout
+	if game:
+		game._debug_clear_one_star_and_next()
+	await get_tree().create_timer(0.35).timeout
+	var debug_clear_valid := save.get_stars(50) == 1 and game != null and game.level_idx == 51
+	print("[expansion validation] levels=", Levels.LEVELS.size(), " visibility=", visibility_valid, " runtime=", runtime_valid, " c_key_clear=", debug_clear_valid)
+	get_tree().quit(0 if Levels.LEVELS.size() == 100 and visibility_valid and runtime_valid and debug_clear_valid else 1)
+
+
+func _headless_late_play_test() -> void:
+	## 대표 레벨을 실제 흡수·해제·배출 파이프라인으로 끝까지 자동 플레이한다.
+	var failed := false
+	for level_index in [50, 60, 70, 80, 90, 99]:
+		start_level(level_index, true, true)
+		await get_tree().create_timer(0.2).timeout
+		var active_game := game
+		if active_game:
+			await active_game.debug_drive()
+			await get_tree().create_timer(1.5).timeout
+		var cleared := active_game != null and active_game.state == "clear" and save.get_stars(level_index) > 0
+		print("[late play validation] level=", level_index + 1, " cleared=", cleared)
+		failed = failed or not cleared
 	get_tree().quit(1 if failed else 0)
 
 

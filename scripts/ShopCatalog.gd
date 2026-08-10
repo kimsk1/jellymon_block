@@ -1,7 +1,7 @@
 class_name ShopCatalog
-## 상점 상품은 assets/data/item.csv에서만 관리한다.
+## 상점 상품은 APK/PCK에도 원본이 포함되는 assets/data/item.json에서 관리한다.
 
-const PATH := "res://assets/data/item.csv"
+const PATH := "res://assets/data/item.json"
 const REQUIRED_IDS := ["stardust_50", "stardust_110", "heart_5", "remove_ads"]
 
 
@@ -9,18 +9,23 @@ static func load_items() -> Array[Dictionary]:
 	var items: Array[Dictionary] = []
 	var file := FileAccess.open(PATH, FileAccess.READ)
 	if not file:
+		push_error("상점 상품 JSON을 열 수 없습니다: %s" % PATH)
 		return items
-	var headers := file.get_csv_line()
-	while not file.eof_reached():
-		var values := file.get_csv_line()
-		if values.is_empty() or (values.size() == 1 and values[0].strip_edges().is_empty()):
+	var parsed = JSON.parse_string(file.get_as_text())
+	if typeof(parsed) != TYPE_DICTIONARY:
+		push_error("상점 상품 JSON 최상위 형식이 올바르지 않습니다: %s" % PATH)
+		return items
+	var raw_items = parsed.get("items", [])
+	if typeof(raw_items) != TYPE_ARRAY:
+		push_error("상점 상품 JSON의 items가 배열이 아닙니다: %s" % PATH)
+		return items
+	for raw_item in raw_items:
+		if typeof(raw_item) != TYPE_DICTIONARY:
 			continue
-		var item := {}
-		for i in range(mini(headers.size(), values.size())):
-			item[String(headers[i]).strip_edges()] = String(values[i]).strip_edges()
-		item["amount"] = int(item.get("amount", "0"))
-		item["price_krw"] = int(item.get("price_krw", "0"))
-		item["consumable"] = String(item.get("consumable", "false")).to_lower() == "true"
+		var item: Dictionary = raw_item.duplicate(true)
+		item["amount"] = int(item.get("amount", 0))
+		item["price_krw"] = int(item.get("price_krw", 0))
+		item["consumable"] = bool(item.get("consumable", false))
 		items.append(item)
 	return items
 

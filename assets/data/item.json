@@ -1,0 +1,52 @@
+{
+  "items": [
+    {
+      "id": "stardust_50",
+      "type": "stardust",
+      "name": "별가루 50개",
+      "amount": 50,
+      "price_krw": 1000,
+      "display_price": "₩1,000",
+      "consumable": true,
+      "android_product_id": "jellymon.stardust.50",
+      "ios_product_id": "jellymon.stardust.50",
+      "description": "이어하기와 특별 콘텐츠에 사용할 수 있어요."
+    },
+    {
+      "id": "stardust_110",
+      "type": "stardust",
+      "name": "별가루 110개",
+      "amount": 110,
+      "price_krw": 2000,
+      "display_price": "₩2,000",
+      "consumable": true,
+      "android_product_id": "jellymon.stardust.110",
+      "ios_product_id": "jellymon.stardust.110",
+      "description": "10개를 더 담은 알뜰 별가루 묶음이에요."
+    },
+    {
+      "id": "heart_5",
+      "type": "energy",
+      "name": "하트 5개",
+      "amount": 5,
+      "price_krw": 500,
+      "display_price": "₩500",
+      "consumable": true,
+      "android_product_id": "jellymon.energy.5",
+      "ios_product_id": "jellymon.energy.5",
+      "description": "모험에 바로 사용할 수 있는 하트 5개예요."
+    },
+    {
+      "id": "remove_ads",
+      "type": "remove_ads",
+      "name": "광고 제거",
+      "amount": 0,
+      "price_krw": 3000,
+      "display_price": "₩3,000",
+      "consumable": false,
+      "android_product_id": "jellymon.remove_ads",
+      "ios_product_id": "jellymon.remove_ads",
+      "description": "한 번 구매하면 광고 없이 쾌적하게 즐겨요."
+    }
+  ]
+}

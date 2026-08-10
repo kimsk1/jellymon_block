@@ -4480,5 +4480,6881 @@
 			0.2
 		],
 		"time": 63.0
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 3,
+				"cell": [
+					2,
+					5
+				],
+				"color": "R",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					6,
+					5
+				],
+				"color": "Y",
+				"shape": "TR"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					4,
+					6
+				],
+				"color": "B",
+				"shape": "SQ"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					1,
+					6
+				],
+				"color": "G",
+				"shape": "S1"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					1,
+					8
+				],
+				"color": "P",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					2,
+					1
+				],
+				"color": "O",
+				"shape": "S1"
+			}
+		],
+		"frozen": [
+			[
+				2,
+				4,
+				1
+			],
+			[
+				3,
+				7,
+				1
+			]
+		],
+		"grid": [
+			"________",
+			"__._____",
+			"_B.B.B__",
+			".GGG...#",
+			"PBP.P.P.",
+			"_O.RYO.O",
+			"_.RR....",
+			"_Y.Y..._",
+			"_.._____"
+		],
+		"hint": "색의 층과 캐처 모양을 보고 구출 순서를 정하세요.\n❄ 얼음 젤리는 같은 색 블록으로 얼음을 깨고 다시 지나가야 구출돼요.",
+		"name": "서리 정원 · 길 열기",
+		"stars": [
+			0.5,
+			0.25
+		],
+		"time": 62.78
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 3,
+				"cell": [
+					4,
+					5
+				],
+				"color": "R",
+				"shape": "TR"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					2,
+					5
+				],
+				"color": "R",
+				"shape": "V2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					5,
+					7
+				],
+				"color": "Y",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					2,
+					8
+				],
+				"color": "Y",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					1,
+					6
+				],
+				"color": "B",
+				"shape": "TR"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					6,
+					5
+				],
+				"color": "G",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					3,
+					4
+				],
+				"color": "P",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					2,
+					3
+				],
+				"color": "O",
+				"shape": "S1"
+			}
+		],
+		"exits": [
+			{
+				"catcher": -1,
+				"cell": [
+					4,
+					0
+				],
+				"color": "R",
+				"direction": [
+					0,
+					-1
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					6,
+					7
+				],
+				"color": "Y",
+				"direction": [
+					1,
+					0
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					0,
+					0
+				],
+				"color": "B",
+				"direction": [
+					0,
+					-1
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					0,
+					6
+				],
+				"color": "G",
+				"direction": [
+					0,
+					1
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					4,
+					8
+				],
+				"color": "P",
+				"direction": [
+					0,
+					1
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					5,
+					0
+				],
+				"color": "O",
+				"direction": [
+					0,
+					-1
+				]
+			}
+		],
+		"frozen": [
+			[
+				1,
+				4,
+				1
+			],
+			[
+				3,
+				3,
+				1
+			]
+		],
+		"grid": [
+			".._...__",
+			"..O.Y.G_",
+			"R.B.PYR_",
+			"#Y.GBORY",
+			"RRB.PPR#",
+			".Y.G.O.Y",
+			"......._",
+			"_......_",
+			"_......_"
+		],
+		"hint": "젤리를 모두 담아 GO가 된 블록을 같은 색 화살표 출구로 내보내세요!\n❄ 얼음 젤리는 같은 색 블록으로 얼음을 깨고 다시 지나가야 구출돼요.",
+		"name": "서리 정원 · 엇갈린 줄",
+		"stars": [
+			0.5,
+			0.25
+		],
+		"time": 62.56
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 5,
+				"cell": [
+					1,
+					6
+				],
+				"color": "R",
+				"shape": "SV"
+			},
+			{
+				"capacity": 5,
+				"cell": [
+					5,
+					6
+				],
+				"color": "R",
+				"shape": "SQ"
+			},
+			{
+				"capacity": 5,
+				"cell": [
+					3,
+					8
+				],
+				"color": "Y",
+				"shape": "H4"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					3,
+					6
+				],
+				"color": "Y",
+				"shape": "SQ"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					3,
+					2
+				],
+				"color": "B",
+				"shape": "S1"
+			}
+		],
+		"exits": [
+			{
+				"catcher": -1,
+				"cell": [
+					2,
+					8
+				],
+				"color": "R",
+				"direction": [
+					0,
+					1
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					5,
+					2
+				],
+				"color": "Y",
+				"direction": [
+					0,
+					-1
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					3,
+					8
+				],
+				"color": "B",
+				"direction": [
+					0,
+					1
+				]
+			}
+		],
+		"frozen": [
+			[
+				5,
+				5,
+				1
+			],
+			[
+				1,
+				4,
+				1
+			]
+		],
+		"grid": [
+			"________",
+			"__B_R___",
+			"__....__",
+			".YYB.BBR",
+			"RYYYYYY.",
+			"_RRR.RRR",
+			"_.R.....",
+			"_......_",
+			"__....._"
+		],
+		"hint": "젤리를 모두 담아 GO가 된 블록을 같은 색 화살표 출구로 내보내세요!\n❄ 얼음 젤리는 같은 색 블록으로 얼음을 깨고 다시 지나가야 구출돼요.",
+		"name": "서리 정원 · 색의 성",
+		"stars": [
+			0.5,
+			0.25
+		],
+		"time": 62.34
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 2,
+				"cell": [
+					3,
+					6
+				],
+				"color": "R",
+				"shape": "SQ"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					0,
+					7
+				],
+				"color": "Y",
+				"shape": "TU"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					5,
+					0
+				],
+				"color": "B",
+				"shape": "V2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					6,
+					7
+				],
+				"color": "B",
+				"shape": "SQ"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					5,
+					4
+				],
+				"color": "G",
+				"shape": "V4"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					2,
+					8
+				],
+				"color": "G",
+				"shape": "H2"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					1,
+					3
+				],
+				"color": "P",
+				"shape": "S1"
+			},
+			{
+				"capacity": 2,
+				"cell": [
+					7,
+					2
+				],
+				"color": "O",
+				"shape": "V4"
+			}
+		],
+		"frozen": [
+			[
+				2,
+				3,
+				1
+			],
+			[
+				4,
+				2,
+				1
+			]
+		],
+		"grid": [
+			"R.Y...__",
+			"R.Y.B.G#",
+			"Y.B.G.P.",
+			"_.B.G.P.",
+			"B.G.P.O.",
+			"B.GBP.O.",
+			"..G...._",
+			"........",
+			"_......."
+		],
+		"hint": "색의 층과 캐처 모양을 보고 구출 순서를 정하세요.\n❄ 얼음 젤리는 같은 색 블록으로 얼음을 깨고 다시 지나가야 구출돼요.",
+		"name": "서리 정원 · 굽은 통로",
+		"stars": [
+			0.5,
+			0.25
+		],
+		"time": 62.12
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 3,
+				"cell": [
+					4,
+					7
+				],
+				"color": "R",
+				"shape": "H2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					3,
+					5
+				],
+				"color": "Y",
+				"shape": "L4B"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					1,
+					6
+				],
+				"color": "B",
+				"shape": "SQ"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					4,
+					6
+				],
+				"color": "G",
+				"shape": "S1"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					4,
+					8
+				],
+				"color": "P",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					0,
+					7
+				],
+				"color": "O",
+				"shape": "S1"
+			}
+		],
+		"exits": [
+			{
+				"catcher": -1,
+				"cell": [
+					1,
+					8
+				],
+				"color": "R",
+				"direction": [
+					0,
+					1
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					3,
+					1
+				],
+				"color": "Y",
+				"direction": [
+					0,
+					-1
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					7,
+					7
+				],
+				"color": "B",
+				"direction": [
+					1,
+					0
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					6,
+					8
+				],
+				"color": "G",
+				"direction": [
+					0,
+					1
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					7,
+					6
+				],
+				"color": "P",
+				"direction": [
+					1,
+					0
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					4,
+					8
+				],
+				"color": "O",
+				"direction": [
+					0,
+					1
+				]
+			}
+		],
+		"frozen": [
+			[
+				4,
+				2,
+				1
+			],
+			[
+				5,
+				5,
+				1
+			],
+			[
+				3,
+				3,
+				1
+			]
+		],
+		"grid": [
+			"________",
+			"__Y.B_P_",
+			"__BBB_.#",
+			"_G.G.G..",
+			"P.PYPY..",
+			"_OR..O.O",
+			"_....R..",
+			"......R.",
+			"........"
+		],
+		"hint": "젤리를 모두 담아 GO가 된 블록을 같은 색 화살표 출구로 내보내세요!\n❄ 얼음 젤리는 같은 색 블록으로 얼음을 깨고 다시 지나가야 구출돼요.",
+		"name": "서리 정원 · 한붓 쓸기",
+		"stars": [
+			0.5,
+			0.25
+		],
+		"time": 61.9
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 5,
+				"cell": [
+					0,
+					5
+				],
+				"color": "R",
+				"shape": "V4"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					5,
+					6
+				],
+				"color": "Y",
+				"shape": "SQ"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					2,
+					5
+				],
+				"color": "Y",
+				"shape": "SV"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					1,
+					8
+				],
+				"color": "B",
+				"shape": "H2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					5,
+					8
+				],
+				"color": "G",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					1,
+					7
+				],
+				"color": "P",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					7,
+					7
+				],
+				"color": "O",
+				"shape": "S1"
+			}
+		],
+		"exits": [
+			{
+				"catcher": -1,
+				"cell": [
+					3,
+					0
+				],
+				"color": "R",
+				"direction": [
+					0,
+					-1
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					0,
+					6
+				],
+				"color": "Y",
+				"direction": [
+					-1,
+					0
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					3,
+					8
+				],
+				"color": "B",
+				"direction": [
+					0,
+					1
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					5,
+					0
+				],
+				"color": "G",
+				"direction": [
+					0,
+					-1
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					0,
+					7
+				],
+				"color": "P",
+				"direction": [
+					-1,
+					0
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					5,
+					8
+				],
+				"color": "O",
+				"direction": [
+					0,
+					1
+				]
+			}
+		],
+		"frozen": [
+			[
+				0,
+				4,
+				1
+			],
+			[
+				6,
+				4,
+				1
+			],
+			[
+				4,
+				2,
+				1
+			]
+		],
+		"grid": [
+			"___...__",
+			"___.Y.O_",
+			"R_B.P.R_",
+			".Y.GYOGY",
+			"RPBBP.R.",
+			".Y.G.ORY",
+			"......._",
+			"........",
+			"........"
+		],
+		"hint": "젤리를 모두 담아 GO가 된 블록을 같은 색 화살표 출구로 내보내세요!\n❄ 얼음 젤리는 같은 색 블록으로 얼음을 깨고 다시 지나가야 구출돼요.",
+		"name": "서리 정원 · 갈림길",
+		"stars": [
+			0.5,
+			0.25
+		],
+		"time": 61.68
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 5,
+				"cell": [
+					4,
+					7
+				],
+				"color": "R",
+				"shape": "SQ"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					1,
+					6
+				],
+				"color": "R",
+				"shape": "L4A"
+			},
+			{
+				"capacity": 5,
+				"cell": [
+					3,
+					6
+				],
+				"color": "Y",
+				"shape": "H2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					6,
+					5
+				],
+				"color": "Y",
+				"shape": "V2"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					1,
+					4
+				],
+				"color": "B",
+				"shape": "S1"
+			}
+		],
+		"exits": [
+			{
+				"catcher": -1,
+				"cell": [
+					2,
+					1
+				],
+				"color": "R",
+				"direction": [
+					0,
+					-1
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					6,
+					4
+				],
+				"color": "Y",
+				"direction": [
+					1,
+					0
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					5,
+					8
+				],
+				"color": "B",
+				"direction": [
+					1,
+					0
+				]
+			}
+		],
+		"frozen": [
+			[
+				5,
+				4,
+				1
+			],
+			[
+				1,
+				3,
+				1
+			],
+			[
+				6,
+				7,
+				1
+			]
+		],
+		"grid": [
+			"________",
+			"__....Y_",
+			"_B....._",
+			".Y.BRB._",
+			"R.YRYB._",
+			"_RYRYR.R",
+			"_.Y....#",
+			"_.YR..R_",
+			"_.....__"
+		],
+		"hint": "젤리를 모두 담아 GO가 된 블록을 같은 색 화살표 출구로 내보내세요!\n❄ 얼음 젤리는 같은 색 블록으로 얼음을 깨고 다시 지나가야 구출돼요.",
+		"name": "서리 정원 · 큰 몸 작은 문",
+		"stars": [
+			0.5,
+			0.25
+		],
+		"time": 61.46
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 4,
+				"cell": [
+					5,
+					4
+				],
+				"color": "Y",
+				"shape": "V2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					3,
+					6
+				],
+				"color": "B",
+				"shape": "TU"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					0,
+					7
+				],
+				"color": "B",
+				"shape": "SQ"
+			},
+			{
+				"capacity": 5,
+				"cell": [
+					5,
+					7
+				],
+				"color": "G",
+				"shape": "S1"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					3,
+					0
+				],
+				"color": "P",
+				"shape": "V4"
+			},
+			{
+				"capacity": 2,
+				"cell": [
+					1,
+					5
+				],
+				"color": "O",
+				"shape": "S1"
+			}
+		],
+		"frozen": [
+			[
+				4,
+				1,
+				1
+			],
+			[
+				5,
+				1,
+				1
+			],
+			[
+				4,
+				5,
+				1
+			]
+		],
+		"grid": [
+			"___.____",
+			"_.Y.BY__",
+			"YGB.G.P_",
+			"Y.B.GBP_",
+			"B.G.P.O_",
+			"B.G.P.O_",
+			"#......_",
+			"......._",
+			"......__"
+		],
+		"hint": "빛나는 모양 봉인에 같은 색 블록을 정확히 포개 장벽을 여세요!\n❄ 얼음 젤리는 같은 색 블록으로 얼음을 깨고 다시 지나가야 구출돼요.",
+		"name": "서리 정원 · 색깔 미로",
+		"shape_seals": [
+			{
+				"cells": [
+					[
+						1,
+						6
+					],
+					[
+						2,
+						6
+					],
+					[
+						3,
+						6
+					],
+					[
+						2,
+						7
+					]
+				],
+				"color": "B",
+				"gates": [
+					[
+						1,
+						1
+					]
+				],
+				"shape": "TU"
+			}
+		],
+		"stars": [
+			0.5,
+			0.25
+		],
+		"time": 61.24
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 4,
+				"cell": [
+					2,
+					5
+				],
+				"color": "R",
+				"shape": "V4"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					5,
+					7
+				],
+				"color": "Y",
+				"shape": "L4C"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					4,
+					6
+				],
+				"color": "B",
+				"shape": "H4"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					2,
+					1
+				],
+				"color": "G",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					3,
+					6
+				],
+				"color": "P",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					0,
+					7
+				],
+				"color": "O",
+				"shape": "S1"
+			}
+		],
+		"frozen": [
+			[
+				6,
+				3,
+				1
+			],
+			[
+				4,
+				1,
+				1
+			],
+			[
+				1,
+				3,
+				1
+			],
+			[
+				5,
+				1,
+				1
+			]
+		],
+		"grid": [
+			"________",
+			"__._YY__",
+			"B...BBB.",
+			"_G.G.GY#",
+			"_RP.P.P.",
+			"_O...O.O",
+			"__......",
+			"...RR.R_",
+			"__......"
+		],
+		"hint": "색의 층과 캐처 모양을 보고 구출 순서를 정하세요.\n❄ 얼음 젤리는 같은 색 블록으로 얼음을 깨고 다시 지나가야 구출돼요.",
+		"name": "서리 정원 · 연쇄 구출",
+		"stars": [
+			0.5,
+			0.25
+		],
+		"time": 61.02
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 3,
+				"cell": [
+					4,
+					5
+				],
+				"color": "R",
+				"shape": "L4C"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					1,
+					6
+				],
+				"color": "R",
+				"shape": "H2"
+			},
+			{
+				"capacity": 5,
+				"cell": [
+					5,
+					7
+				],
+				"color": "Y",
+				"shape": "TU"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					0,
+					6
+				],
+				"color": "B",
+				"shape": "V2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					1,
+					8
+				],
+				"color": "G",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					5,
+					0
+				],
+				"color": "P",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					5,
+					8
+				],
+				"color": "O",
+				"shape": "S1"
+			}
+		],
+		"exits": [
+			{
+				"catcher": -1,
+				"cell": [
+					3,
+					8
+				],
+				"color": "R",
+				"direction": [
+					0,
+					1
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					5,
+					1
+				],
+				"color": "Y",
+				"direction": [
+					1,
+					0
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					1,
+					8
+				],
+				"color": "B",
+				"direction": [
+					0,
+					1
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					3,
+					1
+				],
+				"color": "G",
+				"direction": [
+					0,
+					-1
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					0,
+					7
+				],
+				"color": "P",
+				"direction": [
+					0,
+					1
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					6,
+					8
+				],
+				"color": "O",
+				"direction": [
+					1,
+					0
+				]
+			}
+		],
+		"frozen": [
+			[
+				2,
+				5,
+				1
+			],
+			[
+				4,
+				4,
+				1
+			],
+			[
+				6,
+				3,
+				1
+			],
+			[
+				3,
+				5,
+				1
+			]
+		],
+		"grid": [
+			"_____.__",
+			"__B...__",
+			"_R.RP.__",
+			"_Y.GYOG_",
+			"RYB.POR_",
+			".YRG.OPY",
+			"......._",
+			".B..R...",
+			"_......_"
+		],
+		"hint": "젤리를 모두 담아 GO가 된 블록을 같은 색 화살표 출구로 내보내세요!\n❄ 얼음 젤리는 같은 색 블록으로 얼음을 깨고 다시 지나가야 구출돼요.",
+		"name": "서리 정원 · 최종 관문",
+		"stars": [
+			0.45,
+			0.2
+		],
+		"time": 60.8
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 3,
+				"cell": [
+					2,
+					5
+				],
+				"color": "R",
+				"shape": "L4D"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					2,
+					1
+				],
+				"color": "Y",
+				"shape": "TU"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					2,
+					6
+				],
+				"color": "B",
+				"shape": "SQ"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					5,
+					6
+				],
+				"color": "G",
+				"shape": "V2"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					0,
+					7
+				],
+				"color": "P",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					0,
+					5
+				],
+				"color": "O",
+				"shape": "S1"
+			}
+		],
+		"chains": [
+			{
+				"cells": [
+					[
+						4,
+						7
+					],
+					[
+						1,
+						6
+					]
+				],
+				"color": "R"
+			}
+		],
+		"exits": [
+			{
+				"catcher": -1,
+				"cell": [
+					0,
+					5
+				],
+				"color": "R",
+				"direction": [
+					0,
+					1
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					3,
+					8
+				],
+				"color": "Y",
+				"direction": [
+					0,
+					1
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					6,
+					0
+				],
+				"color": "B",
+				"direction": [
+					0,
+					-1
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					6,
+					6
+				],
+				"color": "G",
+				"direction": [
+					1,
+					0
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					4,
+					8
+				],
+				"color": "P",
+				"direction": [
+					0,
+					1
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					0,
+					1
+				],
+				"color": "O",
+				"direction": [
+					0,
+					-1
+				]
+			}
+		],
+		"grid": [
+			"___...._",
+			"......B_",
+			"....BYB_",
+			".GYGYGB_",
+			"P.P.P.P_",
+			".O...O.O",
+			"_R....._",
+			".R..R.._",
+			"......._"
+		],
+		"hint": "젤리를 모두 담아 GO가 된 블록을 같은 색 화살표 출구로 내보내세요!\n⛓ 번호가 붙은 젤리는 1번부터 차례대로 구출하세요.",
+		"name": "오로라 동굴 · 길 열기",
+		"stars": [
+			0.5,
+			0.25
+		],
+		"time": 60.58
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 3,
+				"cell": [
+					3,
+					6
+				],
+				"color": "R",
+				"shape": "H2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					1,
+					6
+				],
+				"color": "R",
+				"shape": "SQ"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					6,
+					6
+				],
+				"color": "Y",
+				"shape": "SV"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					2,
+					8
+				],
+				"color": "Y",
+				"shape": "H2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					7,
+					2
+				],
+				"color": "B",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					4,
+					1
+				],
+				"color": "G",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					1,
+					0
+				],
+				"color": "P",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					6,
+					8
+				],
+				"color": "O",
+				"shape": "S1"
+			}
+		],
+		"chains": [
+			{
+				"cells": [
+					[
+						3,
+						7
+					],
+					[
+						5,
+						7
+					]
+				],
+				"color": "R"
+			}
+		],
+		"grid": [
+			"_...____",
+			"_.Y..___",
+			"_PBR....",
+			"_YRG.OGY",
+			"RYB.POR.",
+			"#YPG.OBY",
+			"_......_",
+			"_..R.R..",
+			"__......"
+		],
+		"hint": "빛나는 모양 봉인에 같은 색 블록을 정확히 포개 장벽을 여세요!\n⛓ 번호가 붙은 젤리는 1번부터 차례대로 구출하세요.",
+		"name": "오로라 동굴 · 엇갈린 줄",
+		"shape_seals": [
+			{
+				"cells": [
+					[
+						4,
+						8
+					],
+					[
+						5,
+						8
+					]
+				],
+				"color": "R",
+				"gates": [
+					[
+						4,
+						5
+					]
+				],
+				"shape": "H2"
+			}
+		],
+		"stars": [
+			0.5,
+			0.25
+		],
+		"time": 60.36
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 5,
+				"cell": [
+					6,
+					5
+				],
+				"color": "R",
+				"shape": "TR"
+			},
+			{
+				"capacity": 5,
+				"cell": [
+					2,
+					5
+				],
+				"color": "R",
+				"shape": "V2"
+			},
+			{
+				"capacity": 5,
+				"cell": [
+					0,
+					7
+				],
+				"color": "Y",
+				"shape": "SQ"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					4,
+					8
+				],
+				"color": "Y",
+				"shape": "H4"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					4,
+					6
+				],
+				"color": "B",
+				"shape": "SQ"
+			}
+		],
+		"chains": [
+			{
+				"cells": [
+					[
+						2,
+						7
+					],
+					[
+						4,
+						3
+					]
+				],
+				"color": "R"
+			}
+		],
+		"grid": [
+			"________",
+			"__B.____",
+			"_B.R____",
+			".Y.BRB._",
+			"RYYYY.Y_",
+			".R.RYR.R",
+			"_R.R....",
+			"..RY..._",
+			"........"
+		],
+		"hint": "색의 층과 캐처 모양을 보고 구출 순서를 정하세요.\n⛓ 번호가 붙은 젤리는 1번부터 차례대로 구출하세요.",
+		"name": "오로라 동굴 · 색의 성",
+		"stars": [
+			0.5,
+			0.25
+		],
+		"time": 60.14
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 2,
+				"cell": [
+					1,
+					6
+				],
+				"color": "R",
+				"shape": "SV"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					5,
+					6
+				],
+				"color": "Y",
+				"shape": "ZH"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					3,
+					8
+				],
+				"color": "B",
+				"shape": "H4"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					3,
+					4
+				],
+				"color": "B",
+				"shape": "V2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					5,
+					2
+				],
+				"color": "G",
+				"shape": "V2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					0,
+					6
+				],
+				"color": "G",
+				"shape": "V2"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					3,
+					0
+				],
+				"color": "P",
+				"shape": "V2"
+			},
+			{
+				"capacity": 2,
+				"cell": [
+					1,
+					0
+				],
+				"color": "O",
+				"shape": "V2"
+			}
+		],
+		"chains": [
+			{
+				"cells": [
+					[
+						2,
+						1
+					],
+					[
+						0,
+						2
+					]
+				],
+				"color": "Y"
+			}
+		],
+		"grid": [
+			"_._.____",
+			"R.Y.B.._",
+			"Y.B.G.P_",
+			"_.B.G.P#",
+			"BRG.PGO_",
+			"BGG.P.O_",
+			"....Y.._",
+			"...B....",
+			"__....._"
+		],
+		"hint": "색의 층과 캐처 모양을 보고 구출 순서를 정하세요.\n⛓ 번호가 붙은 젤리는 1번부터 차례대로 구출하세요.",
+		"name": "오로라 동굴 · 굽은 통로",
+		"stars": [
+			0.5,
+			0.25
+		],
+		"time": 59.92
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 3,
+				"cell": [
+					3,
+					5
+				],
+				"color": "R",
+				"shape": "SQ"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					1,
+					7
+				],
+				"color": "Y",
+				"shape": "H2"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					6,
+					5
+				],
+				"color": "B",
+				"shape": "V2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					2,
+					8
+				],
+				"color": "G",
+				"shape": "S1"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					2,
+					1
+				],
+				"color": "P",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					5,
+					7
+				],
+				"color": "O",
+				"shape": "S1"
+			}
+		],
+		"chains": [
+			{
+				"cells": [
+					[
+						3,
+						4
+					],
+					[
+						2,
+						5
+					]
+				],
+				"color": "R"
+			}
+		],
+		"grid": [
+			"________",
+			"__..____",
+			"___..___",
+			"#GGG..._",
+			"PBPRPBP_",
+			"_OR..O.O",
+			"_BR..Y._",
+			"_..YY.B.",
+			"__._____"
+		],
+		"hint": "색의 층과 캐처 모양을 보고 구출 순서를 정하세요.\n⛓ 번호가 붙은 젤리는 1번부터 차례대로 구출하세요.",
+		"name": "오로라 동굴 · 한붓 쓸기",
+		"stars": [
+			0.5,
+			0.25
+		],
+		"time": 59.7
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 5,
+				"cell": [
+					4,
+					8
+				],
+				"color": "R",
+				"shape": "H4"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					2,
+					5
+				],
+				"color": "Y",
+				"shape": "V4"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					0,
+					6
+				],
+				"color": "Y",
+				"shape": "SQ"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					6,
+					5
+				],
+				"color": "B",
+				"shape": "V2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					3,
+					6
+				],
+				"color": "G",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					0,
+					3
+				],
+				"color": "P",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					5,
+					2
+				],
+				"color": "O",
+				"shape": "S1"
+			}
+		],
+		"chains": [
+			{
+				"cells": [
+					[
+						4,
+						3
+					],
+					[
+						3,
+						4
+					],
+					[
+						4,
+						7
+					]
+				],
+				"color": "R"
+			}
+		],
+		"grid": [
+			"__...___",
+			"__....__",
+			"_P.Y....",
+			".Y.GROB.",
+			"RYBRP.R.",
+			".Y.G.O.Y",
+			"....GO._",
+			"...YRPB_",
+			"__......"
+		],
+		"hint": "빛나는 모양 봉인에 같은 색 블록을 정확히 포개 장벽을 여세요!\n⛓ 번호가 붙은 젤리는 1번부터 차례대로 구출하세요.",
+		"name": "오로라 동굴 · 갈림길",
+		"shape_seals": [
+			{
+				"cells": [
+					[
+						3,
+						8
+					],
+					[
+						4,
+						8
+					],
+					[
+						5,
+						8
+					],
+					[
+						6,
+						8
+					]
+				],
+				"color": "R",
+				"gates": [
+					[
+						4,
+						5
+					]
+				],
+				"shape": "H4"
+			}
+		],
+		"stars": [
+			0.5,
+			0.25
+		],
+		"time": 59.48
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 5,
+				"cell": [
+					2,
+					5
+				],
+				"color": "R",
+				"shape": "SV"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					6,
+					6
+				],
+				"color": "R",
+				"shape": "SQ"
+			},
+			{
+				"capacity": 5,
+				"cell": [
+					4,
+					5
+				],
+				"color": "Y",
+				"shape": "V2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					3,
+					8
+				],
+				"color": "Y",
+				"shape": "H4"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					0,
+					7
+				],
+				"color": "B",
+				"shape": "SQ"
+			}
+		],
+		"chains": [
+			{
+				"cells": [
+					[
+						2,
+						7
+					],
+					[
+						7,
+						5
+					],
+					[
+						3,
+						4
+					]
+				],
+				"color": "R"
+			}
+		],
+		"grid": [
+			"________",
+			"________",
+			"_B.B.___",
+			".YR..B__",
+			"R.YRYBY_",
+			"_R.R.RYR",
+			"_R...Y..",
+			"..R.YY..",
+			"......._"
+		],
+		"hint": "색의 층과 캐처 모양을 보고 구출 순서를 정하세요.\n⛓ 번호가 붙은 젤리는 1번부터 차례대로 구출하세요.",
+		"name": "오로라 동굴 · 큰 몸 작은 문",
+		"stars": [
+			0.5,
+			0.25
+		],
+		"time": 59.26
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 4,
+				"cell": [
+					5,
+					6
+				],
+				"color": "Y",
+				"shape": "SQ"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					2,
+					6
+				],
+				"color": "B",
+				"shape": "L4A"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					0,
+					6
+				],
+				"color": "B",
+				"shape": "L4B"
+			},
+			{
+				"capacity": 5,
+				"cell": [
+					4,
+					7
+				],
+				"color": "G",
+				"shape": "V2"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					3,
+					4
+				],
+				"color": "P",
+				"shape": "V2"
+			},
+			{
+				"capacity": 2,
+				"cell": [
+					5,
+					2
+				],
+				"color": "O",
+				"shape": "V4"
+			}
+		],
+		"chains": [
+			{
+				"cells": [
+					[
+						2,
+						1
+					],
+					[
+						0,
+						2
+					],
+					[
+						0,
+						3
+					]
+				],
+				"color": "Y"
+			}
+		],
+		"exits": [
+			{
+				"catcher": -1,
+				"cell": [
+					0,
+					6
+				],
+				"color": "Y",
+				"direction": [
+					-1,
+					0
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					3,
+					8
+				],
+				"color": "B",
+				"direction": [
+					0,
+					1
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					6,
+					2
+				],
+				"color": "G",
+				"direction": [
+					1,
+					0
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					2,
+					8
+				],
+				"color": "P",
+				"direction": [
+					0,
+					1
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					6,
+					1
+				],
+				"color": "O",
+				"direction": [
+					0,
+					-1
+				]
+			}
+		],
+		"grid": [
+			"__...___",
+			"_GY...._",
+			"YBBP..._",
+			"YYB.G.P_",
+			"BGG.P.O#",
+			"B.G.P.O_",
+			"......._",
+			".B....._",
+			"._...___"
+		],
+		"hint": "젤리를 모두 담아 GO가 된 블록을 같은 색 화살표 출구로 내보내세요!\n⛓ 번호가 붙은 젤리는 1번부터 차례대로 구출하세요.",
+		"name": "오로라 동굴 · 색깔 미로",
+		"stars": [
+			0.5,
+			0.25
+		],
+		"time": 59.04
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 4,
+				"cell": [
+					2,
+					5
+				],
+				"color": "R",
+				"shape": "V2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					5,
+					6
+				],
+				"color": "Y",
+				"shape": "H2"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					1,
+					7
+				],
+				"color": "B",
+				"shape": "V2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					4,
+					5
+				],
+				"color": "G",
+				"shape": "V2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					2,
+					1
+				],
+				"color": "P",
+				"shape": "H2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					6,
+					7
+				],
+				"color": "O",
+				"shape": "S1"
+			}
+		],
+		"chains": [
+			{
+				"cells": [
+					[
+						6,
+						5
+					],
+					[
+						4,
+						7
+					],
+					[
+						5,
+						7
+					]
+				],
+				"color": "R"
+			}
+		],
+		"exits": [
+			{
+				"catcher": -1,
+				"cell": [
+					7,
+					2
+				],
+				"color": "R",
+				"direction": [
+					0,
+					-1
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					1,
+					8
+				],
+				"color": "Y",
+				"direction": [
+					0,
+					1
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					3,
+					1
+				],
+				"color": "B",
+				"direction": [
+					0,
+					-1
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					7,
+					6
+				],
+				"color": "G",
+				"direction": [
+					1,
+					0
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					0,
+					1
+				],
+				"color": "P",
+				"direction": [
+					0,
+					-1
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					7,
+					3
+				],
+				"color": "O",
+				"direction": [
+					1,
+					0
+				]
+			}
+		],
+		"grid": [
+			"________",
+			"....____",
+			"B..._B..",
+			"_GBGYGB.",
+			"_YP.PRP.",
+			"_O...ORO",
+			"__......",
+			"_..YRR._",
+			"_.._..__"
+		],
+		"hint": "젤리를 모두 담아 GO가 된 블록을 같은 색 화살표 출구로 내보내세요!\n⛓ 번호가 붙은 젤리는 1번부터 차례대로 구출하세요.",
+		"name": "오로라 동굴 · 연쇄 구출",
+		"stars": [
+			0.5,
+			0.25
+		],
+		"time": 58.82
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 3,
+				"cell": [
+					3,
+					6
+				],
+				"color": "R",
+				"shape": "H4"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					0,
+					5
+				],
+				"color": "R",
+				"shape": "V2"
+			},
+			{
+				"capacity": 5,
+				"cell": [
+					5,
+					7
+				],
+				"color": "Y",
+				"shape": "L4C"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					0,
+					7
+				],
+				"color": "B",
+				"shape": "SQ"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					4,
+					7
+				],
+				"color": "G",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					4,
+					5
+				],
+				"color": "P",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					1,
+					4
+				],
+				"color": "O",
+				"shape": "S1"
+			}
+		],
+		"chains": [
+			{
+				"cells": [
+					[
+						6,
+						5
+					],
+					[
+						6,
+						2
+					],
+					[
+						0,
+						2
+					]
+				],
+				"color": "R"
+			}
+		],
+		"grid": [
+			"R....___",
+			".YOG.___",
+			"RYB.P.R_",
+			".Y.G.O._",
+			"R.B.P.R_",
+			".YBG.ORY",
+			".P....._",
+			"........",
+			"..___..."
+		],
+		"hint": "빛나는 모양 봉인에 같은 색 블록을 정확히 포개 장벽을 여세요!\n⛓ 번호가 붙은 젤리는 1번부터 차례대로 구출하세요.",
+		"name": "오로라 동굴 · 최종 관문",
+		"shape_seals": [
+			{
+				"cells": [
+					[
+						2,
+						6
+					],
+					[
+						3,
+						6
+					],
+					[
+						4,
+						6
+					],
+					[
+						5,
+						6
+					]
+				],
+				"color": "R",
+				"gates": [
+					[
+						2,
+						3
+					]
+				],
+				"shape": "H4"
+			}
+		],
+		"stars": [
+			0.45,
+			0.2
+		],
+		"time": 58.6
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 3,
+				"cell": [
+					4,
+					6
+				],
+				"color": "R",
+				"shape": "V2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					1,
+					6
+				],
+				"color": "Y",
+				"shape": "ZH"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					0,
+					7
+				],
+				"color": "B",
+				"shape": "H2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					3,
+					0
+				],
+				"color": "G",
+				"shape": "V2"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					2,
+					8
+				],
+				"color": "P",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					6,
+					1
+				],
+				"color": "O",
+				"shape": "S1"
+			}
+		],
+		"grid": [
+			"___.____",
+			"___._.._",
+			"__BB..__",
+			"_G.G....",
+			"PGP.P.P.",
+			"_OY.ROBO",
+			"_..R.RB_",
+			".....YY_",
+			"__._____"
+		],
+		"hint": "색의 층과 캐처 모양을 보고 구출 순서를 정하세요.\n◆ 바닥 스위치를 먼저 밟아 보랏빛 봉인 젤리를 깨우세요.",
+		"name": "빙하 연구소 · 길 열기",
+		"sealed_jellies": [
+			[
+				2,
+				2
+			],
+			[
+				0,
+				4
+			],
+			[
+				1,
+				3
+			],
+			[
+				3,
+				2
+			]
+		],
+		"stars": [
+			0.5,
+			0.25
+		],
+		"switches": [
+			[
+				4,
+				6
+			]
+		],
+		"time": 58.38
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 3,
+				"cell": [
+					1,
+					6
+				],
+				"color": "R",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					4,
+					6
+				],
+				"color": "R",
+				"shape": "L4D"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					3,
+					8
+				],
+				"color": "Y",
+				"shape": "H4"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					1,
+					7
+				],
+				"color": "Y",
+				"shape": "SQ"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					4,
+					7
+				],
+				"color": "B",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					2,
+					5
+				],
+				"color": "G",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					6,
+					5
+				],
+				"color": "P",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					3,
+					4
+				],
+				"color": "O",
+				"shape": "S1"
+			}
+		],
+		"exits": [
+			{
+				"catcher": -1,
+				"cell": [
+					0,
+					1
+				],
+				"color": "R",
+				"direction": [
+					0,
+					-1
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					0,
+					6
+				],
+				"color": "Y",
+				"direction": [
+					0,
+					1
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					4,
+					8
+				],
+				"color": "B",
+				"direction": [
+					0,
+					1
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					4,
+					2
+				],
+				"color": "G",
+				"direction": [
+					0,
+					-1
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					1,
+					8
+				],
+				"color": "P",
+				"direction": [
+					0,
+					1
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					1,
+					1
+				],
+				"color": "O",
+				"direction": [
+					0,
+					-1
+				]
+			}
+		],
+		"grid": [
+			"________",
+			"..._____",
+			".P.R.B__",
+			".YRGYOGY",
+			"RYB.POR_",
+			".Y.GBO.Y",
+			"..RP..._",
+			"_....R._",
+			"_......_"
+		],
+		"hint": "젤리를 모두 담아 GO가 된 블록을 같은 색 화살표 출구로 내보내세요!\n◆ 바닥 스위치를 먼저 밟아 보랏빛 봉인 젤리를 깨우세요.",
+		"name": "빙하 연구소 · 엇갈린 줄",
+		"sealed_jellies": [
+			[
+				7,
+				3
+			],
+			[
+				1,
+				2
+			]
+		],
+		"stars": [
+			0.5,
+			0.25
+		],
+		"switches": [
+			[
+				3,
+				7
+			]
+		],
+		"time": 58.16
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 5,
+				"cell": [
+					4,
+					7
+				],
+				"color": "R",
+				"shape": "TU"
+			},
+			{
+				"capacity": 5,
+				"cell": [
+					1,
+					6
+				],
+				"color": "R",
+				"shape": "TR"
+			},
+			{
+				"capacity": 5,
+				"cell": [
+					6,
+					5
+				],
+				"color": "Y",
+				"shape": "V2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					2,
+					6
+				],
+				"color": "Y",
+				"shape": "H2"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					2,
+					3
+				],
+				"color": "B",
+				"shape": "S1"
+			}
+		],
+		"exits": [
+			{
+				"catcher": -1,
+				"cell": [
+					3,
+					2
+				],
+				"color": "R",
+				"direction": [
+					0,
+					-1
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					4,
+					7
+				],
+				"color": "Y",
+				"direction": [
+					0,
+					1
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					4,
+					1
+				],
+				"color": "B",
+				"direction": [
+					0,
+					-1
+				]
+			}
+		],
+		"grid": [
+			"_____...",
+			"____..R.",
+			"___.BY..",
+			"#Y.BYBBR",
+			"RRYYYYY#",
+			"_RRR.R.R",
+			"_......_",
+			"_..R..._",
+			"_.___.__"
+		],
+		"hint": "젤리를 모두 담아 GO가 된 블록을 같은 색 화살표 출구로 내보내세요!\n◆ 바닥 스위치를 먼저 밟아 보랏빛 봉인 젤리를 깨우세요.",
+		"name": "빙하 연구소 · 색의 성",
+		"sealed_jellies": [
+			[
+				0,
+				4
+			],
+			[
+				1,
+				3
+			],
+			[
+				1,
+				4
+			]
+		],
+		"stars": [
+			0.5,
+			0.25
+		],
+		"switches": [
+			[
+				6,
+				5
+			]
+		],
+		"time": 57.94
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 2,
+				"cell": [
+					5,
+					5
+				],
+				"color": "R",
+				"shape": "V2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					3,
+					5
+				],
+				"color": "Y",
+				"shape": "V2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					1,
+					6
+				],
+				"color": "B",
+				"shape": "H2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					4,
+					8
+				],
+				"color": "B",
+				"shape": "H4"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					3,
+					1
+				],
+				"color": "G",
+				"shape": "V2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					0,
+					7
+				],
+				"color": "G",
+				"shape": "SQ"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					5,
+					1
+				],
+				"color": "P",
+				"shape": "V2"
+			},
+			{
+				"capacity": 2,
+				"cell": [
+					1,
+					2
+				],
+				"color": "O",
+				"shape": "V4"
+			}
+		],
+		"grid": [
+			"......__",
+			".P....__",
+			"Y.B.G.._",
+			"_.BRG.P_",
+			"B.GRPGO_",
+			"B.G.P.O_",
+			"......B_",
+			"...GBYY_",
+			".._....."
+		],
+		"hint": "빛나는 모양 봉인에 같은 색 블록을 정확히 포개 장벽을 여세요!\n◆ 바닥 스위치를 먼저 밟아 보랏빛 봉인 젤리를 깨우세요.",
+		"name": "빙하 연구소 · 굽은 통로",
+		"sealed_jellies": [
+			[
+				1,
+				1
+			],
+			[
+				0,
+				2
+			],
+			[
+				2,
+				2
+			],
+			[
+				4,
+				2
+			]
+		],
+		"shape_seals": [
+			{
+				"cells": [
+					[
+						0,
+						6
+					],
+					[
+						1,
+						6
+					]
+				],
+				"color": "B",
+				"gates": [
+					[
+						6,
+						2
+					]
+				],
+				"shape": "H2"
+			}
+		],
+		"stars": [
+			0.5,
+			0.25
+		],
+		"switches": [
+			[
+				3,
+				8
+			]
+		],
+		"time": 57.72
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 3,
+				"cell": [
+					2,
+					6
+				],
+				"color": "R",
+				"shape": "SV"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					5,
+					7
+				],
+				"color": "Y",
+				"shape": "SQ"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					4,
+					6
+				],
+				"color": "B",
+				"shape": "H2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					0,
+					7
+				],
+				"color": "G",
+				"shape": "SQ"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					2,
+					5
+				],
+				"color": "P",
+				"shape": "H2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					2,
+					1
+				],
+				"color": "O",
+				"shape": "H2"
+			}
+		],
+		"exits": [
+			{
+				"catcher": -1,
+				"cell": [
+					0,
+					5
+				],
+				"color": "R",
+				"direction": [
+					0,
+					1
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					5,
+					8
+				],
+				"color": "Y",
+				"direction": [
+					0,
+					1
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					7,
+					2
+				],
+				"color": "B",
+				"direction": [
+					0,
+					-1
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					0,
+					8
+				],
+				"color": "G",
+				"direction": [
+					0,
+					1
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					2,
+					1
+				],
+				"color": "P",
+				"direction": [
+					0,
+					-1
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					7,
+					4
+				],
+				"color": "O",
+				"direction": [
+					1,
+					0
+				]
+			}
+		],
+		"grid": [
+			"________",
+			"_...Y.B_",
+			"_...BB..",
+			".GYGYGB.",
+			"P.P.P.P.",
+			".O...O.O",
+			"_R....R_",
+			"....R.._",
+			"...._.._"
+		],
+		"hint": "젤리를 모두 담아 GO가 된 블록을 같은 색 화살표 출구로 내보내세요!\n◆ 바닥 스위치를 먼저 밟아 보랏빛 봉인 젤리를 깨우세요.",
+		"name": "빙하 연구소 · 한붓 쓸기",
+		"sealed_jellies": [
+			[
+				6,
+				1
+			],
+			[
+				4,
+				1
+			]
+		],
+		"stars": [
+			0.5,
+			0.25
+		],
+		"switches": [
+			[
+				3,
+				6
+			]
+		],
+		"time": 57.5
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 5,
+				"cell": [
+					5,
+					6
+				],
+				"color": "R",
+				"shape": "ZH"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					1,
+					6
+				],
+				"color": "Y",
+				"shape": "H2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					0,
+					5
+				],
+				"color": "Y",
+				"shape": "V4"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					4,
+					7
+				],
+				"color": "B",
+				"shape": "H2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					1,
+					7
+				],
+				"color": "G",
+				"shape": "H2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					6,
+					8
+				],
+				"color": "P",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					3,
+					7
+				],
+				"color": "O",
+				"shape": "S1"
+			}
+		],
+		"grid": [
+			"__....._",
+			"__..R.O.",
+			"__B.PYR.",
+			"_YYG.OGY",
+			"R.BPPBR.",
+			".Y.G.ORY",
+			"......._",
+			"........",
+			".__...._"
+		],
+		"hint": "색의 층과 캐처 모양을 보고 구출 순서를 정하세요.\n◆ 바닥 스위치를 먼저 밟아 보랏빛 봉인 젤리를 깨우세요.",
+		"name": "빙하 연구소 · 갈림길",
+		"sealed_jellies": [
+			[
+				6,
+				1
+			],
+			[
+				7,
+				3
+			],
+			[
+				6,
+				2
+			]
+		],
+		"stars": [
+			0.5,
+			0.25
+		],
+		"switches": [
+			[
+				2,
+				6
+			]
+		],
+		"time": 57.28
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 5,
+				"cell": [
+					1,
+					6
+				],
+				"color": "R",
+				"shape": "H4"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					6,
+					5
+				],
+				"color": "R",
+				"shape": "V2"
+			},
+			{
+				"capacity": 5,
+				"cell": [
+					2,
+					7
+				],
+				"color": "Y",
+				"shape": "SQ"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					4,
+					7
+				],
+				"color": "Y",
+				"shape": "L4D"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					0,
+					7
+				],
+				"color": "B",
+				"shape": "SQ"
+			}
+		],
+		"exits": [
+			{
+				"catcher": -1,
+				"cell": [
+					7,
+					7
+				],
+				"color": "R",
+				"direction": [
+					1,
+					0
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					6,
+					8
+				],
+				"color": "Y",
+				"direction": [
+					0,
+					1
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					7,
+					4
+				],
+				"color": "B",
+				"direction": [
+					1,
+					0
+				]
+			}
+		],
+		"grid": [
+			"________",
+			"__..R.__",
+			"__..BBY.",
+			"_Y.B.B.R",
+			"RYYYY.Y.",
+			"_RRRYR.R",
+			"_....R..",
+			"........",
+			"........"
+		],
+		"hint": "젤리를 모두 담아 GO가 된 블록을 같은 색 화살표 출구로 내보내세요!\n◆ 바닥 스위치를 먼저 밟아 보랏빛 봉인 젤리를 깨우세요.",
+		"name": "빙하 연구소 · 큰 몸 작은 문",
+		"sealed_jellies": [
+			[
+				7,
+				3
+			],
+			[
+				6,
+				2
+			],
+			[
+				4,
+				1
+			],
+			[
+				7,
+				5
+			]
+		],
+		"stars": [
+			0.5,
+			0.25
+		],
+		"switches": [
+			[
+				2,
+				6
+			]
+		],
+		"time": 57.06
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 4,
+				"cell": [
+					3,
+					5
+				],
+				"color": "Y",
+				"shape": "V4"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					0,
+					6
+				],
+				"color": "B",
+				"shape": "SQ"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					5,
+					4
+				],
+				"color": "B",
+				"shape": "V2"
+			},
+			{
+				"capacity": 5,
+				"cell": [
+					4,
+					7
+				],
+				"color": "G",
+				"shape": "H2"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					4,
+					8
+				],
+				"color": "P",
+				"shape": "S1"
+			},
+			{
+				"capacity": 2,
+				"cell": [
+					3,
+					0
+				],
+				"color": "O",
+				"shape": "V4"
+			}
+		],
+		"grid": [
+			"___...__",
+			"__Y.B.__",
+			"Y_B.G.P_",
+			"Y.B.G.P_",
+			"B.G.P.O_",
+			"BGG.P.O_",
+			"..B...._",
+			"..Y...._",
+			"___...._"
+		],
+		"hint": "빛나는 모양 봉인에 같은 색 블록을 정확히 포개 장벽을 여세요!\n◆ 바닥 스위치를 먼저 밟아 보랏빛 봉인 젤리를 깨우세요.",
+		"name": "빙하 연구소 · 색깔 미로",
+		"sealed_jellies": [
+			[
+				0,
+				5
+			],
+			[
+				0,
+				2
+			]
+		],
+		"shape_seals": [
+			{
+				"cells": [
+					[
+						3,
+						4
+					],
+					[
+						3,
+						5
+					],
+					[
+						3,
+						6
+					],
+					[
+						3,
+						7
+					]
+				],
+				"color": "Y",
+				"gates": [
+					[
+						1,
+						3
+					]
+				],
+				"shape": "V4"
+			}
+		],
+		"stars": [
+			0.5,
+			0.25
+		],
+		"switches": [
+			[
+				5,
+				3
+			]
+		],
+		"time": 56.84
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 4,
+				"cell": [
+					6,
+					6
+				],
+				"color": "R",
+				"shape": "SQ"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					3,
+					4
+				],
+				"color": "Y",
+				"shape": "V2"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					1,
+					6
+				],
+				"color": "B",
+				"shape": "L4D"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					5,
+					7
+				],
+				"color": "G",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					2,
+					7
+				],
+				"color": "P",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					2,
+					1
+				],
+				"color": "O",
+				"shape": "TU"
+			}
+		],
+		"exits": [
+			{
+				"catcher": -1,
+				"cell": [
+					1,
+					1
+				],
+				"color": "R",
+				"direction": [
+					0,
+					-1
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					7,
+					6
+				],
+				"color": "Y",
+				"direction": [
+					1,
+					0
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					3,
+					0
+				],
+				"color": "B",
+				"direction": [
+					0,
+					-1
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					7,
+					3
+				],
+				"color": "G",
+				"direction": [
+					1,
+					0
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					2,
+					8
+				],
+				"color": "P",
+				"direction": [
+					0,
+					1
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					2,
+					1
+				],
+				"color": "O",
+				"direction": [
+					0,
+					-1
+				]
+			}
+		],
+		"grid": [
+			"___..._#",
+			"_....YBY",
+			"_...BBB.",
+			"_G.G.GY.",
+			"_RP.P.P.",
+			"_O...ORO",
+			"_....R..",
+			"_R......",
+			"__...___"
+		],
+		"hint": "젤리를 모두 담아 GO가 된 블록을 같은 색 화살표 출구로 내보내세요!\n◆ 바닥 스위치를 먼저 밟아 보랏빛 봉인 젤리를 깨우세요.",
+		"name": "빙하 연구소 · 연쇄 구출",
+		"sealed_jellies": [
+			[
+				7,
+				1
+			],
+			[
+				6,
+				1
+			],
+			[
+				5,
+				1
+			]
+		],
+		"stars": [
+			0.5,
+			0.25
+		],
+		"switches": [
+			[
+				2,
+				6
+			]
+		],
+		"time": 56.62
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 3,
+				"cell": [
+					1,
+					6
+				],
+				"color": "R",
+				"shape": "L4A"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					5,
+					6
+				],
+				"color": "R",
+				"shape": "H2"
+			},
+			{
+				"capacity": 5,
+				"cell": [
+					2,
+					5
+				],
+				"color": "Y",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					2,
+					7
+				],
+				"color": "B",
+				"shape": "H4"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					0,
+					5
+				],
+				"color": "G",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					6,
+					7
+				],
+				"color": "P",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					7,
+					0
+				],
+				"color": "O",
+				"shape": "S1"
+			}
+		],
+		"exits": [
+			{
+				"catcher": -1,
+				"cell": [
+					0,
+					7
+				],
+				"color": "R",
+				"direction": [
+					-1,
+					0
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					5,
+					8
+				],
+				"color": "Y",
+				"direction": [
+					0,
+					1
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					2,
+					2
+				],
+				"color": "B",
+				"direction": [
+					0,
+					-1
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					6,
+					7
+				],
+				"color": "G",
+				"direction": [
+					1,
+					0
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					6,
+					8
+				],
+				"color": "P",
+				"direction": [
+					1,
+					0
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					3,
+					2
+				],
+				"color": "O",
+				"direction": [
+					0,
+					-1
+				]
+			}
+		],
+		"grid": [
+			"_____...",
+			"_____.__",
+			"R....P__",
+			".YRGYOB_",
+			"RYBOPGR_",
+			".Y.G.OBY",
+			"..RRP.._",
+			"......._",
+			"......._"
+		],
+		"hint": "젤리를 모두 담아 GO가 된 블록을 같은 색 화살표 출구로 내보내세요!\n◆ 바닥 스위치를 먼저 밟아 보랏빛 봉인 젤리를 깨우세요.",
+		"name": "빙하 연구소 · 최종 관문",
+		"sealed_jellies": [
+			[
+				7,
+				5
+			],
+			[
+				6,
+				3
+			],
+			[
+				5,
+				2
+			],
+			[
+				6,
+				4
+			]
+		],
+		"stars": [
+			0.45,
+			0.2
+		],
+		"switches": [
+			[
+				0,
+				6
+			]
+		],
+		"time": 56.4
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 3,
+				"cell": [
+					3,
+					5
+				],
+				"color": "R",
+				"shape": "V4"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					1,
+					7
+				],
+				"color": "Y",
+				"shape": "SQ"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					4,
+					6
+				],
+				"color": "B",
+				"shape": "SQ"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					2,
+					1
+				],
+				"color": "G",
+				"shape": "S1"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					4,
+					8
+				],
+				"color": "P",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					7,
+					6
+				],
+				"color": "O",
+				"shape": "S1"
+			}
+		],
+		"exits": [
+			{
+				"catcher": -1,
+				"cell": [
+					2,
+					1
+				],
+				"color": "R",
+				"direction": [
+					0,
+					-1
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					0,
+					5
+				],
+				"color": "Y",
+				"direction": [
+					0,
+					1
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					4,
+					8
+				],
+				"color": "B",
+				"direction": [
+					0,
+					1
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					6,
+					1
+				],
+				"color": "G",
+				"direction": [
+					0,
+					-1
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					1,
+					8
+				],
+				"color": "P",
+				"direction": [
+					0,
+					1
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					3,
+					1
+				],
+				"color": "O",
+				"direction": [
+					0,
+					-1
+				]
+			}
+		],
+		"grid": [
+			"________",
+			"__....._",
+			"_B.B..._",
+			".GGGY.B_",
+			"PBPRP.P#",
+			".OR.RO.O",
+			"_YY.....",
+			"_......_",
+			"_......_"
+		],
+		"hint": "젤리를 모두 담아 GO가 된 블록을 같은 색 화살표 출구로 내보내세요!\n🔑 열쇠 젤리를 먼저 구출하면 자물쇠 블록이 움직여요.",
+		"key_locks": [
+			{
+				"catcher": 5,
+				"key": [
+					3,
+					4
+				]
+			}
+		],
+		"name": "별빛 극지 · 길 열기",
+		"stars": [
+			0.5,
+			0.25
+		],
+		"time": 56.18
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 3,
+				"cell": [
+					5,
+					7
+				],
+				"color": "R",
+				"shape": "L4C"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					4,
+					6
+				],
+				"color": "R",
+				"shape": "L4D"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					1,
+					6
+				],
+				"color": "Y",
+				"shape": "TU"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					1,
+					8
+				],
+				"color": "Y",
+				"shape": "H4"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					2,
+					3
+				],
+				"color": "B",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					1,
+					2
+				],
+				"color": "G",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					4,
+					1
+				],
+				"color": "P",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					1,
+					0
+				],
+				"color": "O",
+				"shape": "S1"
+			}
+		],
+		"grid": [
+			"_.______",
+			"_...._B_",
+			"R..RP.._",
+			".Y.G.OYY",
+			"R.BOPGR_",
+			"_YYGPOBY",
+			"_......_",
+			"_R..R...",
+			"........"
+		],
+		"hint": "빛나는 모양 봉인에 같은 색 블록을 정확히 포개 장벽을 여세요!\n🔑 열쇠 젤리를 먼저 구출하면 자물쇠 블록이 움직여요.",
+		"key_locks": [
+			{
+				"catcher": 7,
+				"key": [
+					2,
+					4
+				]
+			}
+		],
+		"name": "별빛 극지 · 엇갈린 줄",
+		"shape_seals": [
+			{
+				"cells": [
+					[
+						0,
+						8
+					],
+					[
+						1,
+						8
+					],
+					[
+						2,
+						8
+					],
+					[
+						3,
+						8
+					]
+				],
+				"color": "Y",
+				"gates": [
+					[
+						2,
+						2
+					]
+				],
+				"shape": "H4"
+			}
+		],
+		"stars": [
+			0.5,
+			0.25
+		],
+		"time": 55.96
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 5,
+				"cell": [
+					2,
+					6
+				],
+				"color": "R",
+				"shape": "L4D"
+			},
+			{
+				"capacity": 5,
+				"cell": [
+					5,
+					6
+				],
+				"color": "R",
+				"shape": "SQ"
+			},
+			{
+				"capacity": 5,
+				"cell": [
+					1,
+					6
+				],
+				"color": "Y",
+				"shape": "L4C"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					2,
+					8
+				],
+				"color": "Y",
+				"shape": "H2"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					6,
+					8
+				],
+				"color": "B",
+				"shape": "S1"
+			}
+		],
+		"grid": [
+			"________",
+			"________",
+			"__.R_B__",
+			".YYBRBB_",
+			"RYYYYYY_",
+			"#RRRRRRR",
+			"_.......",
+			"_......_",
+			"_......_"
+		],
+		"hint": "색의 층과 캐처 모양을 보고 구출 순서를 정하세요.\n🔑 열쇠 젤리를 먼저 구출하면 자물쇠 블록이 움직여요.",
+		"key_locks": [
+			{
+				"catcher": 4,
+				"key": [
+					2,
+					5
+				]
+			}
+		],
+		"name": "별빛 극지 · 색의 성",
+		"stars": [
+			0.5,
+			0.25
+		],
+		"time": 55.74
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 2,
+				"cell": [
+					5,
+					7
+				],
+				"color": "R",
+				"shape": "SQ"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					2,
+					6
+				],
+				"color": "Y",
+				"shape": "H4"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					3,
+					5
+				],
+				"color": "B",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					1,
+					5
+				],
+				"color": "B",
+				"shape": "V4"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					1,
+					1
+				],
+				"color": "G",
+				"shape": "V4"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					5,
+					3
+				],
+				"color": "G",
+				"shape": "S1"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					3,
+					1
+				],
+				"color": "P",
+				"shape": "S1"
+			},
+			{
+				"capacity": 2,
+				"cell": [
+					1,
+					0
+				],
+				"color": "O",
+				"shape": "S1"
+			}
+		],
+		"grid": [
+			"_.______",
+			"_._.BR__",
+			"Y.B.GYP#",
+			"_.B.G.P_",
+			"B.G.PGO_",
+			"B.G.P.O_",
+			"......B_",
+			"..YRG.._",
+			"..___.._"
+		],
+		"hint": "색의 층과 캐처 모양을 보고 구출 순서를 정하세요.\n🔑 열쇠 젤리를 먼저 구출하면 자물쇠 블록이 움직여요.",
+		"key_locks": [
+			{
+				"catcher": 7,
+				"key": [
+					0,
+					5
+				]
+			}
+		],
+		"name": "별빛 극지 · 굽은 통로",
+		"stars": [
+			0.5,
+			0.25
+		],
+		"time": 55.52
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 3,
+				"cell": [
+					3,
+					4
+				],
+				"color": "R",
+				"shape": "V2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					6,
+					5
+				],
+				"color": "Y",
+				"shape": "V2"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					1,
+					6
+				],
+				"color": "B",
+				"shape": "SQ"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					4,
+					8
+				],
+				"color": "G",
+				"shape": "H2"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					0,
+					8
+				],
+				"color": "P",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					4,
+					6
+				],
+				"color": "O",
+				"shape": "S1"
+			}
+		],
+		"grid": [
+			"________",
+			"__B...__",
+			"_B.P..._",
+			".GBGBG.#",
+			"PYP.PY._",
+			"_OR.RO.O",
+			"_..R.Y..",
+			"_.......",
+			"......__"
+		],
+		"hint": "색의 층과 캐처 모양을 보고 구출 순서를 정하세요.\n🔑 열쇠 젤리를 먼저 구출하면 자물쇠 블록이 움직여요.",
+		"key_locks": [
+			{
+				"catcher": 5,
+				"key": [
+					3,
+					6
+				]
+			}
+		],
+		"name": "별빛 극지 · 한붓 쓸기",
+		"stars": [
+			0.5,
+			0.25
+		],
+		"time": 55.3
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 5,
+				"cell": [
+					2,
+					5
+				],
+				"color": "R",
+				"shape": "V4"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					0,
+					7
+				],
+				"color": "Y",
+				"shape": "SQ"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					4,
+					7
+				],
+				"color": "Y",
+				"shape": "H2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					3,
+					8
+				],
+				"color": "B",
+				"shape": "H2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					4,
+					5
+				],
+				"color": "G",
+				"shape": "V2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					3,
+					4
+				],
+				"color": "P",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					0,
+					3
+				],
+				"color": "O",
+				"shape": "S1"
+			}
+		],
+		"grid": [
+			"________",
+			"__YGR___",
+			"R.B.P...",
+			".Y.G.O.Y",
+			"ROB.P.R.",
+			".Y.G.OYY",
+			"_R.P..._",
+			"...B..._",
+			"........"
+		],
+		"hint": "빛나는 모양 봉인에 같은 색 블록을 정확히 포개 장벽을 여세요!\n🔑 열쇠 젤리를 먼저 구출하면 자물쇠 블록이 움직여요.",
+		"key_locks": [
+			{
+				"catcher": 6,
+				"key": [
+					4,
+					4
+				]
+			}
+		],
+		"name": "별빛 극지 · 갈림길",
+		"shape_seals": [
+			{
+				"cells": [
+					[
+						6,
+						8
+					],
+					[
+						7,
+						8
+					]
+				],
+				"color": "Y",
+				"gates": [
+					[
+						5,
+						4
+					]
+				],
+				"shape": "H2"
+			}
+		],
+		"stars": [
+			0.5,
+			0.25
+		],
+		"time": 55.08
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 5,
+				"cell": [
+					5,
+					6
+				],
+				"color": "R",
+				"shape": "ZH"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					1,
+					6
+				],
+				"color": "R",
+				"shape": "H4"
+			},
+			{
+				"capacity": 5,
+				"cell": [
+					0,
+					7
+				],
+				"color": "Y",
+				"shape": "H4"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					4,
+					7
+				],
+				"color": "Y",
+				"shape": "SQ"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					0,
+					8
+				],
+				"color": "B",
+				"shape": "H2"
+			}
+		],
+		"grid": [
+			"________",
+			"___.Y.Y_",
+			"R.B.B.._",
+			"_YYB.BYR",
+			"R.Y.Y.Y_",
+			".RRR.RRR",
+			"_.......",
+			"........",
+			"......__"
+		],
+		"hint": "색의 층과 캐처 모양을 보고 구출 순서를 정하세요.\n🔑 열쇠 젤리를 먼저 구출하면 자물쇠 블록이 움직여요.",
+		"key_locks": [
+			{
+				"catcher": 4,
+				"key": [
+					5,
+					5
+				]
+			}
+		],
+		"name": "별빛 극지 · 큰 몸 작은 문",
+		"stars": [
+			0.5,
+			0.25
+		],
+		"time": 54.86
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 4,
+				"cell": [
+					1,
+					6
+				],
+				"color": "Y",
+				"shape": "H4"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					5,
+					0
+				],
+				"color": "B",
+				"shape": "V2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					3,
+					7
+				],
+				"color": "B",
+				"shape": "H2"
+			},
+			{
+				"capacity": 5,
+				"cell": [
+					0,
+					6
+				],
+				"color": "G",
+				"shape": "S1"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					5,
+					6
+				],
+				"color": "P",
+				"shape": "SQ"
+			},
+			{
+				"capacity": 2,
+				"cell": [
+					1,
+					2
+				],
+				"color": "O",
+				"shape": "S1"
+			}
+		],
+		"exits": [
+			{
+				"catcher": -1,
+				"cell": [
+					3,
+					7
+				],
+				"color": "Y",
+				"direction": [
+					0,
+					1
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					2,
+					0
+				],
+				"color": "B",
+				"direction": [
+					0,
+					-1
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					6,
+					2
+				],
+				"color": "G",
+				"direction": [
+					1,
+					0
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					5,
+					7
+				],
+				"color": "P",
+				"direction": [
+					0,
+					1
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					4,
+					0
+				],
+				"color": "O",
+				"direction": [
+					0,
+					-1
+				]
+			}
+		],
+		"grid": [
+			"__....__",
+			"__....._",
+			"_..P..._",
+			"YGBYG.._",
+			"BYGPPBO_",
+			"BBGBP.O_",
+			"......._",
+			".YG...._",
+			"..._____"
+		],
+		"hint": "젤리를 모두 담아 GO가 된 블록을 같은 색 화살표 출구로 내보내세요!\n🔑 열쇠 젤리를 먼저 구출하면 자물쇠 블록이 움직여요.",
+		"key_locks": [
+			{
+				"catcher": 5,
+				"key": [
+					2,
+					3
+				]
+			}
+		],
+		"name": "별빛 극지 · 색깔 미로",
+		"stars": [
+			0.5,
+			0.25
+		],
+		"time": 54.64
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 4,
+				"cell": [
+					4,
+					5
+				],
+				"color": "R",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					2,
+					5
+				],
+				"color": "Y",
+				"shape": "V4"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					6,
+					5
+				],
+				"color": "B",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					0,
+					7
+				],
+				"color": "G",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					5,
+					7
+				],
+				"color": "P",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					0,
+					8
+				],
+				"color": "O",
+				"shape": "S1"
+			}
+		],
+		"exits": [
+			{
+				"catcher": -1,
+				"cell": [
+					3,
+					8
+				],
+				"color": "R",
+				"direction": [
+					0,
+					1
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					2,
+					6
+				],
+				"color": "Y",
+				"direction": [
+					-1,
+					0
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					5,
+					8
+				],
+				"color": "B",
+				"direction": [
+					1,
+					0
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					1,
+					7
+				],
+				"color": "G",
+				"direction": [
+					0,
+					-1
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					4,
+					2
+				],
+				"color": "P",
+				"direction": [
+					0,
+					-1
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					2,
+					8
+				],
+				"color": "O",
+				"direction": [
+					0,
+					1
+				]
+			}
+		],
+		"grid": [
+			"________",
+			"________",
+			"___...__",
+			"_GGGB.._",
+			"_BP.PBP#",
+			"_O.R.O.O",
+			"__.RRBY_",
+			"...RY.Y_",
+			"._....__"
+		],
+		"hint": "젤리를 모두 담아 GO가 된 블록을 같은 색 화살표 출구로 내보내세요!\n🔑 열쇠 젤리를 먼저 구출하면 자물쇠 블록이 움직여요.",
+		"key_locks": [
+			{
+				"catcher": 5,
+				"key": [
+					3,
+					5
+				]
+			}
+		],
+		"name": "별빛 극지 · 연쇄 구출",
+		"stars": [
+			0.5,
+			0.25
+		],
+		"time": 54.42
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 3,
+				"cell": [
+					5,
+					6
+				],
+				"color": "R",
+				"shape": "SQ"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					2,
+					5
+				],
+				"color": "R",
+				"shape": "V2"
+			},
+			{
+				"capacity": 5,
+				"cell": [
+					0,
+					6
+				],
+				"color": "Y",
+				"shape": "H2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					4,
+					7
+				],
+				"color": "B",
+				"shape": "V2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					1,
+					7
+				],
+				"color": "G",
+				"shape": "V2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					0,
+					5
+				],
+				"color": "P",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					4,
+					5
+				],
+				"color": "O",
+				"shape": "S1"
+			}
+		],
+		"grid": [
+			"__..____",
+			"__RGO___",
+			"R...PB__",
+			".YYGYO__",
+			"RBB.PRR_",
+			".Y.G.OPY",
+			"....R.._",
+			"_.......",
+			"_......."
+		],
+		"hint": "빛나는 모양 봉인에 같은 색 블록을 정확히 포개 장벽을 여세요!\n🔑 열쇠 젤리를 먼저 구출하면 자물쇠 블록이 움직여요.",
+		"key_locks": [
+			{
+				"catcher": 0,
+				"key": [
+					5,
+					5
+				]
+			}
+		],
+		"name": "별빛 극지 · 최종 관문",
+		"shape_seals": [
+			{
+				"cells": [
+					[
+						6,
+						7
+					],
+					[
+						7,
+						7
+					],
+					[
+						6,
+						8
+					],
+					[
+						7,
+						8
+					]
+				],
+				"color": "R",
+				"gates": [
+					[
+						2,
+						2
+					]
+				],
+				"shape": "SQ"
+			}
+		],
+		"stars": [
+			0.45,
+			0.2
+		],
+		"time": 54.2
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 3,
+				"cell": [
+					2,
+					6
+				],
+				"color": "R",
+				"shape": "SQ"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					5,
+					6
+				],
+				"color": "Y",
+				"shape": "SQ"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					4,
+					5
+				],
+				"color": "B",
+				"shape": "V2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					3,
+					4
+				],
+				"color": "G",
+				"shape": "S1"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					2,
+					1
+				],
+				"color": "P",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					0,
+					7
+				],
+				"color": "O",
+				"shape": "SQ"
+			}
+		],
+		"chains": [
+			{
+				"cells": [
+					[
+						5,
+						2
+					],
+					[
+						4,
+						3
+					],
+					[
+						5,
+						4
+					]
+				],
+				"color": "Y"
+			}
+		],
+		"exits": [
+			{
+				"catcher": -1,
+				"cell": [
+					1,
+					2
+				],
+				"color": "R",
+				"direction": [
+					0,
+					-1
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					6,
+					7
+				],
+				"color": "Y",
+				"direction": [
+					1,
+					0
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					6,
+					0
+				],
+				"color": "B",
+				"direction": [
+					0,
+					-1
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					7,
+					4
+				],
+				"color": "G",
+				"direction": [
+					0,
+					-1
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					2,
+					8
+				],
+				"color": "P",
+				"direction": [
+					0,
+					1
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					0,
+					2
+				],
+				"color": "O",
+				"direction": [
+					0,
+					-1
+				]
+			}
+		],
+		"frozen": [
+			[
+				1,
+				5,
+				1
+			],
+			[
+				7,
+				5,
+				1
+			],
+			[
+				5,
+				3,
+				2
+			],
+			[
+				2,
+				5,
+				1
+			]
+		],
+		"grid": [
+			"____..._",
+			"__..B.B_",
+			"....BY._",
+			".G.GYGB_",
+			"PRP.PYP.",
+			"#OR..O.O",
+			"_R.....#",
+			"......._",
+			"....____"
+		],
+		"hint": "종합 관문 · ❄얼음 / ⛓순서의 우선순위를 읽고 구출하세요.",
+		"name": "영원의 빙궁 · 길 열기",
+		"stars": [
+			0.5,
+			0.25
+		],
+		"time": 53.98
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 3,
+				"cell": [
+					5,
+					6
+				],
+				"color": "R",
+				"shape": "L4B"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					2,
+					5
+				],
+				"color": "R",
+				"shape": "V2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					2,
+					7
+				],
+				"color": "Y",
+				"shape": "H2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					0,
+					8
+				],
+				"color": "Y",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					6,
+					7
+				],
+				"color": "B",
+				"shape": "SQ"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					6,
+					5
+				],
+				"color": "G",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					1,
+					6
+				],
+				"color": "P",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					0,
+					5
+				],
+				"color": "O",
+				"shape": "S1"
+			}
+		],
+		"grid": [
+			"________",
+			"__Y.R___",
+			"__BRP___",
+			"_YOG.OGY",
+			"RBBRPYR_",
+			".Y.G.O.Y",
+			"#..R..._",
+			"_P......",
+			"........"
+		],
+		"hint": "종합 관문 · ◆스위치 / 🔑열쇠의 우선순위를 읽고 구출하세요.",
+		"key_locks": [
+			{
+				"catcher": 7,
+				"key": [
+					1,
+					7
+				]
+			}
+		],
+		"name": "영원의 빙궁 · 엇갈린 줄",
+		"sealed_jellies": [
+			[
+				2,
+				1
+			],
+			[
+				4,
+				1
+			],
+			[
+				2,
+				2
+			],
+			[
+				0,
+				4
+			]
+		],
+		"stars": [
+			0.5,
+			0.25
+		],
+		"switches": [
+			[
+				4,
+				6
+			]
+		],
+		"time": 53.76
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 5,
+				"cell": [
+					0,
+					7
+				],
+				"color": "R",
+				"shape": "L4C"
+			},
+			{
+				"capacity": 5,
+				"cell": [
+					5,
+					7
+				],
+				"color": "R",
+				"shape": "L4D"
+			},
+			{
+				"capacity": 5,
+				"cell": [
+					2,
+					6
+				],
+				"color": "Y",
+				"shape": "SQ"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					3,
+					8
+				],
+				"color": "Y",
+				"shape": "H2"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					3,
+					4
+				],
+				"color": "B",
+				"shape": "S1"
+			}
+		],
+		"frozen": [
+			[
+				2,
+				4,
+				2
+			],
+			[
+				4,
+				3,
+				1
+			],
+			[
+				5,
+				6,
+				1
+			],
+			[
+				1,
+				5,
+				2
+			]
+		],
+		"grid": [
+			"________",
+			"_...____",
+			"_B....__",
+			".YR.RBB_",
+			"RYY.YBY.",
+			"_RYR.R.R",
+			"_Y..YR..",
+			".R..R...",
+			"........"
+		],
+		"hint": "종합 관문 · ❄얼음 / ◆스위치의 우선순위를 읽고 구출하세요.",
+		"name": "영원의 빙궁 · 색의 성",
+		"sealed_jellies": [
+			[
+				1,
+				2
+			],
+			[
+				0,
+				4
+			]
+		],
+		"stars": [
+			0.5,
+			0.25
+		],
+		"switches": [
+			[
+				5,
+				7
+			]
+		],
+		"time": 53.54
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 2,
+				"cell": [
+					3,
+					6
+				],
+				"color": "R",
+				"shape": "L4D"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					0,
+					6
+				],
+				"color": "Y",
+				"shape": "H2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					6,
+					6
+				],
+				"color": "B",
+				"shape": "V2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					2,
+					8
+				],
+				"color": "B",
+				"shape": "H4"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					7,
+					0
+				],
+				"color": "G",
+				"shape": "V2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					3,
+					2
+				],
+				"color": "G",
+				"shape": "V2"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					1,
+					2
+				],
+				"color": "P",
+				"shape": "V2"
+			},
+			{
+				"capacity": 2,
+				"cell": [
+					5,
+					2
+				],
+				"color": "O",
+				"shape": "V2"
+			}
+		],
+		"chains": [
+			{
+				"cells": [
+					[
+						2,
+						7
+					],
+					[
+						3,
+						7
+					],
+					[
+						0,
+						2
+					]
+				],
+				"color": "Y"
+			}
+		],
+		"grid": [
+			"__......",
+			"_.......",
+			"Y...G.._",
+			"_.B.G.P_",
+			"BPGRPBO#",
+			"BGGBP.O_",
+			"..G...._",
+			"_BYYR...",
+			"__......"
+		],
+		"hint": "종합 관문 · ⛓순서 / 🔑열쇠의 우선순위를 읽고 구출하세요.",
+		"key_locks": [
+			{
+				"catcher": 7,
+				"key": [
+					4,
+					2
+				]
+			}
+		],
+		"name": "영원의 빙궁 · 굽은 통로",
+		"shape_seals": [
+			{
+				"cells": [
+					[
+						7,
+						7
+					],
+					[
+						7,
+						8
+					]
+				],
+				"color": "B",
+				"gates": [
+					[
+						5,
+						5
+					]
+				],
+				"shape": "V2"
+			}
+		],
+		"stars": [
+			0.5,
+			0.25
+		],
+		"time": 53.32
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 3,
+				"cell": [
+					2,
+					1
+				],
+				"color": "R",
+				"shape": "TU"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					3,
+					6
+				],
+				"color": "Y",
+				"shape": "SQ"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					1,
+					6
+				],
+				"color": "B",
+				"shape": "SQ"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					5,
+					6
+				],
+				"color": "G",
+				"shape": "SQ"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					4,
+					8
+				],
+				"color": "P",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					2,
+					5
+				],
+				"color": "O",
+				"shape": "S1"
+			}
+		],
+		"frozen": [
+			[
+				3,
+				3,
+				1
+			],
+			[
+				1,
+				1,
+				2
+			],
+			[
+				7,
+				1,
+				1
+			],
+			[
+				2,
+				4,
+				1
+			],
+			[
+				0,
+				2,
+				2
+			]
+		],
+		"grid": [
+			"__R.R.__",
+			".Y...Y.Y",
+			"BRB.B.B.",
+			"_G.G.G._",
+			"P.P.P.P_",
+			"_O...O.O",
+			"_.......",
+			"_.......",
+			"____...."
+		],
+		"hint": "종합 관문 · ❄얼음 / 🔑열쇠의 우선순위를 읽고 구출하세요.",
+		"key_locks": [
+			{
+				"catcher": 5,
+				"key": [
+					2,
+					0
+				]
+			}
+		],
+		"name": "영원의 빙궁 · 한붓 쓸기",
+		"stars": [
+			0.5,
+			0.25
+		],
+		"time": 53.1
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 5,
+				"cell": [
+					0,
+					5
+				],
+				"color": "R",
+				"shape": "TR"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					4,
+					5
+				],
+				"color": "Y",
+				"shape": "V2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					2,
+					6
+				],
+				"color": "Y",
+				"shape": "H2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					0,
+					8
+				],
+				"color": "B",
+				"shape": "H2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					6,
+					5
+				],
+				"color": "G",
+				"shape": "V2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					3,
+					0
+				],
+				"color": "P",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					7,
+					8
+				],
+				"color": "O",
+				"shape": "S1"
+			}
+		],
+		"chains": [
+			{
+				"cells": [
+					[
+						0,
+						4
+					],
+					[
+						1,
+						7
+					],
+					[
+						0,
+						2
+					]
+				],
+				"color": "R"
+			}
+		],
+		"exits": [
+			{
+				"catcher": -1,
+				"cell": [
+					4,
+					8
+				],
+				"color": "R",
+				"direction": [
+					0,
+					1
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					4,
+					2
+				],
+				"color": "Y",
+				"direction": [
+					0,
+					-1
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					1,
+					8
+				],
+				"color": "B",
+				"direction": [
+					0,
+					1
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					3,
+					0
+				],
+				"color": "G",
+				"direction": [
+					0,
+					-1
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					6,
+					6
+				],
+				"color": "P",
+				"direction": [
+					1,
+					0
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					5,
+					8
+				],
+				"color": "O",
+				"direction": [
+					0,
+					1
+				]
+			}
+		],
+		"grid": [
+			"___.____",
+			"___.____",
+			"R_...P__",
+			".YYG.OB_",
+			"RYBRP.R_",
+			".YBG.O.Y",
+			"......._",
+			".RYOP.G_",
+			"........"
+		],
+		"hint": "종합 관문 · ⛓순서 / ◆스위치의 우선순위를 읽고 구출하세요.",
+		"name": "영원의 빙궁 · 갈림길",
+		"sealed_jellies": [
+			[
+				5,
+				2
+			],
+			[
+				6,
+				3
+			]
+		],
+		"stars": [
+			0.5,
+			0.25
+		],
+		"switches": [
+			[
+				2,
+				8
+			]
+		],
+		"time": 52.88
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 5,
+				"cell": [
+					4,
+					5
+				],
+				"color": "R",
+				"shape": "SV"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					1,
+					6
+				],
+				"color": "R",
+				"shape": "H2"
+			},
+			{
+				"capacity": 5,
+				"cell": [
+					4,
+					8
+				],
+				"color": "Y",
+				"shape": "H2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					0,
+					8
+				],
+				"color": "Y",
+				"shape": "H2"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					6,
+					6
+				],
+				"color": "B",
+				"shape": "SQ"
+			}
+		],
+		"chains": [
+			{
+				"cells": [
+					[
+						3,
+						2
+					],
+					[
+						2,
+						3
+					],
+					[
+						0,
+						4
+					]
+				],
+				"color": "R"
+			}
+		],
+		"exits": [
+			{
+				"catcher": -1,
+				"cell": [
+					1,
+					6
+				],
+				"color": "R",
+				"direction": [
+					-1,
+					0
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					3,
+					8
+				],
+				"color": "Y",
+				"direction": [
+					0,
+					1
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					7,
+					6
+				],
+				"color": "B",
+				"direction": [
+					1,
+					0
+				]
+			}
+		],
+		"frozen": [
+			[
+				1,
+				7,
+				1
+			],
+			[
+				5,
+				5,
+				1
+			],
+			[
+				3,
+				3,
+				2
+			],
+			[
+				5,
+				2,
+				1
+			],
+			[
+				2,
+				7,
+				1
+			],
+			[
+				6,
+				5,
+				2
+			]
+		],
+		"grid": [
+			"________",
+			"________",
+			"___R_B.#",
+			"_YRB.B._",
+			"R.YYYBY_",
+			".RRR.RYR",
+			"_.......",
+			"_RYY....",
+			"......__"
+		],
+		"hint": "종합 관문 · ❄얼음 / ⛓순서 / ◆스위치의 우선순위를 읽고 구출하세요.",
+		"name": "영원의 빙궁 · 큰 몸 작은 문",
+		"sealed_jellies": [
+			[
+				7,
+				5
+			],
+			[
+				1,
+				3
+			],
+			[
+				5,
+				3
+			]
+		],
+		"stars": [
+			0.5,
+			0.25
+		],
+		"switches": [
+			[
+				3,
+				6
+			]
+		],
+		"time": 52.66
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 4,
+				"cell": [
+					5,
+					6
+				],
+				"color": "Y",
+				"shape": "ZH"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					1,
+					6
+				],
+				"color": "B",
+				"shape": "L4A"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					1,
+					2
+				],
+				"color": "B",
+				"shape": "V2"
+			},
+			{
+				"capacity": 5,
+				"cell": [
+					4,
+					7
+				],
+				"color": "G",
+				"shape": "H2"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					0,
+					6
+				],
+				"color": "P",
+				"shape": "V2"
+			},
+			{
+				"capacity": 2,
+				"cell": [
+					3,
+					1
+				],
+				"color": "O",
+				"shape": "V2"
+			}
+		],
+		"frozen": [
+			[
+				4,
+				5,
+				1
+			],
+			[
+				0,
+				4,
+				2
+			],
+			[
+				6,
+				4,
+				1
+			],
+			[
+				2,
+				3,
+				1
+			],
+			[
+				4,
+				2,
+				2
+			],
+			[
+				5,
+				5,
+				1
+			]
+		],
+		"grid": [
+			"________",
+			"_P_.____",
+			"Y.B.G.__",
+			"Y.B.G.P_",
+			"B.GYP.O_",
+			"BBG.PYO#",
+			"..G.B.._",
+			"........",
+			"_.....__"
+		],
+		"hint": "종합 관문 · ❄얼음 / ◆스위치 / 🔑열쇠의 우선순위를 읽고 구출하세요.",
+		"key_locks": [
+			{
+				"catcher": 5,
+				"key": [
+					2,
+					2
+				]
+			}
+		],
+		"name": "영원의 빙궁 · 색깔 미로",
+		"sealed_jellies": [
+			[
+				6,
+				5
+			],
+			[
+				6,
+				3
+			],
+			[
+				4,
+				6
+			],
+			[
+				4,
+				4
+			]
+		],
+		"shape_seals": [
+			{
+				"cells": [
+					[
+						1,
+						5
+					],
+					[
+						1,
+						6
+					],
+					[
+						1,
+						7
+					],
+					[
+						2,
+						7
+					]
+				],
+				"color": "B",
+				"gates": [
+					[
+						5,
+						4
+					]
+				],
+				"shape": "L4A"
+			}
+		],
+		"stars": [
+			0.5,
+			0.25
+		],
+		"switches": [
+			[
+				1,
+				3
+			]
+		],
+		"time": 52.44
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 4,
+				"cell": [
+					2,
+					6
+				],
+				"color": "R",
+				"shape": "SQ"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					6,
+					5
+				],
+				"color": "Y",
+				"shape": "V4"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					4,
+					7
+				],
+				"color": "B",
+				"shape": "SQ"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					1,
+					6
+				],
+				"color": "G",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					2,
+					1
+				],
+				"color": "P",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					3,
+					5
+				],
+				"color": "O",
+				"shape": "S1"
+			}
+		],
+		"chains": [
+			{
+				"cells": [
+					[
+						4,
+						5
+					],
+					[
+						1,
+						7
+					],
+					[
+						4,
+						6
+					]
+				],
+				"color": "R"
+			}
+		],
+		"exits": [
+			{
+				"catcher": -1,
+				"cell": [
+					1,
+					8
+				],
+				"color": "R",
+				"direction": [
+					0,
+					1
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					5,
+					1
+				],
+				"color": "Y",
+				"direction": [
+					0,
+					-1
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					2,
+					8
+				],
+				"color": "B",
+				"direction": [
+					0,
+					1
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					2,
+					2
+				],
+				"color": "G",
+				"direction": [
+					1,
+					0
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					3,
+					8
+				],
+				"color": "P",
+				"direction": [
+					0,
+					1
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					6,
+					2
+				],
+				"color": "O",
+				"direction": [
+					1,
+					0
+				]
+			}
+		],
+		"grid": [
+			"________",
+			"__._B.B_",
+			"__._BB._",
+			"_G.GYG._",
+			"_YPYP.P.",
+			"_O..RO.O",
+			"_...RR.#",
+			"_R....._",
+			"_......_"
+		],
+		"hint": "종합 관문 · ⛓순서 / ◆스위치 / 🔑열쇠의 우선순위를 읽고 구출하세요.",
+		"key_locks": [
+			{
+				"catcher": 5,
+				"key": [
+					2,
+					4
+				]
+			}
+		],
+		"name": "영원의 빙궁 · 연쇄 구출",
+		"sealed_jellies": [
+			[
+				6,
+				1
+			],
+			[
+				4,
+				1
+			]
+		],
+		"stars": [
+			0.5,
+			0.25
+		],
+		"switches": [
+			[
+				2,
+				7
+			]
+		],
+		"time": 52.22
+	},
+	{
+		"catchers": [
+			{
+				"capacity": 3,
+				"cell": [
+					4,
+					5
+				],
+				"color": "R",
+				"shape": "V2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					2,
+					6
+				],
+				"color": "R",
+				"shape": "H2"
+			},
+			{
+				"capacity": 5,
+				"cell": [
+					6,
+					5
+				],
+				"color": "Y",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					0,
+					6
+				],
+				"color": "B",
+				"shape": "L4A"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					1,
+					7
+				],
+				"color": "G",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					5,
+					6
+				],
+				"color": "P",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					2,
+					1
+				],
+				"color": "O",
+				"shape": "S1"
+			}
+		],
+		"chains": [
+			{
+				"cells": [
+					[
+						2,
+						7
+					],
+					[
+						3,
+						4
+					],
+					[
+						4,
+						7
+					]
+				],
+				"color": "R"
+			}
+		],
+		"exits": [
+			{
+				"catcher": -1,
+				"cell": [
+					2,
+					8
+				],
+				"color": "R",
+				"direction": [
+					1,
+					0
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					1,
+					3
+				],
+				"color": "Y",
+				"direction": [
+					0,
+					-1
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					2,
+					1
+				],
+				"color": "B",
+				"direction": [
+					0,
+					-1
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					5,
+					3
+				],
+				"color": "G",
+				"direction": [
+					1,
+					0
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					3,
+					1
+				],
+				"color": "P",
+				"direction": [
+					0,
+					-1
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					0,
+					6
+				],
+				"color": "O",
+				"direction": [
+					0,
+					-1
+				]
+			}
+		],
+		"frozen": [
+			[
+				6,
+				7,
+				1
+			],
+			[
+				0,
+				4,
+				1
+			],
+			[
+				6,
+				4,
+				2
+			],
+			[
+				2,
+				3,
+				1
+			],
+			[
+				4,
+				2,
+				1
+			],
+			[
+				5,
+				5,
+				2
+			],
+			[
+				1,
+				4,
+				1
+			]
+		],
+		"grid": [
+			"________",
+			"__....__",
+			"__B.P.__",
+			"..OGY.__",
+			"RRBRP.R_",
+			"_YBG.O.Y",
+			".P....O_",
+			"..RYRGY_",
+			"..._____"
+		],
+		"hint": "종합 관문 · ❄얼음 / ⛓순서 / ◆스위치 / 🔑열쇠의 우선순위를 읽고 구출하세요.",
+		"key_locks": [
+			{
+				"catcher": 6,
+				"key": [
+					7,
+					5
+				]
+			}
+		],
+		"name": "영원의 빙궁 · 최종 관문",
+		"sealed_jellies": [
+			[
+				2,
+				2
+			],
+			[
+				3,
+				3
+			],
+			[
+				1,
+				5
+			]
+		],
+		"stars": [
+			0.45,
+			0.2
+		],
+		"switches": [
+			[
+				4,
+				6
+			]
+		],
+		"time": 52.0
 	}
 ]

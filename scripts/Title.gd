@@ -56,7 +56,7 @@ func _ready() -> void:
 	_build_navigation()
 	_refresh_room()
 	# 최초 닉네임 설정을 출석 안내보다 먼저 처리한다. 자동 QA에서는 기존 화면 캡처를 가리지 않는다.
-	var interactive := not OS.get_cmdline_user_args().has("--shots") and DisplayServer.get_name() != "headless"
+	var interactive := not OS.get_cmdline_user_args().has("--shots") and not OS.get_cmdline_user_args().has("--shot-room-refresh") and not OS.get_cmdline_user_args().has("--shot-room-edit") and not OS.get_cmdline_user_args().has("--shot-level-51") and DisplayServer.get_name() != "headless"
 	if interactive and not main.save.has_nickname():
 		call_deferred("_show_nickname_popup")
 	elif interactive:
@@ -135,20 +135,35 @@ func _nav_button(icon_text: String, title_text: String, color: Color, width: flo
 	var content := VBoxContainer.new()
 	content.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	content.alignment = BoxContainer.ALIGNMENT_CENTER
-	content.add_theme_constant_override("separation", 1)
+	content.add_theme_constant_override("separation", 4)
 	content.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	button.add_child(content)
+	var icon_badge := PanelContainer.new()
+	icon_badge.custom_minimum_size = Vector2(50, 50)
+	icon_badge.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	icon_badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var badge_style := StyleBoxFlat.new()
+	badge_style.bg_color = Color(1, 1, 1, 0.18)
+	badge_style.border_color = Color(1, 1, 1, 0.42)
+	badge_style.set_border_width_all(2)
+	badge_style.set_corner_radius_all(25)
+	badge_style.shadow_color = Color(0.12, 0.05, 0.2, 0.18)
+	badge_style.shadow_size = 3
+	badge_style.shadow_offset = Vector2(0, 2)
+	icon_badge.add_theme_stylebox_override("panel", badge_style)
+	content.add_child(icon_badge)
 	var icon := Label.new()
 	icon.text = icon_text
 	icon.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	icon.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	icon.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	icon.add_theme_font_size_override("font_size", 31)
+	icon.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	icon.add_theme_font_size_override("font_size", 27)
 	icon.add_theme_color_override("font_color", Color.WHITE)
 	icon.add_theme_color_override("font_outline_color", color.darkened(0.42))
 	icon.add_theme_constant_override("outline_size", 4)
 	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	content.add_child(icon)
+	icon_badge.add_child(icon)
 	var title := Label.new()
 	title.text = title_text
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -208,7 +223,7 @@ func _build_header() -> void:
 	row.add_theme_constant_override("separation", 13)
 	card.add_child(row)
 	var avatar := TextureRect.new()
-	avatar.texture = G.jelly_tex("R")
+	avatar.texture = G.hero_tex()
 	avatar.custom_minimum_size = Vector2(76, 76)
 	avatar.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	avatar.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
@@ -292,7 +307,7 @@ func _show_nickname_popup() -> void:
 	content.add_theme_constant_override("separation", 16)
 	panel.add_child(content)
 	var avatar := TextureRect.new()
-	avatar.texture = G.jelly_tex("R")
+	avatar.texture = G.hero_tex()
 	avatar.custom_minimum_size = Vector2(105, 105)
 	avatar.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	avatar.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
@@ -913,7 +928,7 @@ func _refresh_characters() -> void:
 	character_layer.add_child(aura)
 	var hero := Sprite2D.new()
 	hero.name = "Hero"
-	hero.texture = G.jelly_tex("R")
+	hero.texture = G.hero_tex()
 	hero.position = Vector2(360, 615)
 	var hero_size: float = [0.0, 148.0, 182.0, 220.0][stage]
 	hero.scale = Vector2.ONE * hero_size / float(hero.texture.get_width())
@@ -937,7 +952,7 @@ func _refresh_characters() -> void:
 	var residents: Array[String] = main.save.get_rescued_jellies()
 	for i in range(mini(5, residents.size())):
 		var resident := Sprite2D.new()
-		resident.texture = G.jelly_tex(residents[i])
+		resident.texture = G.hero_tex() if residents[i] == "R" else G.jelly_tex(residents[i])
 		resident.position = spots[i]
 		resident.scale = Vector2.ONE * 82.0 / float(resident.texture.get_width())
 		resident.z_index = 2 + i
@@ -1004,8 +1019,10 @@ func _build_palette() -> void:
 	if palette:
 		palette.free()
 	palette = PanelContainer.new()
-	palette.position = Vector2(16, 914)
-	palette.size = Vector2(G.W - 32, 205)
+	# 메인 내비게이션과 동일하게 좌우 20px, 아래 28px의 하단 고정 영역을 사용한다.
+	var palette_height := 205.0
+	palette.position = Vector2(20, G.H - 28.0 - palette_height)
+	palette.size = Vector2(G.W - 40, palette_height)
 	palette.add_theme_stylebox_override("panel", _panel_style(Color("#fffaf5"), Color("#81659f"), 26))
 	ui_layer.add_child(palette)
 	var box := VBoxContainer.new()

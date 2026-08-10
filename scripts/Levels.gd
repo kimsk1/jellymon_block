@@ -1,12 +1,16 @@
 class_name Levels
-## 50개 레벨 캠페인 데이터.
+## 100개 레벨 캠페인 데이터.
 ## 빠지냥식 규칙: 폴리오미노 캐처를 움직여 같은 색 젤리를 흡수하고,
 ## 다른 색 젤리/벽/캐처는 길을 막는다.
 
-const CHAPTER_NAMES := ["젤리 마을", "캔디 숲", "소다 해변", "아이스 설산", "초코 화산"]
+const CHAPTER_NAMES := [
+	"젤리 마을", "캔디 숲", "소다 해변", "아이스 설산", "초코 화산",
+	"서리 정원", "오로라 동굴", "빙하 연구소", "별빛 극지", "영원의 빙궁",
+]
 const CHAPTER_COLORS := [
 	Color("#ff8fa3"), Color("#77c66e"), Color("#63b9e8"),
-	Color("#9caee8"), Color("#d88767"),
+	Color("#9caee8"), Color("#d88767"), Color("#55bfc2"),
+	Color("#598bd8"), Color("#776bc7"), Color("#ca6ead"), Color("#5279ad"),
 ]
 
 const BAKED_LEVELS_PATH := "res://assets/data/levels.json"
@@ -18,7 +22,7 @@ static func _load_levels() -> Array:
 	if FileAccess.file_exists(BAKED_LEVELS_PATH):
 		var file := FileAccess.open(BAKED_LEVELS_PATH, FileAccess.READ)
 		var parsed = JSON.parse_string(file.get_as_text())
-		if parsed is Array and parsed.size() == 50:
+		if parsed is Array and parsed.size() == 100:
 			return parsed
 	return _build_levels()
 
@@ -44,7 +48,7 @@ static func _build_levels() -> Array:
 	out.append(_level("두 가지 색", ["BBBBB", ".....", "RRRRR", ".....", ".....", "....."], [_c("B", "S1", 1, 5), _c("R", "S1", 3, 5)], 70, "다른 색은 길을 막아요. 알맞은 캐처를 골라 주세요."))
 	out.append(_level("넓게 쓸기", ["RRRRRR", "RRRRRR", "......", "Y.Y...", "...Y.Y", "......", "......"], [_c("R", "H2", 3, 6), _c("Y", "V2", 0, 5)], 80, "넓은 캐처는 한 번에 여러 칸을 쓸어요!"))
 	out.append(_level("순서가 중요해", ["......", ".BBBB.", ".BBBB.", "RRRRRR", "......", "......", "......"], [_c("R", "S1", 0, 5), _c("B", "S1", 5, 5)], 90, "앞을 막은 색부터 치우면 길이 열려요."))
-	for number in range(5, 51):
+	for number in range(5, 101):
 		out.append(_generated_level(number))
 	return out
 
@@ -86,8 +90,10 @@ static func _generated_level(number: int) -> Dictionary:
 
 	var specs := _capacity_catchers(board, colors, w, h, number)
 
-	# L1~4 이후는 색/밀도가 늘어나는 동시에 L9 83초 → L50 63초로 압축한다.
+	# L1~4 이후는 색/밀도가 늘어나며, 얼음 구간에서는 63초에서 52초까지 다시 압축한다.
 	var time_limit := maxf(63.0, 83.0 - float(number - 9) * 0.5)
+	if number >= 51:
+		time_limit = maxf(52.0, 63.0 - float(number - 50) * 0.22)
 	var chapter_name: String = CHAPTER_NAMES[chapter]
 	var titles := ["길 열기", "엇갈린 줄", "색의 성", "굽은 통로", "한붓 쓸기", "갈림길", "큰 몸 작은 문", "색깔 미로", "연쇄 구출", "최종 관문"]
 	var hint := "색의 층과 캐처 모양을 보고 구출 순서를 정하세요."
@@ -114,7 +120,284 @@ static func _generated_level(number: int) -> Dictionary:
 		_fix_known_mobility_traps(result, number)
 		_validate_shape_seal(result)
 		_add_rescue_exits(result, number)
+		_add_late_gimmicks(result, number)
 	return result
+
+
+static func _add_late_gimmicks(level: Dictionary, number: int) -> void:
+	if number < 51:
+		return
+	var flags := _gimmick_flags(number)
+	if flags.frost:
+		_add_frozen_jellies(level, number)
+	if flags.chain:
+		_add_rescue_chain(level, number)
+	if flags.switch:
+		_add_rescue_switch(level, number)
+	if flags.key:
+		_add_key_lock(level, number)
+	if number >= 91:
+		var names: Array[String] = []
+		if flags.frost: names.append("❄얼음")
+		if flags.chain: names.append("⛓순서")
+		if flags.switch: names.append("◆스위치")
+		if flags.key: names.append("🔑열쇠")
+		level.hint = "종합 관문 · %s의 우선순위를 읽고 구출하세요." % " / ".join(names)
+
+
+static func _gimmick_flags(number: int) -> Dictionary:
+	var flags := {
+		"frost": number >= 51 and number <= 60,
+		"chain": number >= 61 and number <= 70,
+		"switch": number >= 71 and number <= 80,
+		"key": number >= 81 and number <= 90,
+	}
+	if number >= 91 and number <= 100:
+		var mixes := [
+			[true, true, false, false], [false, false, true, true],
+			[true, false, true, false], [false, true, false, true],
+			[true, false, false, true], [false, true, true, false],
+			[true, true, true, false], [true, false, true, true],
+			[false, true, true, true], [true, true, true, true],
+		]
+		var mix: Array = mixes[number - 91]
+		flags = {"frost": mix[0], "chain": mix[1], "switch": mix[2], "key": mix[3]}
+	return flags
+
+
+static func _special_cells(level: Dictionary) -> Dictionary:
+	var taken := {}
+	for raw in level.get("frozen", []):
+		taken[Vector2i(int(raw[0]), int(raw[1]))] = true
+	for chain in level.get("chains", []):
+		for pair in chain.cells:
+			taken[Vector2i(int(pair[0]), int(pair[1]))] = true
+	for pair in level.get("sealed_jellies", []):
+		taken[Vector2i(int(pair[0]), int(pair[1]))] = true
+	for pair in level.get("switches", []):
+		taken[Vector2i(int(pair[0]), int(pair[1]))] = true
+	for lock in level.get("key_locks", []):
+		var pair: Array = lock.key
+		taken[Vector2i(int(pair[0]), int(pair[1]))] = true
+	for exit in level.get("exits", []):
+		var pair: Array = exit.cell
+		taken[Vector2i(int(pair[0]), int(pair[1]))] = true
+	for seal in level.get("shape_seals", []):
+		for pair in seal.get("cells", []):
+			taken[Vector2i(int(pair[0]), int(pair[1]))] = true
+		for pair in seal.get("gates", []):
+			taken[Vector2i(int(pair[0]), int(pair[1]))] = true
+	return taken
+
+
+static func _add_frozen_jellies(level: Dictionary, number: int) -> void:
+	## L51부터 같은 색 블록으로 먼저 얼음을 깨고 다시 지나가야 흡수되는 신규 기믹.
+	if number < 51:
+		return
+	var board: Array = level.grid
+	var candidates: Array[Vector2i] = []
+	for y in range(board.size()):
+		for x in range(board[y].length()):
+			if not G.COLORS.has(board[y][x]):
+				continue
+			var open_neighbors := 0
+			for dir in [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]:
+				var next: Vector2i = Vector2i(x, y) + dir
+				if next.x >= 0 and next.y >= 0 and next.x < board[y].length() and next.y < board.size() and board[next.y][next.x] != "_" and board[next.y][next.x] != "#":
+					open_neighbors += 1
+			# 막다른 한 칸은 재진입이 애매하므로 얼리지 않는다.
+			if open_neighbors >= 2:
+				candidates.append(Vector2i(x, y))
+	candidates.sort_custom(func(a: Vector2i, b: Vector2i) -> bool:
+		return ((a.x * 17 + a.y * 31 + number * 7) % 101) < ((b.x * 17 + b.y * 31 + number * 7) % 101)
+	)
+	var local := (number - 1) % 10
+	var target_count := mini(candidates.size(), 2 + (number - 51) / 15 + local / 4)
+	var frozen: Array = []
+	for i in range(target_count):
+		var cell := candidates[i]
+		var layers := 2 if number >= 71 and (i + number) % 3 == 0 else 1
+		frozen.append([cell.x, cell.y, layers])
+	if frozen.is_empty():
+		return
+	level["frozen"] = frozen
+	var frost_hint := "❄ 얼음 젤리는 같은 색 블록으로 얼음을 깨고 다시 지나가야 구출돼요."
+	if number >= 71:
+		frost_hint = "❄ 숫자 얼음은 표시된 횟수만큼 깨뜨린 뒤 다시 지나가야 구출돼요."
+	level.hint = String(level.get("hint", "")) + "\n" + frost_hint
+
+
+static func _add_rescue_chain(level: Dictionary, number: int) -> void:
+	## 같은 색 젤리를 표시된 번호 순서대로 구조해야 하는 경로 계획 기믹.
+	var board: Array = level.grid
+	var by_color := {}
+	var taken := _special_cells(level)
+	for y in range(board.size()):
+		for x in range(board[y].length()):
+			var color: String = board[y][x]
+			var cell := Vector2i(x, y)
+			if G.COLORS.has(color) and not taken.has(cell):
+				var cells: Array = by_color.get(color, [])
+				cells.append(cell)
+				by_color[color] = cells
+	var chosen_color := ""
+	for color in G.COLORS.keys():
+		if by_color.has(color) and by_color[color].size() >= 3:
+			chosen_color = color
+			break
+	# 복합 관문에서 후보가 겹쳤다면 체인은 다른 표식과 겹쳐도 진행 가능하다.
+	if chosen_color.is_empty():
+		for color in G.COLORS.keys():
+			var fallback: Array = []
+			for y in range(board.size()):
+				for x in range(board[y].length()):
+					if board[y][x] == color:
+						fallback.append(Vector2i(x, y))
+			if fallback.size() >= 2:
+				chosen_color = color
+				by_color[color] = fallback
+				break
+	if chosen_color.is_empty():
+		return
+	var candidates: Array = by_color[chosen_color]
+	candidates.sort_custom(func(a: Vector2i, b: Vector2i) -> bool:
+		return ((a.x * 13 + a.y * 29 + number) % 97) < ((b.x * 13 + b.y * 29 + number) % 97)
+	)
+	var count := mini(candidates.size(), 3 if number >= 66 else 2)
+	var cells: Array = []
+	for i in range(count):
+		cells.append([candidates[i].x, candidates[i].y])
+	level["chains"] = [{"color": chosen_color, "cells": cells}]
+	level.hint = String(level.get("hint", "")) + "\n⛓ 번호가 붙은 젤리는 1번부터 차례대로 구출하세요."
+
+
+static func _find_initial_switch_cell(level: Dictionary) -> Vector2i:
+	var board: Array = level.grid
+	var specs: Array = level.catchers
+	var positions: Array[Vector2i] = []
+	var active: Array[bool] = []
+	for spec in specs:
+		positions.append(Vector2i(int(spec.cell[0]), int(spec.cell[1])))
+		active.append(true)
+	var taken := _special_cells(level)
+	for si in range(specs.size()):
+		for dir in [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]:
+			var target: Vector2i = positions[si] + dir
+			if not _test_can_place(board, specs, positions, active, si, target):
+				continue
+			for off in G.SHAPES[specs[si].shape]:
+				var cell: Vector2i = target + off
+				if board[cell.y][cell.x] == "." and not taken.has(cell):
+					return cell
+	# 첫 한 칸이 막힌 레벨은 정지한 다른 블록을 통과하지 않고 도달 가능한 모든 원점을 검사한다.
+	for si in range(specs.size()):
+		for y in range(board.size()):
+			for x in range(board[y].length()):
+				var target := Vector2i(x, y)
+				if not _can_reach_origin(board, specs, positions, active, si, target):
+					continue
+				for off in G.SHAPES[specs[si].shape]:
+					var cell: Vector2i = target + off
+					if board[cell.y][cell.x] == "." and not taken.has(cell):
+						return cell
+	return Vector2i(-1, -1)
+
+
+static func _add_rescue_switch(level: Dictionary, number: int) -> void:
+	## 시작 위치에서 한 칸 이동해 반드시 누를 수 있는 스위치만 배치한다.
+	var switch_cell := _find_initial_switch_cell(level)
+	if switch_cell.x < 0:
+		return
+	var board: Array = level.grid
+	var taken := _special_cells(level)
+	taken[switch_cell] = true
+	var candidates: Array[Vector2i] = []
+	for y in range(board.size()):
+		for x in range(board[y].length()):
+			var cell := Vector2i(x, y)
+			if G.COLORS.has(board[y][x]) and not taken.has(cell):
+				candidates.append(cell)
+	candidates.sort_custom(func(a: Vector2i, b: Vector2i) -> bool:
+		return a.distance_squared_to(switch_cell) > b.distance_squared_to(switch_cell)
+	)
+	if candidates.is_empty():
+		return
+	var sealed: Array = []
+	var count := mini(candidates.size(), 2 + (number % 3))
+	for i in range(count):
+		sealed.append([candidates[i].x, candidates[i].y])
+	level["switches"] = [[switch_cell.x, switch_cell.y]]
+	level["sealed_jellies"] = sealed
+	level.hint = String(level.get("hint", "")) + "\n◆ 바닥 스위치를 먼저 밟아 보랏빛 봉인 젤리를 깨우세요."
+
+
+static func _add_key_lock(level: Dictionary, number: int) -> void:
+	## 다른 블록으로 즉시 획득 가능한 열쇠만 사용해 시작부터 막히는 경우를 방지한다.
+	var board: Array = level.grid
+	var specs: Array = level.catchers
+	if specs.size() < 2:
+		return
+	var positions: Array[Vector2i] = []
+	var active: Array[bool] = []
+	for spec in specs:
+		positions.append(Vector2i(int(spec.cell[0]), int(spec.cell[1])))
+		active.append(true)
+	var taken := _special_cells(level)
+	var key_cell := Vector2i(-1, -1)
+	var key_owner := -1
+	for si in range(specs.size()):
+		for dir in [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]:
+			var target: Vector2i = positions[si] + dir
+			if not _test_can_place(board, specs, positions, active, si, target):
+				continue
+			for off in G.SHAPES[specs[si].shape]:
+				var cell: Vector2i = target + off
+				if board[cell.y][cell.x] == specs[si].color and not taken.has(cell):
+					key_cell = cell
+					key_owner = si
+					break
+			if key_owner >= 0:
+				break
+		if key_owner >= 0:
+			break
+	# 인접 흡수가 없으면 실제 경로 탐색으로 도달 가능한 같은 색 젤리를 고른다.
+	if key_owner < 0:
+		for si in range(specs.size()):
+			for y in range(board.size()):
+				for x in range(board[y].length()):
+					var cell := Vector2i(x, y)
+					if board[y][x] != specs[si].color or taken.has(cell):
+						continue
+					for off in G.SHAPES[specs[si].shape]:
+						var target: Vector2i = cell - off
+						if _can_reach_origin(board, specs, positions, active, si, target):
+							key_cell = cell
+							key_owner = si
+							break
+					if key_owner >= 0:
+						break
+			if key_owner >= 0:
+				break
+	if key_owner < 0:
+		return
+	var lock_index := specs.size() - 1
+	if lock_index == key_owner:
+		lock_index = 0
+	if lock_index == key_owner:
+		return
+	level["key_locks"] = [{"catcher": lock_index, "key": [key_cell.x, key_cell.y]}]
+	level.hint = String(level.get("hint", "")) + "\n🔑 열쇠 젤리를 먼저 구출하면 자물쇠 블록이 움직여요."
+
+
+static func visible_chapter_count(save) -> int:
+	## 1~50은 기본 공개, 이후 챕터는 직전 10단계의 마지막 레벨 클리어 시 공개한다.
+	var visible := 5
+	for chapter in range(5, CHAPTER_NAMES.size()):
+		var previous_final_level := chapter * 10 - 1
+		if save.get_stars(previous_final_level) <= 0:
+			break
+		visible += 1
+	return visible
 
 
 static func _fix_known_mobility_traps(level: Dictionary, number: int) -> void:
@@ -404,6 +687,12 @@ static func _reduce_empty_space(level: Dictionary, number: int) -> void:
 		target = 9
 	if number >= 41:
 		target = 8
+	if number >= 51:
+		target = 7
+	if number >= 71:
+		target = 6
+	if number >= 91:
+		target = 5
 	var safety := w * h
 	while free_empty > target and safety > 0:
 		safety -= 1
@@ -748,8 +1037,8 @@ static func _level(name: String, grid: Array, catchers: Array, time: float, hint
 
 static func validate_all() -> PackedStringArray:
 	var errors := PackedStringArray()
-	if LEVELS.size() != 50:
-		errors.append("레벨 수가 50이 아닙니다: %d" % LEVELS.size())
+	if LEVELS.size() != 100:
+		errors.append("레벨 수가 100이 아닙니다: %d" % LEVELS.size())
 	for idx in range(LEVELS.size()):
 		var level: Dictionary = LEVELS[idx]
 		var grid: Array = level.get("grid", [])
@@ -822,6 +1111,58 @@ static func validate_all() -> PackedStringArray:
 			for color in catcher_colors:
 				if not exit_colors.has(color):
 					errors.append("L%d: %s 블록용 젤리 배출구 없음" % [idx + 1, color])
+		var frozen_cells := {}
+		for frozen in level.get("frozen", []):
+			if not (frozen is Array) or frozen.size() < 3:
+				errors.append("L%d: 얼음 젤리 데이터 형식 오류" % (idx + 1))
+				continue
+			var frozen_cell := Vector2i(int(frozen[0]), int(frozen[1]))
+			var layers := int(frozen[2])
+			if frozen_cell.x < 0 or frozen_cell.y < 0 or frozen_cell.x >= width or frozen_cell.y >= grid.size():
+				errors.append("L%d: 얼음 젤리가 보드 밖" % (idx + 1))
+			elif not G.COLORS.has(grid[frozen_cell.y][frozen_cell.x]):
+				errors.append("L%d: 얼음이 젤리가 아닌 칸에 배치됨" % (idx + 1))
+			if layers < 1 or layers > 2:
+				errors.append("L%d: 얼음 겹 수 오류 %d" % [idx + 1, layers])
+			if frozen_cells.has(frozen_cell):
+				errors.append("L%d: 얼음 젤리 칸 중복" % (idx + 1))
+			frozen_cells[frozen_cell] = true
+		if idx < 50 and level.has("frozen"):
+			errors.append("L%d: 신규 얼음 기믹이 50레벨 이전에 등장함" % (idx + 1))
+		var number := idx + 1
+		var expected := _gimmick_flags(number)
+		if bool(expected.frost) != level.has("frozen"):
+			errors.append("L%d: 얼음 기믹 구간 구성 오류" % number)
+		if bool(expected.chain) != level.has("chains"):
+			errors.append("L%d: 순서 체인 기믹 구간 구성 오류" % number)
+		if bool(expected.switch) != (level.has("switches") and level.has("sealed_jellies")):
+			errors.append("L%d: 구조 스위치 기믹 구간 구성 오류" % number)
+		if bool(expected.key) != level.has("key_locks"):
+			errors.append("L%d: 열쇠 잠금 기믹 구간 구성 오류" % number)
+		for chain in level.get("chains", []):
+			if not G.COLORS.has(String(chain.get("color", ""))) or chain.get("cells", []).size() < 2:
+				errors.append("L%d: 순서 체인 데이터 오류" % number)
+			for pair in chain.get("cells", []):
+				var cell := Vector2i(int(pair[0]), int(pair[1]))
+				if cell.x < 0 or cell.y < 0 or cell.x >= width or cell.y >= grid.size() or grid[cell.y][cell.x] != chain.color:
+					errors.append("L%d: 순서 체인이 같은 색 젤리 위에 있지 않음" % number)
+		for pair in level.get("switches", []):
+			var cell := Vector2i(int(pair[0]), int(pair[1]))
+			if cell.x < 0 or cell.y < 0 or cell.x >= width or cell.y >= grid.size() or grid[cell.y][cell.x] != ".":
+				errors.append("L%d: 구조 스위치가 빈 타일 위에 있지 않음" % number)
+		for pair in level.get("sealed_jellies", []):
+			var cell := Vector2i(int(pair[0]), int(pair[1]))
+			if cell.x < 0 or cell.y < 0 or cell.x >= width or cell.y >= grid.size() or not G.COLORS.has(grid[cell.y][cell.x]):
+				errors.append("L%d: 봉인 대상이 젤리가 아님" % number)
+		for lock in level.get("key_locks", []):
+			var catcher_index := int(lock.get("catcher", -1))
+			var pair: Array = lock.get("key", [])
+			if catcher_index < 0 or catcher_index >= level.catchers.size() or pair.size() < 2:
+				errors.append("L%d: 열쇠 잠금 데이터 오류" % number)
+			elif int(pair[0]) < 0 or int(pair[1]) < 0 or int(pair[0]) >= width or int(pair[1]) >= grid.size():
+				errors.append("L%d: 열쇠가 보드 밖" % number)
+			elif not G.COLORS.has(grid[int(pair[1])][int(pair[0])]):
+				errors.append("L%d: 열쇠가 젤리 위에 있지 않음" % number)
 		if level.has("shape_seals") and not _shape_seal_is_valid(level):
 			errors.append("L%d: 닫힌 수정 장벽 상태에서 봉인 또는 기본 풀이 도달 불가" % (idx + 1))
 		if idx == 38:
