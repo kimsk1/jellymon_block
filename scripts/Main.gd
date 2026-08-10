@@ -123,6 +123,8 @@ func _ready() -> void:
 		_headless_expansion_test()
 	elif OS.get_cmdline_user_args().has("--validate-late-play"):
 		_headless_late_play_test()
+	elif OS.get_cmdline_user_args().has("--validate-memory"):
+		_headless_memory_stress_test()
 	elif DisplayServer.get_name() == "headless":
 		_headless_smoke_test()
 
@@ -444,6 +446,8 @@ func _headless_touch_test() -> void:
 	var smooth_drag_valid := game != null and game.debug_validate_smooth_drag()
 	print("[touch validation] smooth_drag=", smooth_drag_valid)
 	failed = failed or not smooth_drag_valid
+	# 이동 흔적 파티클이 정상 해제된 뒤 종료해 QA 종료 자체를 누수로 오인하지 않게 한다.
+	await get_tree().create_timer(0.7).timeout
 	get_tree().quit(1 if failed else 0)
 
 
@@ -623,3 +627,49 @@ func _headless_smoke_test() -> void:
 		await get_tree().create_timer(1.0).timeout
 	print("[smoke] done")
 	get_tree().quit(1 if smoke_failed else 0)
+
+
+func _memory_snapshot() -> Dictionary:
+	return {
+		"static": int(Performance.get_monitor(Performance.MEMORY_STATIC)),
+		"nodes": int(Performance.get_monitor(Performance.OBJECT_NODE_COUNT)),
+		"orphans": int(Performance.get_monitor(Performance.OBJECT_ORPHAN_NODE_COUNT)),
+		"resources": int(Performance.get_monitor(Performance.OBJECT_RESOURCE_COUNT)),
+	}
+
+
+func _headless_memory_stress_test() -> void:
+	## 리소스 캐시 워밍업 후 빠른 레벨 재입장을 반복해 지속 증가하는 노드/리소스를 찾는다.
+	for i in range(12):
+		start_level(i % Levels.LEVELS.size(), true, true)
+		await get_tree().process_frame
+		await get_tree().process_frame
+	_clear_screen()
+	await get_tree().process_frame
+	await get_tree().process_frame
+	var baseline := _memory_snapshot()
+	for i in range(160):
+		start_level(i % Levels.LEVELS.size(), true, true)
+		await get_tree().process_frame
+		await get_tree().process_frame
+	# 한 프레임에 비정상적으로 많은 장식 효과를 요청해도 상한을 넘지 않고 모두 회수되는지 확인한다.
+	for i in range(400):
+		game.fx.ring(Vector2(120 + i % 8 * 40, 320 + i % 10 * 34), Color("#ff7fa0"), 0.6)
+	var effect_peak := game.fx.get_child_count()
+	await get_tree().create_timer(1.0).timeout
+	await get_tree().process_frame
+	var effect_remaining := game.fx.get_child_count()
+	# 샤이니 젤리의 주기 반짝임이 동시에 1~2개 생성될 수 있으므로 스트레스 링만 회수됐는지 본다.
+	var effects_drained := effect_remaining <= 4
+	_clear_screen()
+	for i in range(4):
+		await get_tree().process_frame
+	var final := _memory_snapshot()
+	var node_growth := int(final.nodes) - int(baseline.nodes)
+	var orphan_growth := int(final.orphans) - int(baseline.orphans)
+	var resource_growth := int(final.resources) - int(baseline.resources)
+	var memory_growth := int(final.static) - int(baseline.static)
+	var effect_budget_valid := effect_peak <= FX.MAX_TRANSIENT_NODES and effects_drained
+	var valid := node_growth <= 12 and orphan_growth <= 4 and resource_growth <= 18 and memory_growth <= 32 * 1024 * 1024 and effect_budget_valid
+	print("[memory validation] baseline=", baseline, " final=", final, " growth={static:", memory_growth, ", nodes:", node_growth, ", orphans:", orphan_growth, ", resources:", resource_growth, "} effects={peak:", effect_peak, ", remaining:", effect_remaining, ", drained:", effects_drained, "} valid=", valid)
+	get_tree().quit(0 if valid else 1)

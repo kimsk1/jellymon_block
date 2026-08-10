@@ -50,6 +50,11 @@ var shake_amt := 0.0
 var active_absorptions := 0
 var screen_offset := Vector2.ZERO
 var premium_bg: Sprite2D
+var board_plate_style: StyleBoxFlat
+var tile_shadow_style: StyleBoxFlat
+var tile_rim_style: StyleBoxFlat
+var wall_tile_style: StyleBoxFlat
+var floor_tile_styles: Array[StyleBoxFlat] = []
 
 var jellies_node: Node2D
 var catchers_node: Node2D
@@ -62,6 +67,7 @@ func _ready() -> void:
 	get_viewport().size_changed.connect(_apply_responsive_layout)
 	L = Levels.LEVELS[level_idx]
 	audio = main.audio
+	_build_board_styles()
 	_add_premium_background()
 	cols = L.grid[0].length()
 	rows = L.grid.size()
@@ -132,6 +138,43 @@ func _layout_premium_background() -> void:
 	premium_bg.position = viewport_size * 0.5 - screen_offset
 	var scale_needed := maxf(viewport_size.x / float(premium_bg.texture.get_width()), viewport_size.y / float(premium_bg.texture.get_height()))
 	premium_bg.scale = Vector2.ONE * scale_needed
+
+
+func _build_board_styles() -> void:
+	## 매 프레임/매 타일마다 Resource를 만들지 않고 레벨 생명주기 동안 공유한다.
+	board_plate_style = StyleBoxFlat.new()
+	board_plate_style.bg_color = Color(0.93, 0.97, 1.0, 0.22)
+	board_plate_style.border_color = Color(1, 1, 1, 0.3)
+	board_plate_style.set_border_width_all(2)
+	board_plate_style.set_corner_radius_all(34)
+	board_plate_style.shadow_color = Color(0.07, 0.12, 0.25, 0.2)
+	board_plate_style.shadow_size = 18
+	board_plate_style.shadow_offset = Vector2(0, 10)
+	tile_shadow_style = StyleBoxFlat.new()
+	tile_shadow_style.bg_color = Color(0.08, 0.19, 0.34, 0.38)
+	tile_shadow_style.set_corner_radius_all(15)
+	tile_shadow_style.shadow_color = Color(0.04, 0.08, 0.18, 0.22)
+	tile_shadow_style.shadow_size = 5
+	tile_shadow_style.shadow_offset = Vector2(0, 4)
+	tile_rim_style = StyleBoxFlat.new()
+	tile_rim_style.bg_color = Color("#4e8fbd")
+	tile_rim_style.border_color = Color("#9ed9ef")
+	tile_rim_style.set_border_width_all(2)
+	tile_rim_style.set_corner_radius_all(14)
+	wall_tile_style = StyleBoxFlat.new()
+	wall_tile_style.bg_color = Color("#68558f")
+	wall_tile_style.border_color = Color("#8d78ba")
+	wall_tile_style.set_border_width_all(4)
+	wall_tile_style.set_corner_radius_all(8)
+	floor_tile_styles.clear()
+	var chapter_surface := ArtDirection.chapter_tint(level_idx)
+	for blend in [0.78, 0.64]:
+		var tile := StyleBoxFlat.new()
+		tile.bg_color = chapter_surface.lerp(Color("#fffaf0"), blend)
+		tile.border_color = Color(1, 1, 1, 0.9)
+		tile.set_border_width_all(3)
+		tile.set_corner_radius_all(10)
+		floor_tile_styles.append(tile)
 
 
 func cell_pos(c: Vector2i) -> Vector2:
@@ -272,6 +315,7 @@ func _unhandled_input(event: InputEvent) -> void:
 				grab_offset = (origin + Vector2(c.origin_cell) * G.CELL) - local_position
 				audio.play("grab", 1.0, -8.0)
 				G.haptic(10)
+				queue_redraw()
 		elif event.index == active_touch_index:
 			_release()
 	elif event is InputEventScreenDrag:
@@ -322,6 +366,7 @@ func _release() -> void:
 		grabbed.set_grabbed(false)
 		grabbed = null
 	active_touch_index = -1
+	queue_redraw()
 
 
 # ────────────────────────── 이동 (격자 슬라이드) ──────────────────────────
@@ -406,6 +451,7 @@ func _try_step(c: Catcher, dir: Vector2i) -> bool:
 	c.slide_target = origin + Vector2(org) * G.CELL
 	c.arrival_pending = true
 	fx.move_streak(from_center, from_center + Vector2(dir) * G.CELL, G.COLORS[c.color_id])
+	queue_redraw()
 	return true
 
 
@@ -427,7 +473,6 @@ func _physics_process(delta: float) -> void:
 		position = screen_offset + Vector2(randf_range(-1, 1), randf_range(-1, 1)) * shake_amt
 		if shake_amt <= 0.0:
 			position = screen_offset
-	queue_redraw()
 
 
 func _resolve_catcher_arrivals() -> void:
@@ -763,51 +808,21 @@ func _draw() -> void:
 	# 보드 전체 그림자와 셀별 입체 베벨을 코드로 직접 렌더링한다.
 	# 화려한 챕터 배경 위에서도 퍼즐 실루엣이 즉시 읽히는 서리 낀 젤리 유리판.
 	var board_rect := Rect2(origin - Vector2(17, 17), Vector2(cols, rows) * G.CELL + Vector2(32, 32))
-	var board_plate := StyleBoxFlat.new()
-	board_plate.bg_color = Color(0.93, 0.97, 1.0, 0.22)
-	board_plate.border_color = Color(1, 1, 1, 0.3)
-	board_plate.set_border_width_all(2)
-	board_plate.set_corner_radius_all(34)
-	board_plate.shadow_color = Color(0.07, 0.12, 0.25, 0.2)
-	board_plate.shadow_size = 18
-	board_plate.shadow_offset = Vector2(0, 10)
-	draw_style_box(board_plate, board_rect)
+	draw_style_box(board_plate_style, board_rect)
 	for r in range(rows):
 		for c in range(cols):
 			var cell := Vector2i(c, r)
 			var p := origin + Vector2(c, r) * G.CELL
 			if voids.has(cell):
 				continue
-			var shadow_style := StyleBoxFlat.new()
-			shadow_style.bg_color = Color(0.08, 0.19, 0.34, 0.38)
-			shadow_style.set_corner_radius_all(15)
-			shadow_style.shadow_color = Color(0.04, 0.08, 0.18, 0.22)
-			shadow_style.shadow_size = 5
-			shadow_style.shadow_offset = Vector2(0, 4)
-			draw_style_box(shadow_style, Rect2(p + Vector2(2, 7), Vector2(G.CELL - 1, G.CELL - 1)))
-			var rim := StyleBoxFlat.new()
-			rim.bg_color = Color("#4e8fbd")
-			rim.border_color = Color("#9ed9ef")
-			rim.set_border_width_all(2)
-			rim.set_corner_radius_all(14)
-			draw_style_box(rim, Rect2(p, Vector2(G.CELL - 2, G.CELL - 2)))
+			draw_style_box(tile_shadow_style, Rect2(p + Vector2(2, 7), Vector2(G.CELL - 1, G.CELL - 1)))
+			draw_style_box(tile_rim_style, Rect2(p, Vector2(G.CELL - 2, G.CELL - 2)))
 			if walls.has(cell):
-				var wall := StyleBoxFlat.new()
-				wall.bg_color = Color("#68558f")
-				wall.border_color = Color("#8d78ba")
-				wall.set_border_width_all(4)
-				wall.set_corner_radius_all(8)
-				draw_style_box(wall, Rect2(p + Vector2(5, 5), Vector2(G.CELL - 12, G.CELL - 12)))
+				draw_style_box(wall_tile_style, Rect2(p + Vector2(5, 5), Vector2(G.CELL - 12, G.CELL - 12)))
 				draw_rect(Rect2(p + Vector2(11, 10), Vector2(G.CELL - 24, 8)), Color(1, 1, 1, 0.2))
 			else:
 				var even := (c + r) % 2 == 0
-				var tile := StyleBoxFlat.new()
-				var chapter_surface := ArtDirection.chapter_tint(level_idx)
-				tile.bg_color = chapter_surface.lerp(Color("#fffaf0"), 0.78 if even else 0.64)
-				tile.border_color = Color(1, 1, 1, 0.9)
-				tile.set_border_width_all(3)
-				tile.set_corner_radius_all(10)
-				draw_style_box(tile, Rect2(p + Vector2(5, 5), Vector2(G.CELL - 12, G.CELL - 12)))
+				draw_style_box(floor_tile_styles[0 if even else 1], Rect2(p + Vector2(5, 5), Vector2(G.CELL - 12, G.CELL - 12)))
 				draw_rect(Rect2(p + Vector2(12, 11), Vector2(G.CELL - 26, 5)), Color(1, 1, 1, 0.46))
 				# 아래쪽의 은은한 음영과 모서리 광점으로 장난감 타일 같은 재질감을 더한다.
 				draw_line(p + Vector2(13, G.CELL - 11), p + Vector2(G.CELL - 15, G.CELL - 11), Color(0.61, 0.48, 0.3, 0.12), 3.0, true)

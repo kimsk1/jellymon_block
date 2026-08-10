@@ -6,6 +6,7 @@ var soft_tex: Texture2D
 var ring_tex: Texture2D
 var star_tex: Texture2D
 var lock_tex: Texture2D
+const MAX_TRANSIENT_NODES := 180
 
 
 func _ready() -> void:
@@ -25,8 +26,15 @@ func _auto_free(node: Node, sec: float) -> void:
 	node.add_child(t)
 
 
+func _has_budget(required: int = 1) -> bool:
+	## 빠른 연속 포획에서도 장식 효과가 무제한 누적되어 앱 메모리를 압박하지 않게 한다.
+	return get_child_count() + required <= MAX_TRANSIENT_NODES
+
+
 func burst(pos: Vector2, col: Color, big: bool = false) -> void:
 	## 젤리 자리에서 터지는 방울 파티클
+	if not _has_budget():
+		return
 	var p := CPUParticles2D.new()
 	p.position = pos
 	p.one_shot = true
@@ -51,6 +59,8 @@ func burst(pos: Vector2, col: Color, big: bool = false) -> void:
 
 func swirl(pos: Vector2, col: Color) -> void:
 	## 구멍으로 소용돌이치며 빨려드는 입자
+	if not _has_budget():
+		return
 	var p := CPUParticles2D.new()
 	p.position = pos
 	p.one_shot = true
@@ -75,6 +85,8 @@ func swirl(pos: Vector2, col: Color) -> void:
 
 func sparkle(pos: Vector2, amount: int = 6) -> void:
 	## 샤이니 반짝임
+	if not _has_budget():
+		return
 	var p := CPUParticles2D.new()
 	p.position = pos
 	p.one_shot = true
@@ -97,6 +109,8 @@ func sparkle(pos: Vector2, amount: int = 6) -> void:
 
 func ring(pos: Vector2, col: Color, size: float = 1.0) -> void:
 	## 충격파 링
+	if not _has_budget():
+		return
 	var s := Sprite2D.new()
 	s.texture = ring_tex
 	s.position = pos
@@ -112,6 +126,8 @@ func ring(pos: Vector2, col: Color, size: float = 1.0) -> void:
 
 func grab_pulse(pos: Vector2, col: Color) -> void:
 	## 선택 순간 블록 아래에서 짧게 차오르는 젤리 후광.
+	if not _has_budget(2):
+		return
 	ring(pos, col.lightened(0.28), 0.72)
 	var glow := Sprite2D.new()
 	glow.texture = soft_tex
@@ -128,6 +144,8 @@ func grab_pulse(pos: Vector2, col: Color) -> void:
 
 func move_streak(from: Vector2, to: Vector2, col: Color) -> void:
 	## 한 칸 이동 방향을 읽기 쉬운 빛 알갱이로 남긴다.
+	if not _has_budget():
+		return
 	var p := CPUParticles2D.new()
 	p.position = from
 	p.one_shot = true
@@ -150,6 +168,8 @@ func move_streak(from: Vector2, to: Vector2, col: Color) -> void:
 
 func blocked_bump(pos: Vector2, col: Color) -> void:
 	## 이동 불가 피드백은 성공 효과보다 작고 짧게 표시한다.
+	if not _has_budget():
+		return
 	var s := Sprite2D.new()
 	s.texture = ring_tex
 	s.position = pos
@@ -165,6 +185,8 @@ func blocked_bump(pos: Vector2, col: Color) -> void:
 
 func impact(pos: Vector2, col: Color, big: bool = false) -> void:
 	## 흡수 순간 플래시 + 별 파편 + 이중 충격파. 큰 홀 제거는 한 단계 더 강하게 연출한다.
+	if not _has_budget(4):
+		return
 	var flash := Sprite2D.new()
 	flash.texture = soft_tex
 	flash.position = pos
@@ -215,6 +237,8 @@ func impact(pos: Vector2, col: Color, big: bool = false) -> void:
 
 func float_text(pos: Vector2, text: String, col: Color, fsize: int = 32) -> void:
 	## 플로팅 점수 텍스트
+	if not _has_budget():
+		return
 	var l := Label.new()
 	l.text = text
 	l.z_index = 60
@@ -235,6 +259,8 @@ func float_text(pos: Vector2, text: String, col: Color, fsize: int = 32) -> void
 
 func show_lock(pos: Vector2) -> void:
 	## 크기 부족 자물쇠 (0.5s)
+	if not _has_budget():
+		return
 	var s := Sprite2D.new()
 	s.texture = lock_tex
 	s.position = pos + Vector2(0, -34)
@@ -249,6 +275,8 @@ func show_lock(pos: Vector2) -> void:
 
 func confetti() -> void:
 	## 클리어 컨페티 (화면 상단에서 낙하)
+	if not _has_budget(3):
+		return
 	for i in range(3):
 		var p := CPUParticles2D.new()
 		p.position = Vector2(G.W * (0.2 + 0.3 * i), 40)
