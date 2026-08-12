@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "weekly": {
+    "title": "주간 구조 작전",
+    "missions": [
+      {"id": "play", "title": "모험 15회 도전", "target": 15},
+      {"id": "clear", "title": "스테이지 10회 클리어", "target": 10},
+      {"id": "capture", "title": "젤리몬 100마리 구조", "target": 100}
+    ],
+    "reward": {"stardust": 60, "boosters": {"time": 1, "compass": 1}}
+  },
+  "season": {
+    "title": "구조대 시즌 패스",
+    "milestones": [
+      {"stars": 30, "stardust": 20},
+      {"stars": 90, "stardust": 40, "booster": "ice"},
+      {"stars": 180, "stardust": 80, "booster": "space"},
+      {"stars": 300, "stardust": 150, "booster": "rescue"}
+    ]
+  }
+}

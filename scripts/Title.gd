@@ -3,6 +3,11 @@ class_name Title
 ## 메인 화면 = 플레이 기록이 살아 움직이는 '젤리 아지트'.
 
 const FurnitureRewards = preload("res://scripts/FurnitureRewardCatalog.gd")
+const HomeNavIconScene = preload("res://scripts/HomeNavIcon.gd")
+const DailyMissionCatalogLib = preload("res://scripts/DailyMissionCatalog.gd")
+const JellyDexCatalogLib = preload("res://scripts/JellyDexCatalog.gd")
+const LiveMessageCatalogLib = preload("res://scripts/LiveMessageCatalog.gd")
+const LiveProgressionCatalogLib = preload("res://scripts/LiveProgressionCatalog.gd")
 
 var main = null
 var backdrop: RoomBackdrop
@@ -14,6 +19,10 @@ var palette: Control
 var photo_layer: Control
 var attendance_button: Button
 var attendance_popup: Control
+var mission_button: Button
+var mission_popup: Control
+var dex_popup: Control
+var menu_popup: Control
 var stardust_label: Label
 var shop_popup: Control
 var purchase_confirm_popup: Control
@@ -109,7 +118,7 @@ func _format_number(value: int) -> String:
 	return formatted
 
 
-func _nav_button(icon_text: String, title_text: String, color: Color, width: float = 150.0) -> Button:
+func _nav_button(icon_kind: String, title_text: String, color: Color, width: float = 150.0) -> Button:
 	var button := _button("", color, Vector2(width, 122), 27)
 	var content := VBoxContainer.new()
 	content.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -131,17 +140,10 @@ func _nav_button(icon_text: String, title_text: String, color: Color, width: flo
 	badge_style.shadow_offset = Vector2(0, 2)
 	icon_badge.add_theme_stylebox_override("panel", badge_style)
 	content.add_child(icon_badge)
-	var icon := Label.new()
-	icon.text = icon_text
-	icon.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	icon.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	icon.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	icon.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	icon.add_theme_font_size_override("font_size", 27)
-	icon.add_theme_color_override("font_color", Color.WHITE)
-	icon.add_theme_color_override("font_outline_color", color.darkened(0.42))
-	icon.add_theme_constant_override("outline_size", 4)
-	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var icon: Control = HomeNavIconScene.new()
+	icon.setup(icon_kind)
+	icon.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	icon_badge.add_child(icon)
 	var title := Label.new()
 	title.text = title_text
@@ -206,7 +208,12 @@ func _build_header() -> void:
 	avatar.custom_minimum_size = Vector2(76, 76)
 	avatar.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	avatar.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	avatar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	avatar.mouse_filter = Control.MOUSE_FILTER_STOP
+	avatar.tooltip_text = "젤리몬 도감 열기"
+	avatar.gui_input.connect(func(event: InputEvent):
+		if (event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT) or (event is InputEventScreenTouch and event.pressed):
+			_show_jelly_dex()
+	)
 	row.add_child(avatar)
 	var info := VBoxContainer.new()
 	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -252,13 +259,21 @@ func _build_header() -> void:
 	home_energy_label.add_theme_color_override("font_color", Color("#ce4e6d"))
 	home_energy_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	energy_panel.add_child(home_energy_label)
-	attendance_button = _button("🎁 출석", Color("#8c63c7"), Vector2(195, 43), 17)
-	attendance_button.position = Vector2(505, 132)
-	attendance_button.size = Vector2(195, 43)
+	mission_button = _button("구조 0/3", Color("#e06f7f"), Vector2(94, 43), 15)
+	mission_button.position = Vector2(505, 132)
+	mission_button.size = Vector2(94, 43)
+	mission_button.pressed.connect(_show_daily_mission_popup)
+	ui_layer.add_child(mission_button)
+	attendance_button = _button("출석", Color("#8c63c7"), Vector2(94, 43), 15)
+	attendance_button.position = Vector2(606, 132)
+	attendance_button.size = Vector2(94, 43)
+	attendance_button.clip_text = true
+	attendance_button.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	attendance_button.pressed.connect(_show_attendance_popup)
 	ui_layer.add_child(attendance_button)
 	_refresh_home_energy()
 	_refresh_attendance_button()
+	_refresh_mission_button()
 
 
 func _show_nickname_popup() -> void:
@@ -392,9 +407,11 @@ func _refresh_attendance_button() -> void:
 	var week: int = main.save.get_attendance_week()
 	var claimed: int = main.save.get_attendance_day_in_week()
 	if main.save.can_claim_attendance():
-		attendance_button.text = "🎁 %d주차 · %d일차" % [week, claimed + 1]
+		attendance_button.text = "선물 받기"
+		attendance_button.tooltip_text = "%d주차 %d일차 출석 선물을 받을 수 있어요" % [week, claimed + 1]
 	else:
-		attendance_button.text = "✓ %d주차 %d/7 · 내일" % [week, claimed]
+		attendance_button.text = "출석 %d/7" % claimed
+		attendance_button.tooltip_text = "%d주차 출석 완료 · 다음 선물은 내일 받을 수 있어요" % week
 
 
 func _shop_item_card(item: Dictionary) -> PanelContainer:
@@ -942,38 +959,625 @@ func _close_attendance_popup() -> void:
 	attendance_popup = null
 
 
+func _refresh_mission_button() -> void:
+	if not mission_button:
+		return
+	var completed: int = main.save.get_daily_completed_count()
+	if main.save.has_claimed_daily_mission_chest():
+		mission_button.text = "✓ 완료"
+	elif main.save.can_claim_daily_mission_chest():
+		mission_button.text = "상자 받기!"
+	else:
+		mission_button.text = "구조 %d/3" % completed
+
+
+func _mission_row(mission: Dictionary) -> PanelContainer:
+	var id := String(mission.get("id", ""))
+	var target := int(mission.get("target", 1))
+	var progress: int = main.save.get_daily_mission_progress(id)
+	var complete: bool = progress >= target
+	var panel := PanelContainer.new()
+	panel.custom_minimum_size = Vector2(570, 72)
+	panel.add_theme_stylebox_override("panel", _panel_style(Color("#effbf4") if complete else Color("#fff8ef"), Color("#53b77a") if complete else Color("#d4a878"), 18))
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 12)
+	panel.add_child(row)
+	var badge := Label.new()
+	badge.text = "✓" if complete else str(progress)
+	badge.custom_minimum_size = Vector2(50, 0)
+	badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	badge.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	badge.add_theme_font_size_override("font_size", 27)
+	badge.add_theme_color_override("font_color", Color("#3a9c67") if complete else Color("#df7652"))
+	row.add_child(badge)
+	var copy := VBoxContainer.new()
+	copy.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(copy)
+	var title := Label.new()
+	title.text = String(mission.get("title", "오늘의 구조"))
+	title.add_theme_font_size_override("font_size", 21)
+	title.add_theme_color_override("font_color", Color("#543d65"))
+	copy.add_child(title)
+	var desc := Label.new()
+	desc.text = String(mission.get("description", ""))
+	desc.add_theme_font_size_override("font_size", 16)
+	desc.add_theme_color_override("font_color", Color("#8a728f"))
+	copy.add_child(desc)
+	var count := Label.new()
+	count.text = "%d / %d" % [progress, target]
+	count.custom_minimum_size = Vector2(82, 0)
+	count.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	count.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	count.add_theme_font_size_override("font_size", 20)
+	count.add_theme_color_override("font_color", Color("#3a9c67") if complete else Color("#7d6489"))
+	row.add_child(count)
+	return panel
+
+
+func _current_chapter_progress() -> Dictionary:
+	var idx := _next_level_index()
+	var chapter := clampi(idx / 10, 0, Levels.CHAPTER_NAMES.size() - 1)
+	var start := chapter * 10
+	var cleared := 0
+	for level_idx in range(start, mini(start + 10, Levels.LEVELS.size())):
+		if main.save.get_stars(level_idx) > 0:
+			cleared += 1
+	var reward := FurnitureRewardCatalog.reward_for_level((chapter + 1) * 10)
+	return {"chapter": chapter, "cleared": cleared, "reward": reward}
+
+
+func _show_daily_mission_popup() -> void:
+	if mission_popup and is_instance_valid(mission_popup):
+		return
+	var dim := ColorRect.new()
+	dim.color = Color(0.08, 0.04, 0.15, 0.72)
+	_fit_overlay_to_viewport(dim)
+	dim.mouse_filter = Control.MOUSE_FILTER_STOP
+	dim.z_index = 250
+	ui_layer.add_child(dim)
+	mission_popup = dim
+	var card := PanelContainer.new()
+	card.position = Vector2(55, 180)
+	card.size = Vector2(610, 880)
+	card.add_theme_stylebox_override("panel", _panel_style(Color("#fffaf3"), Color("#8b62bd"), 34))
+	dim.add_child(card)
+	var content := VBoxContainer.new()
+	content.alignment = BoxContainer.ALIGNMENT_CENTER
+	content.add_theme_constant_override("separation", 12)
+	card.add_child(content)
+	var heading := Label.new()
+	heading.text = "오늘의 젤리 구조"
+	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	heading.add_theme_font_size_override("font_size", 35)
+	heading.add_theme_color_override("font_color", Color("#62407e"))
+	content.add_child(heading)
+	var sub := Label.new()
+	sub.text = "매일 세 가지 부탁을 완료하고 구조 상자를 받아요!"
+	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	sub.add_theme_font_size_override("font_size", 17)
+	sub.add_theme_color_override("font_color", Color("#967da0"))
+	content.add_child(sub)
+	for mission in DailyMissionCatalogLib.missions():
+		content.add_child(_mission_row(mission))
+	var reward := DailyMissionCatalogLib.reward()
+	var chest := _button("구조 상자  ★ %d  ♥ %d" % [int(reward.get("stardust", 0)), int(reward.get("energy", 0))], Color("#f09a42"), Vector2(420, 72), 22)
+	chest.disabled = not main.save.can_claim_daily_mission_chest()
+	chest.pressed.connect(_claim_daily_mission_chest)
+	content.add_child(chest)
+	var divider := HSeparator.new()
+	divider.custom_minimum_size.y = 8
+	content.add_child(divider)
+	var chapter_data := _current_chapter_progress()
+	var chapter := int(chapter_data.chapter)
+	var reward_data: Dictionary = chapter_data.reward
+	var chapter_title := Label.new()
+	chapter_title.text = "CHAPTER %d · %s" % [chapter + 1, Levels.CHAPTER_NAMES[chapter]]
+	chapter_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	chapter_title.add_theme_font_size_override("font_size", 24)
+	chapter_title.add_theme_color_override("font_color", Levels.CHAPTER_COLORS[chapter].darkened(0.28))
+	content.add_child(chapter_title)
+	var track := ProgressBar.new()
+	track.custom_minimum_size = Vector2(540, 34)
+	track.max_value = 10
+	track.value = int(chapter_data.cleared)
+	track.show_percentage = false
+	track.add_theme_stylebox_override("background", _panel_style(Color("#eadff0"), Color("#b79bc5"), 15))
+	track.add_theme_stylebox_override("fill", _panel_style(Levels.CHAPTER_COLORS[chapter], Levels.CHAPTER_COLORS[chapter].darkened(0.25), 15))
+	content.add_child(track)
+	var track_copy := Label.new()
+	track_copy.text = "%d / 10 구조 · 완주 보상: %s" % [int(chapter_data.cleared), String(reward_data.get("title", "기념 가구"))]
+	track_copy.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	track_copy.add_theme_font_size_override("font_size", 18)
+	track_copy.add_theme_color_override("font_color", Color("#725a7d"))
+	content.add_child(track_copy)
+	var weekly: Dictionary = LiveProgressionCatalogLib.weekly()
+	var weekly_parts: Array[String] = []
+	for mission in weekly.get("missions", []):
+		weekly_parts.append("%d/%d" % [main.save.get_weekly_progress(String(mission.get("id", ""))), int(mission.get("target", 0))])
+	var weekly_button := _button("주간 작전  %s" % " · ".join(weekly_parts), Color("#4fa7b4"), Vector2(500, 57), 18)
+	weekly_button.disabled = not main.save.can_claim_weekly_reward()
+	weekly_button.pressed.connect(_claim_weekly_reward)
+	content.add_child(weekly_button)
+	var season: Dictionary = LiveProgressionCatalogLib.season()
+	var season_stars: int = RoomData.total_stars(main.save)
+	var next_milestone := 0
+	for milestone in season.get("milestones", []):
+		var target := int(milestone.get("stars", 0))
+		if not main.save.claimed_season_milestones.has(target):
+			next_milestone = target
+			break
+	if next_milestone > 0:
+		var season_button := _button("시즌 패스  ★ %d/%d" % [season_stars, next_milestone], Color("#8b64c4"), Vector2(500, 57), 18)
+		season_button.disabled = season_stars < next_milestone
+		season_button.pressed.connect(func(): _claim_season_reward(next_milestone))
+		content.add_child(season_button)
+	var close := _button("닫기", Color("#8065aa"), Vector2(210, 62), 22)
+	close.pressed.connect(_close_daily_mission_popup)
+	content.add_child(close)
+
+
+func _claim_daily_mission_chest() -> void:
+	var reward: Dictionary = main.save.claim_daily_mission_chest()
+	if reward.is_empty():
+		return
+	G.haptic(24)
+	_close_daily_mission_popup()
+	if stardust_label:
+		stardust_label.text = "★ 별가루 %d" % main.save.get_stardust()
+	_refresh_home_energy()
+	_refresh_mission_button()
+	_show_toast("구조 상자 획득!  ★ %d  ♥ %d" % [int(reward.get("stardust", 0)), int(reward.get("energy", 0))])
+
+
+func _close_daily_mission_popup() -> void:
+	if mission_popup and is_instance_valid(mission_popup):
+		mission_popup.queue_free()
+	mission_popup = null
+
+
+func _claim_weekly_reward() -> void:
+	var reward: Dictionary = main.save.claim_weekly_reward()
+	if reward.is_empty():
+		return
+	_close_daily_mission_popup()
+	stardust_label.text = "★ 별가루 %d" % main.save.get_stardust()
+	_show_toast("주간 구조 작전 완료!  ★ %d" % int(reward.get("stardust", 0)))
+	_show_daily_mission_popup()
+
+
+func _claim_season_reward(target: int) -> void:
+	var reward: Dictionary = main.save.claim_season_milestone(target)
+	if reward.is_empty():
+		return
+	_close_daily_mission_popup()
+	stardust_label.text = "★ 별가루 %d" % main.save.get_stardust()
+	_show_toast("시즌 ★ %d 보상 획득!" % target)
+	_show_daily_mission_popup()
+
+
+func _dex_entry_card(entry: Dictionary) -> PanelContainer:
+	var color_id := String(entry.get("color", ""))
+	var discovered: bool = main.save.has_discovered_jelly(color_id)
+	var panel := PanelContainer.new()
+	panel.custom_minimum_size = Vector2(270, 142)
+	panel.add_theme_stylebox_override("panel", _panel_style(Color("#fff9f2") if discovered else Color("#e5e0e8"), G.COLORS[color_id].darkened(0.24) if discovered else Color("#90899b"), 20))
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 8)
+	panel.add_child(row)
+	var portrait := TextureRect.new()
+	portrait.texture = G.hero_tex() if color_id == "R" else G.jelly_tex(color_id)
+	portrait.custom_minimum_size = Vector2(82, 82)
+	portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	portrait.modulate = Color.WHITE if discovered else Color(0.25, 0.22, 0.32, 0.35)
+	portrait.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_child(portrait)
+	var copy := VBoxContainer.new()
+	copy.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	copy.alignment = BoxContainer.ALIGNMENT_CENTER
+	row.add_child(copy)
+	var name_label := Label.new()
+	name_label.text = String(entry.get("name", "???")) if discovered else "아직 만나지 못했어요"
+	name_label.add_theme_font_size_override("font_size", 19)
+	name_label.add_theme_color_override("font_color", Color("#523764") if discovered else Color("#837b89"))
+	copy.add_child(name_label)
+	var habitat := Label.new()
+	habitat.text = String(entry.get("habitat", "")) if discovered else "모험에서 구조해 주세요"
+	habitat.add_theme_font_size_override("font_size", 14)
+	habitat.add_theme_color_override("font_color", Color("#8c718f"))
+	copy.add_child(habitat)
+	var count := Label.new()
+	count.text = "구조 %d · %s" % [main.save.get_jelly_capture_count(color_id), "샤이니 발견" if main.save.has_discovered_shiny(color_id) else "샤이니 미발견"] if discovered else "???"
+	count.add_theme_font_size_override("font_size", 14)
+	count.add_theme_color_override("font_color", Color("#b35f75") if discovered else Color("#99929f"))
+	copy.add_child(count)
+	var personality := Label.new()
+	personality.text = String(entry.get("personality", "")) if discovered else ""
+	personality.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	personality.add_theme_font_size_override("font_size", 13)
+	personality.add_theme_color_override("font_color", Color("#725c79"))
+	copy.add_child(personality)
+	return panel
+
+
+func _show_jelly_dex() -> void:
+	if dex_popup and is_instance_valid(dex_popup):
+		return
+	var dim := ColorRect.new()
+	dim.color = Color(0.08, 0.04, 0.15, 0.74)
+	_fit_overlay_to_viewport(dim)
+	dim.mouse_filter = Control.MOUSE_FILTER_STOP
+	dim.z_index = 260
+	ui_layer.add_child(dim)
+	dex_popup = dim
+	var card := PanelContainer.new()
+	card.position = Vector2(50, 145)
+	card.size = Vector2(620, 970)
+	card.add_theme_stylebox_override("panel", _panel_style(Color("#fff8f3"), Color("#7350a1"), 34))
+	dim.add_child(card)
+	var content := VBoxContainer.new()
+	content.alignment = BoxContainer.ALIGNMENT_CENTER
+	content.add_theme_constant_override("separation", 10)
+	card.add_child(content)
+	var title := Label.new()
+	title.text = "젤리몬 구조 도감"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 34)
+	title.add_theme_color_override("font_color", Color("#603d79"))
+	content.add_child(title)
+	var status := Label.new()
+	status.text = "발견 %d / %d · 초상화를 누르면 언제든 다시 볼 수 있어요" % [main.save.get_discovered_jelly_count(), JellyDexCatalogLib.entries().size()]
+	status.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	status.add_theme_font_size_override("font_size", 17)
+	status.add_theme_color_override("font_color", Color("#907698"))
+	content.add_child(status)
+	var grid := GridContainer.new()
+	grid.columns = 2
+	grid.add_theme_constant_override("h_separation", 10)
+	grid.add_theme_constant_override("v_separation", 10)
+	content.add_child(grid)
+	for entry in JellyDexCatalogLib.entries():
+		grid.add_child(_dex_entry_card(entry))
+	var rewards := HBoxContainer.new()
+	rewards.alignment = BoxContainer.ALIGNMENT_CENTER
+	rewards.add_theme_constant_override("separation", 8)
+	content.add_child(rewards)
+	for milestone in JellyDexCatalogLib.milestones():
+		var needed := int(milestone.get("count", 0))
+		var reward := int(milestone.get("stardust", 0))
+		var button := _button("%d종\n★ %d" % [needed, reward], Color("#5dbb82") if main.save.has_claimed_dex_milestone(needed) else Color("#e49a43"), Vector2(120, 70), 17)
+		button.disabled = main.save.has_claimed_dex_milestone(needed) or main.save.get_discovered_jelly_count() < needed
+		button.pressed.connect(func(): _claim_dex_reward(needed, reward))
+		rewards.add_child(button)
+	var close := _button("닫기", Color("#8065aa"), Vector2(220, 64), 23)
+	close.pressed.connect(_close_jelly_dex)
+	content.add_child(close)
+
+
+func _claim_dex_reward(count: int, reward: int) -> void:
+	if not main.save.claim_dex_milestone(count, reward):
+		return
+	_close_jelly_dex()
+	if stardust_label:
+		stardust_label.text = "★ 별가루 %d" % main.save.get_stardust()
+	_show_toast("도감 %d종 보상!  ★ %d" % [count, reward])
+	_show_jelly_dex()
+
+
+func _close_jelly_dex() -> void:
+	if dex_popup and is_instance_valid(dex_popup):
+		dex_popup.queue_free()
+	dex_popup = null
+
+
 func _build_navigation() -> void:
-	var resident_info := Label.new()
-	resident_info.name = "ResidentInfo"
-	resident_info.position = Vector2(30, 925)
-	resident_info.size = Vector2(G.W - 60, 55)
-	resident_info.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	resident_info.add_theme_font_size_override("font_size", 25)
-	resident_info.add_theme_color_override("font_color", Color("#684f78"))
-	resident_info.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	ui_layer.add_child(resident_info)
+	_build_next_adventure_card()
 	nav_bar = PanelContainer.new()
 	nav_bar.position = Vector2(20, 1080)
 	nav_bar.size = Vector2(G.W - 40, 172)
 	nav_bar.add_theme_stylebox_override("panel", _panel_style(Color("#fff9f4"), Color("#8b70a8"), 30))
 	ui_layer.add_child(nav_bar)
 	var buttons := GridContainer.new()
-	buttons.columns = 3
-	buttons.add_theme_constant_override("h_separation", 10)
+	buttons.columns = 4
+	buttons.add_theme_constant_override("h_separation", 8)
 	buttons.add_theme_constant_override("v_separation", 8)
 	var button_center := CenterContainer.new()
 	button_center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	nav_bar.add_child(button_center)
 	button_center.add_child(buttons)
-	var adventure := _nav_button("▶", "모험", Color("#ed6c43"), 190)
+	var adventure := _nav_button("adventure", "모험", Color("#ed6c43"), 142)
 	adventure.pressed.connect(func(): main.show_map())
 	buttons.add_child(adventure)
-	var decorate := _nav_button("▦", "꾸미기", Color("#3f9dcc"), 190)
+	var decorate := _nav_button("decorate", "꾸미기", Color("#3f9dcc"), 142)
 	decorate.pressed.connect(_enter_edit_mode)
 	buttons.add_child(decorate)
-	var shop := _nav_button("★", "상점", Color("#8a5bc0"), 190)
+	var shop := _nav_button("shop", "상점", Color("#8a5bc0"), 142)
 	shop.pressed.connect(_show_shop_popup)
 	buttons.add_child(shop)
+	var menu := _nav_button("menu", "메뉴", Color("#cf668d"), 142)
+	menu.pressed.connect(_show_home_menu)
+	buttons.add_child(menu)
+
+
+func _set_preference_switch_style(toggle: Button, enabled: bool, accent: Color) -> void:
+	toggle.text = "ON   ●" if enabled else "●   OFF"
+	var fill := accent if enabled else Color("#aaa1b6")
+	var border := accent.darkened(0.28) if enabled else Color("#756b80")
+	var normal := _panel_style(fill, border, 24)
+	normal.shadow_size = 4
+	normal.shadow_offset = Vector2(0, 3)
+	var hover: StyleBoxFlat = normal.duplicate()
+	hover.bg_color = fill.lightened(0.08)
+	var pressed: StyleBoxFlat = normal.duplicate()
+	pressed.bg_color = fill.darkened(0.08)
+	pressed.shadow_size = 1
+	toggle.add_theme_stylebox_override("normal", normal)
+	toggle.add_theme_stylebox_override("hover", hover)
+	toggle.add_theme_stylebox_override("focus", hover)
+	toggle.add_theme_stylebox_override("pressed", pressed)
+	toggle.add_theme_color_override("font_color", Color.WHITE)
+	toggle.add_theme_color_override("font_hover_color", Color.WHITE)
+	toggle.add_theme_color_override("font_pressed_color", Color.WHITE)
+	toggle.add_theme_color_override("font_outline_color", border.darkened(0.15))
+	toggle.add_theme_constant_override("outline_size", 2)
+
+
+func _preference_row(label_text: String, enabled: bool, accent: Color) -> Dictionary:
+	var row_panel := PanelContainer.new()
+	row_panel.custom_minimum_size = Vector2(520, 62)
+	var row_style := _panel_style(Color("#fff7fd"), Color("#c2a8d5"), 20)
+	row_style.shadow_size = 3
+	row_style.shadow_offset = Vector2(0, 2)
+	row_panel.add_theme_stylebox_override("panel", row_style)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 12)
+	row_panel.add_child(row)
+	var label := Label.new()
+	label.text = label_text
+	label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.add_theme_font_size_override("font_size", 21)
+	label.add_theme_color_override("font_color", Color("#624870"))
+	row.add_child(label)
+	var toggle := Button.new()
+	toggle.toggle_mode = true
+	toggle.button_pressed = enabled
+	toggle.custom_minimum_size = Vector2(112, 44)
+	toggle.add_theme_font_size_override("font_size", 17)
+	_set_preference_switch_style(toggle, enabled, accent)
+	toggle.toggled.connect(func(value: bool): _set_preference_switch_style(toggle, value, accent))
+	row.add_child(toggle)
+	return {"row": row_panel, "toggle": toggle}
+
+
+func _show_home_menu() -> void:
+	if menu_popup and is_instance_valid(menu_popup):
+		return
+	var dim := ColorRect.new()
+	dim.color = Color(0.08, 0.04, 0.15, 0.74)
+	_fit_overlay_to_viewport(dim)
+	dim.mouse_filter = Control.MOUSE_FILTER_STOP
+	dim.z_index = 280
+	ui_layer.add_child(dim)
+	menu_popup = dim
+	var card := PanelContainer.new()
+	card.position = Vector2(48, 120)
+	card.size = Vector2(624, 1085)
+	var menu_style := _panel_style(Color("#eee2f6"), Color("#7954a3"), 34)
+	menu_style.border_width_left = 6
+	menu_style.border_width_top = 6
+	menu_style.border_width_right = 6
+	menu_style.border_width_bottom = 6
+	menu_style.shadow_size = 22
+	card.add_theme_stylebox_override("panel", menu_style)
+	dim.add_child(card)
+	var content := VBoxContainer.new()
+	content.alignment = BoxContainer.ALIGNMENT_CENTER
+	content.add_theme_constant_override("separation", 10)
+	card.add_child(content)
+	var heading := Label.new()
+	heading.text = "젤리 메뉴"
+	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	heading.add_theme_font_size_override("font_size", 35)
+	heading.add_theme_color_override("font_color", Color("#5d3b78"))
+	content.add_child(heading)
+	var settings_title := Label.new()
+	settings_title.text = "환경 설정"
+	settings_title.add_theme_font_size_override("font_size", 23)
+	settings_title.add_theme_color_override("font_color", Color("#d05f83"))
+	content.add_child(settings_title)
+	var settings_panel := PanelContainer.new()
+	settings_panel.custom_minimum_size = Vector2(558, 232)
+	settings_panel.add_theme_stylebox_override("panel", _panel_style(Color("#dfccef"), Color("#aa82c8"), 25))
+	content.add_child(settings_panel)
+	var settings_rows := VBoxContainer.new()
+	settings_rows.alignment = BoxContainer.ALIGNMENT_CENTER
+	settings_rows.add_theme_constant_override("separation", 7)
+	settings_panel.add_child(settings_rows)
+	var sound_data := _preference_row("효과음", main.save.sound_enabled, Color("#e16388"))
+	var haptics_data := _preference_row("진동", main.save.haptics_enabled, Color("#6f9ed7"))
+	var notifications_data := _preference_row("알림", main.save.notifications_enabled, Color("#8c68c7"))
+	var sound: Button = sound_data.toggle
+	var haptics: Button = haptics_data.toggle
+	var notifications: Button = notifications_data.toggle
+	for data in [sound_data, haptics_data, notifications_data]:
+		settings_rows.add_child(data.row)
+		var toggle: Button = data.toggle
+		toggle.toggled.connect(func(_enabled: bool):
+			main.save.set_preferences(sound.button_pressed, haptics.button_pressed, notifications.button_pressed)
+			main.audio.enabled = sound.button_pressed
+			G.haptics_enabled = haptics.button_pressed
+		)
+	var account_row := HBoxContainer.new()
+	account_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	account_row.add_theme_constant_override("separation", 10)
+	content.add_child(account_row)
+	var account_status := Label.new()
+	account_status.text = main.platform.status_text() if main.platform else "플랫폼 연결 대기"
+	account_status.custom_minimum_size = Vector2(320, 48)
+	account_status.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	account_status.add_theme_font_size_override("font_size", 17)
+	account_status.add_theme_color_override("font_color", Color("#77647f"))
+	account_row.add_child(account_status)
+	var login := _button("계정 연결", Color("#5a9bc0"), Vector2(160, 52), 18)
+	login.disabled = main.platform.logged_in if main.platform else true
+	login.pressed.connect(func():
+		if main.platform and main.platform.login():
+			account_status.text = main.platform.status_text()
+			login.disabled = true
+	)
+	account_row.add_child(login)
+	var divider := HSeparator.new()
+	divider.custom_minimum_size.y = 5
+	content.add_child(divider)
+	var mail_title := Label.new()
+	mail_title.text = "우편함"
+	mail_title.add_theme_font_size_override("font_size", 23)
+	mail_title.add_theme_color_override("font_color", Color("#d8873f"))
+	content.add_child(mail_title)
+	for mail in LiveMessageCatalogLib.mail():
+		var mail_row := PanelContainer.new()
+		mail_row.custom_minimum_size = Vector2(540, 105)
+		mail_row.add_theme_stylebox_override("panel", _panel_style(Color("#fff0cf"), Color("#dc9b3d"), 19))
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 10)
+		mail_row.add_child(row)
+		var copy := VBoxContainer.new()
+		copy.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		row.add_child(copy)
+		var mail_name := Label.new()
+		mail_name.text = String(mail.get("title", "선물 우편"))
+		mail_name.add_theme_font_size_override("font_size", 19)
+		mail_name.add_theme_color_override("font_color", Color("#684653"))
+		copy.add_child(mail_name)
+		var mail_body := Label.new()
+		mail_body.text = "%s  ·  ★ %d  ♥ %d" % [String(mail.get("body", "")), int(mail.get("stardust", 0)), int(mail.get("energy", 0))]
+		mail_body.add_theme_font_size_override("font_size", 14)
+		mail_body.add_theme_color_override("font_color", Color("#8b6a72"))
+		mail_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		copy.add_child(mail_body)
+		var mail_id := String(mail.get("id", ""))
+		var claimed: bool = main.save.has_claimed_mail(mail_id)
+		var receive := _button("수령 완료" if claimed else "받기", Color("#76ae7d") if claimed else Color("#e98948"), Vector2(118, 58), 19)
+		receive.disabled = claimed
+		receive.pressed.connect(func(): _claim_home_mail(mail))
+		row.add_child(receive)
+		content.add_child(mail_row)
+	var notice_title := Label.new()
+	notice_title.text = "공지"
+	notice_title.add_theme_font_size_override("font_size", 23)
+	notice_title.add_theme_color_override("font_color", Color("#527fac"))
+	content.add_child(notice_title)
+	for notice in LiveMessageCatalogLib.notices():
+		var notice_card := PanelContainer.new()
+		notice_card.custom_minimum_size = Vector2(540, 94)
+		notice_card.add_theme_stylebox_override("panel", _panel_style(Color("#edf5ff"), Color("#73a2c7"), 18))
+		var notice_copy := VBoxContainer.new()
+		notice_card.add_child(notice_copy)
+		var notice_name := Label.new()
+		notice_name.text = "%s  ·  %s" % [String(notice.get("title", "공지")), String(notice.get("date", ""))]
+		notice_name.add_theme_font_size_override("font_size", 17)
+		notice_name.add_theme_color_override("font_color", Color("#4e6381"))
+		notice_copy.add_child(notice_name)
+		var notice_body := Label.new()
+		notice_body.text = String(notice.get("body", ""))
+		notice_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		notice_body.add_theme_font_size_override("font_size", 14)
+		notice_body.add_theme_color_override("font_color", Color("#758299"))
+		notice_copy.add_child(notice_body)
+		content.add_child(notice_card)
+	var close := _button("닫기", Color("#8065aa"), Vector2(210, 60), 22)
+	close.pressed.connect(_close_home_menu)
+	content.add_child(close)
+
+
+func _claim_home_mail(mail: Dictionary) -> void:
+	if not main.save.claim_mail(mail):
+		return
+	G.haptic(20)
+	_close_home_menu()
+	if stardust_label:
+		stardust_label.text = "★ 별가루 %d" % main.save.get_stardust()
+	_refresh_home_energy()
+	_show_toast("우편 선물 수령!  ★ %d  ♥ %d" % [int(mail.get("stardust", 0)), int(mail.get("energy", 0))])
+	_show_home_menu()
+
+
+func _close_home_menu() -> void:
+	if menu_popup and is_instance_valid(menu_popup):
+		menu_popup.queue_free()
+	menu_popup = null
+
+
+func _next_level_index() -> int:
+	for idx in range(Levels.LEVELS.size()):
+		if main.save.get_stars(idx) <= 0:
+			return idx
+	return Levels.LEVELS.size() - 1
+
+
+func _next_resident_text() -> String:
+	var count: int = main.save.get_rescued_jellies().size()
+	if count >= 5:
+		return "주민 5/5 · 모두 구조했어요"
+	var target_level := count * 10 + 1
+	return "다음 친구 · LEVEL %d에서 만나요" % target_level
+
+
+func _growth_goal_text() -> String:
+	var stage := RoomData.growth_stage(main.save)
+	var stars := RoomData.total_stars(main.save)
+	if stage >= 3:
+		return "최종 성장 완료 · 별 %d" % stars
+	var target := RoomData.next_growth_stars(stage)
+	return "다음 성장까지 ★ %d" % maxi(0, target - stars)
+
+
+func _build_next_adventure_card() -> void:
+	var idx := _next_level_index()
+	var level: Dictionary = Levels.LEVELS[idx]
+	var chapter := clampi(idx / 10, 0, Levels.CHAPTER_NAMES.size() - 1)
+	var card := PanelContainer.new()
+	card.name = "NextAdventureCard"
+	card.position = Vector2(20, 905)
+	card.size = Vector2(G.W - 40, 158)
+	card.add_theme_stylebox_override("panel", _panel_style(Color("#fffaf1"), Levels.CHAPTER_COLORS[chapter].darkened(0.2), 28))
+	ui_layer.add_child(card)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 14)
+	card.add_child(row)
+	var goal := VBoxContainer.new()
+	goal.custom_minimum_size = Vector2(330, 0)
+	goal.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	goal.alignment = BoxContainer.ALIGNMENT_CENTER
+	goal.add_theme_constant_override("separation", 1)
+	row.add_child(goal)
+	var eyebrow := Label.new()
+	eyebrow.text = "CHAPTER %d · %s" % [chapter + 1, Levels.CHAPTER_NAMES[chapter]]
+	eyebrow.add_theme_font_size_override("font_size", 17)
+	eyebrow.add_theme_color_override("font_color", Levels.CHAPTER_COLORS[chapter].darkened(0.32))
+	goal.add_child(eyebrow)
+	var title := Label.new()
+	title.text = "LEVEL %d  %s" % [idx + 1, String(level.get("name", "다음 구조"))]
+	title.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	title.add_theme_font_size_override("font_size", 24)
+	title.add_theme_color_override("font_color", Color("#4e345f"))
+	goal.add_child(title)
+	var growth := Label.new()
+	growth.text = _growth_goal_text()
+	growth.add_theme_font_size_override("font_size", 17)
+	growth.add_theme_color_override("font_color", Color("#b66a35"))
+	goal.add_child(growth)
+	var resident := Label.new()
+	resident.name = "ResidentInfo"
+	resident.text = _next_resident_text()
+	resident.add_theme_font_size_override("font_size", 16)
+	resident.add_theme_color_override("font_color", Color("#735d80"))
+	goal.add_child(resident)
+	var play := _button("모험 시작", Color("#ed6c43"), Vector2(275, 104), 29)
+	play.tooltip_text = "LEVEL %d 바로 시작" % (idx + 1)
+	play.pressed.connect(func(): main.start_level(idx))
+	row.add_child(play)
 
 
 func _clear_layer(layer: Node) -> void:
@@ -986,8 +1590,7 @@ func _refresh_room() -> void:
 	_refresh_characters()
 	var info := ui_layer.get_node_or_null("ResidentInfo") as Label
 	if info:
-		var residents: Array[String] = main.save.get_rescued_jellies()
-		info.text = "구출 주민 %d/5 · 스테이지를 처음 클리어하면 새 친구가 찾아와요" % residents.size()
+		info.text = _next_resident_text()
 
 
 func _refresh_furniture() -> void:
@@ -1087,6 +1690,9 @@ func _enter_edit_mode() -> void:
 	selected_index = -1
 	backdrop.set_edit_mode(true)
 	nav_bar.visible = false
+	var adventure_card := ui_layer.get_node_or_null("NextAdventureCard") as Control
+	if adventure_card:
+		adventure_card.visible = false
 	_build_palette()
 	_refresh_furniture()
 
@@ -1100,6 +1706,9 @@ func _leave_edit_mode() -> void:
 		palette.queue_free()
 		palette = null
 	nav_bar.visible = true
+	var adventure_card := ui_layer.get_node_or_null("NextAdventureCard") as Control
+	if adventure_card:
+		adventure_card.visible = true
 	main.save.set_room_placements(placements)
 	_refresh_furniture()
 
@@ -1108,14 +1717,20 @@ func _build_palette() -> void:
 	if palette:
 		palette.free()
 	palette = PanelContainer.new()
-	# 메인 내비게이션과 동일하게 좌우 20px, 아래 28px의 하단 고정 영역을 사용한다.
-	var palette_height := 205.0
+	# 꾸미기 중에는 모험 카드를 숨겨 편집 공간과 도구 패널의 시각적 간격을 확보한다.
+	# 도구 행과 가구 목록 사이에도 충분한 내부 여백을 둔다.
+	var palette_height := 225.0
 	palette.position = Vector2(20, G.H - 28.0 - palette_height)
 	palette.size = Vector2(G.W - 40, palette_height)
-	palette.add_theme_stylebox_override("panel", _panel_style(Color("#fffaf5"), Color("#81659f"), 26))
+	var palette_style := _panel_style(Color("#fffaf5"), Color("#81659f"), 26)
+	palette_style.content_margin_left = 12
+	palette_style.content_margin_right = 12
+	palette_style.content_margin_top = 14
+	palette_style.content_margin_bottom = 14
+	palette.add_theme_stylebox_override("panel", palette_style)
 	ui_layer.add_child(palette)
 	var box := VBoxContainer.new()
-	box.add_theme_constant_override("separation", 6)
+	box.add_theme_constant_override("separation", 14)
 	palette.add_child(box)
 	var tools := HBoxContainer.new()
 	tools.add_theme_constant_override("separation", 8)
@@ -1145,7 +1760,7 @@ func _build_palette() -> void:
 	done.pressed.connect(_leave_edit_mode)
 	tools.add_child(done)
 	var scroll := ScrollContainer.new()
-	scroll.custom_minimum_size = Vector2(0, 116)
+	scroll.custom_minimum_size = Vector2(0, 120)
 	# 모바일에서도 가구 버튼 위를 손가락으로 끌어 좌우 목록을 탐색할 수 있다.
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_ALWAYS
 	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED

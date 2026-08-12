@@ -4,6 +4,7 @@ class_name G
 const CELL := 84.0
 const W := 720.0
 const H := 1280.0
+static var haptics_enabled := true
 
 
 static func safe_offset(viewport_size: Vector2) -> Vector2:
@@ -73,4 +74,5 @@ static func catcher_tex(shape: String, c: String) -> Texture2D:
 
 
 static func haptic(ms: int) -> void:
-	Input.vibrate_handheld(ms)
+	if haptics_enabled:
+		Input.vibrate_handheld(ms)

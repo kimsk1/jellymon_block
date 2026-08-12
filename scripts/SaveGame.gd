@@ -4,6 +4,8 @@ class_name SaveGame
 
 const RoomDataLib = preload("res://scripts/RoomData.gd")
 const FurnitureRewardCatalogLib = preload("res://scripts/FurnitureRewardCatalog.gd")
+const DailyMissionCatalogLib = preload("res://scripts/DailyMissionCatalog.gd")
+const LiveProgressionCatalogLib = preload("res://scripts/LiveProgressionCatalog.gd")
 
 const PATH := "user://jellymon_save.json"
 const MAX_ENERGY := 5
@@ -31,6 +33,21 @@ var nickname := ""
 var seen_scenarios: Array[String] = []
 var energy := MAX_ENERGY
 var energy_updated_at := 0
+var daily_mission_date := ""
+var daily_mission_progress := {}
+var daily_mission_claimed := false
+var jelly_capture_counts := {}
+var shiny_discoveries: Array[String] = []
+var claimed_dex_milestones: Array[int] = []
+var sound_enabled := true
+var haptics_enabled := true
+var notifications_enabled := true
+var claimed_mail_ids: Array[String] = []
+var booster_inventory := {"time": 2, "compass": 2, "ice": 1, "space": 1, "rescue": 1}
+var weekly_key := ""
+var weekly_progress := {}
+var weekly_claimed := false
+var claimed_season_milestones: Array[int] = []
 var persistence_enabled := true
 
 
@@ -68,6 +85,36 @@ func load_data() -> void:
 				# 구매한 보너스 하트는 최대치 5를 넘어 보유할 수 있다.
 				energy = maxi(0, int(d.get("energy", MAX_ENERGY)))
 				energy_updated_at = int(d.get("energy_updated_at", _now()))
+				daily_mission_date = String(d.get("daily_mission_date", ""))
+				daily_mission_progress = d.get("daily_mission_progress", {})
+				daily_mission_claimed = bool(d.get("daily_mission_claimed", false))
+				jelly_capture_counts = d.get("jelly_capture_counts", {})
+				for raw_color in d.get("shiny_discoveries", []):
+					var shiny_color := String(raw_color)
+					if G.COLORS.has(shiny_color) and not shiny_discoveries.has(shiny_color):
+						shiny_discoveries.append(shiny_color)
+				for raw_count in d.get("claimed_dex_milestones", []):
+					var milestone_count := int(raw_count)
+					if milestone_count > 0 and not claimed_dex_milestones.has(milestone_count):
+						claimed_dex_milestones.append(milestone_count)
+				sound_enabled = bool(d.get("sound_enabled", true))
+				haptics_enabled = bool(d.get("haptics_enabled", true))
+				notifications_enabled = bool(d.get("notifications_enabled", true))
+				for raw_mail_id in d.get("claimed_mail_ids", []):
+					var mail_id := String(raw_mail_id)
+					if not mail_id.is_empty() and not claimed_mail_ids.has(mail_id):
+						claimed_mail_ids.append(mail_id)
+				var loaded_boosters = d.get("booster_inventory", {})
+				if loaded_boosters is Dictionary:
+					for booster_id in booster_inventory:
+						booster_inventory[booster_id] = maxi(0, int(loaded_boosters.get(booster_id, booster_inventory[booster_id])))
+				weekly_key = String(d.get("weekly_key", ""))
+				weekly_progress = d.get("weekly_progress", {})
+				weekly_claimed = bool(d.get("weekly_claimed", false))
+				for raw_milestone in d.get("claimed_season_milestones", []):
+					var season_star := int(raw_milestone)
+					if season_star > 0 and not claimed_season_milestones.has(season_star):
+						claimed_season_milestones.append(season_star)
 	if energy_updated_at <= 0:
 		energy_updated_at = _now()
 	# 구버전 저장 데이터도 기본 지급 4종만 소유한 상태에서 시작한다.
@@ -93,6 +140,8 @@ func load_data() -> void:
 					rescued_jellies.append(chapter_colors[chapter])
 					break
 	refresh_energy()
+	refresh_daily_missions()
+	refresh_weekly_progress()
 
 
 func save_data() -> void:
@@ -116,6 +165,21 @@ func save_data() -> void:
 			"seen_scenarios": seen_scenarios,
 			"energy": energy,
 			"energy_updated_at": energy_updated_at,
+			"daily_mission_date": daily_mission_date,
+			"daily_mission_progress": daily_mission_progress,
+			"daily_mission_claimed": daily_mission_claimed,
+			"jelly_capture_counts": jelly_capture_counts,
+			"shiny_discoveries": shiny_discoveries,
+			"claimed_dex_milestones": claimed_dex_milestones,
+			"sound_enabled": sound_enabled,
+			"haptics_enabled": haptics_enabled,
+			"notifications_enabled": notifications_enabled,
+			"claimed_mail_ids": claimed_mail_ids,
+			"booster_inventory": booster_inventory,
+			"weekly_key": weekly_key,
+			"weekly_progress": weekly_progress,
+			"weekly_claimed": weekly_claimed,
+			"claimed_season_milestones": claimed_season_milestones,
 		}))
 
 
@@ -225,6 +289,248 @@ static func calculate_stardust_reward(previous: int, achieved: int) -> int:
 
 func get_stardust() -> int:
 	return stardust
+
+
+func refresh_daily_missions() -> bool:
+	var today := Time.get_date_string_from_system()
+	if daily_mission_date == today:
+		return false
+	daily_mission_date = today
+	daily_mission_progress = {}
+	for mission in DailyMissionCatalogLib.missions():
+		daily_mission_progress[String(mission.get("id", ""))] = 0
+	daily_mission_claimed = false
+	save_data()
+	return true
+
+
+func record_daily_action(action_id: String, amount: int = 1) -> bool:
+	refresh_daily_missions()
+	if amount <= 0:
+		return false
+	for mission in DailyMissionCatalogLib.missions():
+		if String(mission.get("id", "")) != action_id:
+			continue
+		var target := int(mission.get("target", 1))
+		var previous := int(daily_mission_progress.get(action_id, 0))
+		daily_mission_progress[action_id] = mini(target, previous + amount)
+		if int(daily_mission_progress[action_id]) != previous:
+			# 젤리 포획마다 디스크에 쓰지 않고 5마리/완료 지점에서만 체크포인트를 남긴다.
+			var current := int(daily_mission_progress[action_id])
+			if action_id != "capture" or current >= target or current % 5 == 0:
+				save_data()
+			return true
+	return false
+
+
+func get_daily_mission_progress(action_id: String) -> int:
+	refresh_daily_missions()
+	return int(daily_mission_progress.get(action_id, 0))
+
+
+func get_daily_completed_count() -> int:
+	refresh_daily_missions()
+	var completed := 0
+	for mission in DailyMissionCatalogLib.missions():
+		var id := String(mission.get("id", ""))
+		if get_daily_mission_progress(id) >= int(mission.get("target", 1)):
+			completed += 1
+	return completed
+
+
+func can_claim_daily_mission_chest() -> bool:
+	return not daily_mission_claimed and get_daily_completed_count() >= DailyMissionCatalogLib.missions().size()
+
+
+func claim_daily_mission_chest() -> Dictionary:
+	if not can_claim_daily_mission_chest():
+		return {}
+	var reward := DailyMissionCatalogLib.reward().duplicate(true)
+	stardust += maxi(0, int(reward.get("stardust", 0)))
+	energy += maxi(0, int(reward.get("energy", 0)))
+	if energy >= MAX_ENERGY:
+		energy_updated_at = _now()
+	daily_mission_claimed = true
+	save_data()
+	return reward
+
+
+func has_claimed_daily_mission_chest() -> bool:
+	refresh_daily_missions()
+	return daily_mission_claimed
+
+
+func record_jelly_capture(color_id: String, shiny: bool = false) -> void:
+	if not G.COLORS.has(color_id):
+		return
+	var count := int(jelly_capture_counts.get(color_id, 0)) + 1
+	jelly_capture_counts[color_id] = count
+	if shiny and not shiny_discoveries.has(color_id):
+		shiny_discoveries.append(color_id)
+	# 포획 수는 5마리 단위와 신규 발견 시점에 저장한다.
+	if count == 1 or count % 5 == 0 or shiny:
+		save_data()
+
+
+func get_jelly_capture_count(color_id: String) -> int:
+	return int(jelly_capture_counts.get(color_id, 0))
+
+
+func has_discovered_jelly(color_id: String) -> bool:
+	return get_jelly_capture_count(color_id) > 0
+
+
+func has_discovered_shiny(color_id: String) -> bool:
+	return shiny_discoveries.has(color_id)
+
+
+func get_discovered_jelly_count() -> int:
+	var count := 0
+	for color_id in G.COLORS:
+		if has_discovered_jelly(String(color_id)):
+			count += 1
+	return count
+
+
+func claim_dex_milestone(count: int, reward: int) -> bool:
+	if count <= 0 or reward <= 0 or claimed_dex_milestones.has(count) or get_discovered_jelly_count() < count:
+		return false
+	claimed_dex_milestones.append(count)
+	stardust += reward
+	save_data()
+	return true
+
+
+func has_claimed_dex_milestone(count: int) -> bool:
+	return claimed_dex_milestones.has(count)
+
+
+func set_preferences(sound: bool, haptics: bool, notifications: bool) -> void:
+	sound_enabled = sound
+	haptics_enabled = haptics
+	notifications_enabled = notifications
+	save_data()
+
+
+func claim_mail(mail: Dictionary) -> bool:
+	var id := String(mail.get("id", ""))
+	if id.is_empty() or claimed_mail_ids.has(id):
+		return false
+	claimed_mail_ids.append(id)
+	stardust += maxi(0, int(mail.get("stardust", 0)))
+	energy += maxi(0, int(mail.get("energy", 0)))
+	if energy >= MAX_ENERGY:
+		energy_updated_at = _now()
+	save_data()
+	return true
+
+
+func has_claimed_mail(id: String) -> bool:
+	return claimed_mail_ids.has(id)
+
+
+func progression_snapshot() -> Dictionary:
+	## 서버 저장/분쟁 복구에 필요한 영구 진행 데이터만 반환한다.
+	return {
+		"schema": 1,
+		"stars": stars.duplicate(true),
+		"best_clear_times": best_clear_times.duplicate(true),
+		"stardust": stardust,
+		"energy": energy,
+		"energy_updated_at": energy_updated_at,
+		"owned_furniture": owned_furniture.duplicate(),
+		"room_placements": room_placements.duplicate(true),
+		"rescued_jellies": rescued_jellies.duplicate(),
+		"nickname": nickname,
+		"jelly_capture_counts": jelly_capture_counts.duplicate(true),
+		"shiny_discoveries": shiny_discoveries.duplicate(),
+		"booster_inventory": booster_inventory.duplicate(true),
+	}
+
+
+func get_booster_count(booster_id: String) -> int:
+	return maxi(0, int(booster_inventory.get(booster_id, 0)))
+
+
+func consume_booster(booster_id: String) -> bool:
+	var count := get_booster_count(booster_id)
+	if count <= 0:
+		return false
+	booster_inventory[booster_id] = count - 1
+	save_data()
+	return true
+
+
+func add_booster(booster_id: String, amount: int = 1) -> void:
+	if amount <= 0 or not booster_inventory.has(booster_id):
+		return
+	booster_inventory[booster_id] = get_booster_count(booster_id) + amount
+	save_data()
+
+
+func refresh_weekly_progress() -> void:
+	var current := str(int(Time.get_unix_time_from_system()) / (7 * 24 * 60 * 60))
+	if weekly_key == current:
+		return
+	weekly_key = current
+	weekly_progress = {}
+	weekly_claimed = false
+	save_data()
+
+
+func record_weekly_action(action_id: String, amount: int = 1) -> void:
+	refresh_weekly_progress()
+	if amount <= 0:
+		return
+	weekly_progress[action_id] = maxi(0, int(weekly_progress.get(action_id, 0)) + amount)
+	save_data()
+
+
+func get_weekly_progress(action_id: String) -> int:
+	refresh_weekly_progress()
+	return maxi(0, int(weekly_progress.get(action_id, 0)))
+
+
+func can_claim_weekly_reward() -> bool:
+	refresh_weekly_progress()
+	if weekly_claimed:
+		return false
+	for mission in LiveProgressionCatalogLib.weekly().get("missions", []):
+		if get_weekly_progress(String(mission.get("id", ""))) < int(mission.get("target", 0)):
+			return false
+	return true
+
+
+func claim_weekly_reward() -> Dictionary:
+	if not can_claim_weekly_reward():
+		return {}
+	var reward: Dictionary = LiveProgressionCatalogLib.weekly().get("reward", {}).duplicate(true)
+	weekly_claimed = true
+	stardust += maxi(0, int(reward.get("stardust", 0)))
+	for booster_id in reward.get("boosters", {}):
+		booster_inventory[booster_id] = get_booster_count(String(booster_id)) + maxi(0, int(reward.boosters[booster_id]))
+	save_data()
+	return reward
+
+
+func claim_season_milestone(star_target: int) -> Dictionary:
+	if star_target <= 0 or claimed_season_milestones.has(star_target):
+		return {}
+	var total := 0
+	for value in stars.values():
+		total += int(value)
+	if total < star_target:
+		return {}
+	for milestone in LiveProgressionCatalogLib.season().get("milestones", []):
+		if int(milestone.get("stars", 0)) == star_target:
+			claimed_season_milestones.append(star_target)
+			stardust += maxi(0, int(milestone.get("stardust", 0)))
+			var booster_id := String(milestone.get("booster", ""))
+			if not booster_id.is_empty() and booster_inventory.has(booster_id):
+				booster_inventory[booster_id] = get_booster_count(booster_id) + 1
+			save_data()
+			return milestone
+	return {}
 
 
 static func is_valid_nickname(value: String) -> bool:

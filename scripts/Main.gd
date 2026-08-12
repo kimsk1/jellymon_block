@@ -1,9 +1,16 @@
 extends Node
 ## 루트: 화면 전환 + 저장 + 오디오 (02 문서 7장 상태 머신 간소판)
 
+const DailyMissionCatalogLib = preload("res://scripts/DailyMissionCatalog.gd")
+const JellyDexCatalogLib = preload("res://scripts/JellyDexCatalog.gd")
+const LiveMessageCatalogLib = preload("res://scripts/LiveMessageCatalog.gd")
+const LiveProgressionCatalogLib = preload("res://scripts/LiveProgressionCatalog.gd")
+const PlatformServiceLib = preload("res://scripts/PlatformService.gd")
+
 signal rewarded_ad_requested(on_reward: Callable, on_unavailable: Callable)
 
 var audio: AudioMgr
+var platform: Node
 var save := SaveGame.new()
 var current_screen: Node = null
 var game: Game = null
@@ -17,6 +24,10 @@ func _ready() -> void:
 	level_errors.append_array(ShopCatalog.validate_catalog())
 	level_errors.append_array(FurnitureRewardCatalog.validate())
 	level_errors.append_array(ScenarioCatalog.validate())
+	level_errors.append_array(DailyMissionCatalogLib.validate())
+	level_errors.append_array(JellyDexCatalogLib.validate())
+	level_errors.append_array(LiveMessageCatalogLib.validate())
+	level_errors.append_array(LiveProgressionCatalogLib.validate())
 	if SaveGame.calculate_stardust_reward(0, 1) != 1:
 		level_errors.append("별가루 보상 오류: 0성→1성")
 	if SaveGame.calculate_stardust_reward(1, 3) != 5:
@@ -91,6 +102,18 @@ func _ready() -> void:
 		level_errors.append("10단위 가구 보상 지급 오류")
 	if not milestone_test_save.claim_level_furniture_reward(10).is_empty():
 		level_errors.append("10단위 가구 보상 중복 지급 차단 오류")
+	var live_test_save := SaveGame.new()
+	live_test_save.persistence_enabled = false
+	var first_mail: Dictionary = LiveMessageCatalogLib.mail()[0]
+	if not live_test_save.claim_mail(first_mail) or live_test_save.claim_mail(first_mail):
+		level_errors.append("우편 보상 중복 수령 차단 오류")
+	var initial_time_boosters := live_test_save.get_booster_count("time")
+	if not live_test_save.consume_booster("time") or live_test_save.get_booster_count("time") != initial_time_boosters - 1:
+		level_errors.append("구조 보조 아이템 소모 오류")
+	for mission in LiveProgressionCatalogLib.weekly().get("missions", []):
+		live_test_save.record_weekly_action(String(mission.get("id", "")), int(mission.get("target", 0)))
+	if live_test_save.claim_weekly_reward().is_empty() or not live_test_save.claim_weekly_reward().is_empty():
+		level_errors.append("주간 보상 수령/중복 차단 오류")
 	if not level_errors.is_empty():
 		for message in level_errors:
 			push_error("[level validation] " + message)
@@ -111,10 +134,15 @@ func _ready() -> void:
 		return
 	audio = AudioMgr.new()
 	add_child(audio)
+	platform = PlatformServiceLib.new()
+	add_child(platform)
+	platform.initialize()
 	# 자동 QA는 메모리에서만 진행해 개발자의 실제 플레이 계정을 오염시키지 않는다.
-	if OS.get_cmdline_user_args().has("--shots") or OS.get_cmdline_user_args().has("--shot-room-refresh") or OS.get_cmdline_user_args().has("--shot-room-edit") or OS.get_cmdline_user_args().has("--shot-level-39") or OS.get_cmdline_user_args().has("--shot-level-51") or OS.get_cmdline_user_args().has("--shot-late-gimmicks") or DisplayServer.get_name() == "headless":
+	if OS.get_cmdline_user_args().has("--shots") or OS.get_cmdline_user_args().has("--shot-room-refresh") or OS.get_cmdline_user_args().has("--shot-home-menu") or OS.get_cmdline_user_args().has("--shot-room-edit") or OS.get_cmdline_user_args().has("--shot-level-39") or OS.get_cmdline_user_args().has("--shot-level-51") or OS.get_cmdline_user_args().has("--shot-late-gimmicks") or DisplayServer.get_name() == "headless":
 		save.persistence_enabled = false
 	save.load_data()
+	audio.enabled = save.sound_enabled
+	G.haptics_enabled = save.haptics_enabled
 	if OS.get_cmdline_user_args().has("--shot-room-refresh") or OS.get_cmdline_user_args().has("--shot-room-edit"):
 		save.room_placements = RoomData.default_placements()
 	show_title()
@@ -122,6 +150,8 @@ func _ready() -> void:
 		_screenshot_run()
 	elif OS.get_cmdline_user_args().has("--shot-room-refresh"):
 		_screenshot_room_refresh()
+	elif OS.get_cmdline_user_args().has("--shot-home-menu"):
+		_screenshot_home_menu()
 	elif OS.get_cmdline_user_args().has("--shot-room-edit"):
 		_screenshot_room_edit()
 	elif OS.get_cmdline_user_args().has("--shot-level-51"):
@@ -242,6 +272,8 @@ func start_level(idx: int, bypass_energy: bool = false, skip_story: bool = false
 		energy_reserved = true
 	_clear_screen()
 	var g := Game.new()
+	save.record_daily_action("play")
+	save.record_weekly_action("play")
 	g.main = self
 	g.level_idx = idx
 	g.energy_reserved = energy_reserved
@@ -267,6 +299,8 @@ func on_level_finished(idx: int, stars: int, cleared: bool, refund_reserved_ener
 	var stardust_reward := 0
 	last_furniture_reward = {}
 	if cleared:
+		save.record_daily_action("clear")
+		save.record_weekly_action("clear")
 		if clear_time > 0.0:
 			save.record_clear_time(idx, clear_time)
 		var first_clear := save.get_stars(idx) == 0
@@ -276,6 +310,11 @@ func on_level_finished(idx: int, stars: int, cleared: bool, refund_reserved_ener
 			last_furniture_reward = save.claim_level_furniture_reward(idx + 1)
 		if refund_reserved_energy:
 			save.refund_energy()
+		var total_stars := 0
+		for value in save.stars.values():
+			total_stars += int(value)
+		platform.submit_score(total_stars)
+		platform.save_cloud_snapshot(save.progression_snapshot())
 	return stardust_reward
 
 
@@ -285,14 +324,9 @@ func request_rewarded_ad(on_reward: Callable, on_unavailable: Callable = Callabl
 		if on_reward.is_valid():
 			on_reward.call_deferred()
 		return
-	# 개발 빌드에서는 실제 광고 과금/네트워크 없이 완료 콜백을 검증한다.
-	if OS.is_debug_build():
-		await get_tree().create_timer(0.9).timeout
-		if on_reward.is_valid():
-			on_reward.call()
-		return
-	# 출시 빌드에서는 광고 SDK 연결부가 이 신호를 받아 시청 완료 후 on_reward를 호출한다.
-	if not get_signal_connection_list("rewarded_ad_requested").is_empty():
+	if platform:
+		platform.show_rewarded_ad(on_reward, on_unavailable)
+	elif not get_signal_connection_list("rewarded_ad_requested").is_empty():
 		rewarded_ad_requested.emit(on_reward, on_unavailable)
 	elif on_unavailable.is_valid():
 		on_unavailable.call_deferred()
@@ -412,6 +446,15 @@ func _screenshot_room_refresh() -> void:
 	## 첫 방 그래픽만 빠르게 검수하는 전용 캡처. 실제 저장 데이터는 변경하지 않는다.
 	await get_tree().create_timer(0.8).timeout
 	await _snap("room_refresh.png")
+	get_tree().quit()
+
+
+func _screenshot_home_menu() -> void:
+	await get_tree().create_timer(0.45).timeout
+	if current_screen is Title:
+		current_screen._show_home_menu()
+	await get_tree().create_timer(0.35).timeout
+	await _snap("home_menu.png")
 	get_tree().quit()
 
 
@@ -668,8 +711,10 @@ func _memory_snapshot() -> Dictionary:
 
 
 func _headless_memory_stress_test() -> void:
-	## 리소스 캐시 워밍업 후 빠른 레벨 재입장을 반복해 지속 증가하는 노드/리소스를 찾는다.
-	for i in range(12):
+	## 모든 챕터의 텍스처/스타일 캐시를 한 번 워밍업한 뒤 같은 레벨을 다시
+	## 순회한다. Godot 메모리 할당자의 정상적인 고점 예약을 누수로 오판하지 않고,
+	## 두 번째 순회에서도 계속 증가하는 객체만 검출한다.
+	for i in range(Levels.LEVELS.size()):
 		start_level(i % Levels.LEVELS.size(), true, true)
 		await get_tree().process_frame
 		await get_tree().process_frame
@@ -677,7 +722,7 @@ func _headless_memory_stress_test() -> void:
 	await get_tree().process_frame
 	await get_tree().process_frame
 	var baseline := _memory_snapshot()
-	for i in range(160):
+	for i in range(Levels.LEVELS.size()):
 		start_level(i % Levels.LEVELS.size(), true, true)
 		await get_tree().process_frame
 		await get_tree().process_frame

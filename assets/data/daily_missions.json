@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "missions": [
+    {"id": "play", "title": "모험 떠나기", "description": "모험을 3번 시작해요", "target": 3},
+    {"id": "clear", "title": "젤리 구조 성공", "description": "스테이지를 2번 클리어해요", "target": 2},
+    {"id": "capture", "title": "마음 블록 채우기", "description": "젤리몬 20마리를 블록에 담아요", "target": 20}
+  ],
+  "chest_reward": {"stardust": 15, "energy": 1}
+}

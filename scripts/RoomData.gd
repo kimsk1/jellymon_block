@@ -106,14 +106,14 @@ static func item_by_id(id: String) -> Dictionary:
 
 static func total_stars(save) -> int:
 	var total := 0
-	for idx in range(50):
+	for idx in range(100):
 		total += save.get_stars(idx)
 	return total
 
 
 static func clear_count(save) -> int:
 	var count := 0
-	for idx in range(50):
+	for idx in range(100):
 		if save.get_stars(idx) > 0:
 			count += 1
 	return count
@@ -121,7 +121,7 @@ static func clear_count(save) -> int:
 
 static func three_star_count(save) -> int:
 	var count := 0
-	for idx in range(50):
+	for idx in range(100):
 		if save.get_stars(idx) >= 3:
 			count += 1
 	return count

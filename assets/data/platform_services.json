@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "provider": "hive",
+  "app_id": "SET_IN_HIVE_CONSOLE",
+  "features": {
+    "login": true,
+    "rewarded_ads": true,
+    "leaderboard": true,
+    "cloud_save": true
+  },
+  "leaderboard_id": "jellymon_total_stars"
+}

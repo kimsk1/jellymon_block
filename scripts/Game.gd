@@ -632,6 +632,9 @@ func _absorb(j: Jelly, c: Catcher, cl: Vector2i) -> void:
 	# 목표
 	goals[j.color_id] = max(0, int(goals[j.color_id]) - 1)
 	hud.set_goals(goals)
+	main.save.record_daily_action("capture")
+	main.save.record_weekly_action("capture")
+	main.save.record_jelly_capture(j.color_id, j.shiny)
 	var col: Color = G.COLORS[j.color_id]
 	var jp := cell_pos(cl)
 	# 포획 즉시 수용량을 예약해 중복 포획은 막되, 블록 드래그는 잠그지 않는다.
@@ -806,6 +809,104 @@ func _continue_with_stardust() -> bool:
 	# 실패 팝업이 열린 동안 마지막 가두기 타이머가 끝난 경우도 즉시 클리어 판정한다.
 	call_deferred("_maybe_clear_level")
 	return true
+
+
+# ────────────────────────── 구조 보조 아이템 ──────────────────────────
+
+func use_booster(booster_id: String) -> void:
+	if state != "play" or main.save.get_booster_count(booster_id) <= 0:
+		return
+	var applied := false
+	match booster_id:
+		"time":
+			time_left += 15.0
+			total_time = maxf(total_time, time_left)
+			hud.set_time(time_left, total_time)
+			fx.float_text(Vector2(G.W * 0.5, 165), "+15초", Color("#fff39b"), 31)
+			applied = true
+		"compass":
+			applied = _show_movement_hint()
+		"ice":
+			applied = _weaken_frost()
+		"space":
+			applied = _open_bonus_space()
+		"rescue":
+			applied = _release_one_gimmick()
+	if not applied:
+		fx.float_text(Vector2(G.W * 0.5, G.H - 150), "지금은 사용할 곳이 없어요", Color("#fff0dc"), 22)
+		return
+	main.save.consume_booster(booster_id)
+	hud.refresh_boosters()
+	audio.play("shiny", 1.1, -5.0)
+	G.haptic(18)
+
+
+func _show_movement_hint() -> bool:
+	for c in catchers:
+		if not is_instance_valid(c) or c.key_locked:
+			continue
+		for dir in [Vector2i.UP, Vector2i.RIGHT, Vector2i.DOWN, Vector2i.LEFT]:
+			if _can_place(c, c.origin_cell + dir):
+				var arrow: String = String({Vector2i.UP: "↑", Vector2i.RIGHT: "→", Vector2i.DOWN: "↓", Vector2i.LEFT: "←"}[dir])
+				fx.ring(c.center_px(), G.COLORS[c.color_id], 1.25)
+				fx.float_text(c.center_px(), "%s 이쪽!" % arrow, Color("#e9fbff"), 30)
+				return true
+	return false
+
+
+func _weaken_frost() -> bool:
+	var changed := false
+	for cell in frozen_at.keys():
+		var jelly = jelly_at.get(cell)
+		if jelly != null and jelly.frost_layers > 0:
+			jelly.frost_layers = maxi(0, jelly.frost_layers - 1)
+			frozen_at[cell] = jelly.frost_layers
+			jelly.queue_redraw()
+			fx.sparkle(cell_pos(cell), 6)
+			changed = true
+	return changed
+
+
+func _open_bonus_space() -> bool:
+	for cell in walls.keys():
+		var adjacent_playable := false
+		for dir in [Vector2i.UP, Vector2i.RIGHT, Vector2i.DOWN, Vector2i.LEFT]:
+			var near: Vector2i = cell + dir
+			if near.x >= 0 and near.y >= 0 and near.x < cols and near.y < rows and not walls.has(near) and not voids.has(near):
+				adjacent_playable = true
+				break
+		if adjacent_playable:
+			walls.erase(cell)
+			fx.impact(cell_pos(cell), Color("#ffd978"), true)
+			fx.float_text(cell_pos(cell), "길 열림!", Color("#fff0a8"), 27)
+			queue_redraw()
+			return true
+	return false
+
+
+func _release_one_gimmick() -> bool:
+	for c in catchers:
+		if is_instance_valid(c) and c.key_locked:
+			locked_catcher_indices.erase(c.spec_index)
+			c.set_key_locked(false)
+			fx.float_text(c.center_px(), "잠금 해제!", Color("#f4e2ff"), 27)
+			return true
+	if not rescue_switch_active and not sealed_at.is_empty():
+		rescue_switch_active = true
+		for cell in sealed_at:
+			var jelly = jelly_at.get(cell)
+			if jelly != null:
+				jelly.set_rescue_sealed(false)
+		fx.float_text(Vector2(G.W * 0.5, G.H * 0.5), "구조 봉인 해제!", Color("#f4e2ff"), 29)
+		return true
+	if not seal_gates.is_empty():
+		var seal = seal_gates.values()[0]
+		for gate in seal.gates:
+			seal_gates.erase(gate)
+		seal.active = true
+		queue_redraw()
+		return true
+	return false
 
 
 # ────────────────────────── 보드 렌더 ──────────────────────────

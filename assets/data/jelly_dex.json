@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "entries": [
+    {"color": "R", "name": "딸기 젤리", "personality": "용감하고 친구를 먼저 챙겨요.", "habitat": "젤리 마을"},
+    {"color": "Y", "name": "별사탕 젤리", "personality": "호기심이 많고 반짝이는 걸 좋아해요.", "habitat": "캔디 숲"},
+    {"color": "B", "name": "소다 젤리", "personality": "차분하지만 신나면 톡톡 튀어요.", "habitat": "소다 해변"},
+    {"color": "G", "name": "새싹 젤리", "personality": "식물과 조용한 낮잠을 사랑해요.", "habitat": "서리 정원"},
+    {"color": "P", "name": "포도 젤리", "personality": "수수께끼와 밤하늘을 좋아해요.", "habitat": "오로라 동굴"},
+    {"color": "O", "name": "귤꽃 젤리", "personality": "따뜻하고 새로운 친구를 잘 반겨요.", "habitat": "초코 화산"}
+  ],
+  "milestones": [
+    {"count": 1, "stardust": 5},
+    {"count": 3, "stardust": 10},
+    {"count": 5, "stardust": 20},
+    {"count": 6, "stardust": 30}
+  ]
+}

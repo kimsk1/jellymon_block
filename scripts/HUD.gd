@@ -14,6 +14,7 @@ var clear_base_reward := 0
 var clear_bonus_claimed := false
 var clear_reward_label: Label
 var clear_double_button: Button
+var booster_buttons := {}
 
 
 func _ready() -> void:
@@ -101,6 +102,48 @@ func _ready() -> void:
 	timer_fill.set_corner_radius_all(6)
 	timer_bar.add_theme_stylebox_override("fill", timer_fill)
 	mid.add_child(timer_bar)
+	_build_booster_tray()
+
+
+func _build_booster_tray() -> void:
+	var tray := PanelContainer.new()
+	tray.position = Vector2(28, 1155)
+	tray.size = Vector2(G.W - 56, 92)
+	tray.add_theme_stylebox_override("panel", ArtDirection.panel(Color(0.12, 0.08, 0.22, 0.74), Color(1, 1, 1, 0.42), 25, 0.25, 3))
+	root.add_child(tray)
+	var row := HBoxContainer.new()
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
+	row.add_theme_constant_override("separation", 7)
+	tray.add_child(row)
+	var specs := [
+		["time", "+15초", "시간 젤리"],
+		["compass", "힌트", "구조 나침반"],
+		["ice", "얼음", "햇살 스푼"],
+		["space", "공간", "공간 캔디"],
+		["rescue", "해제", "구조 호루라기"],
+	]
+	for spec in specs:
+		var id := String(spec[0])
+		var count: int = game.main.save.get_booster_count(id)
+		var button := Button.new()
+		button.text = "%s  ×%d" % [String(spec[1]), count]
+		button.tooltip_text = String(spec[2])
+		button.custom_minimum_size = Vector2(119, 62)
+		button.add_theme_font_size_override("font_size", 17)
+		ArtDirection.apply_button(button, Color("#e48658") if id == "time" else Color("#6d8fd1"), 17)
+		button.disabled = count <= 0
+		button.pressed.connect(func(): game.use_booster(id))
+		row.add_child(button)
+		booster_buttons[id] = button
+
+
+func refresh_boosters() -> void:
+	for id in booster_buttons:
+		var button: Button = booster_buttons[id]
+		var count: int = game.main.save.get_booster_count(String(id))
+		var label: String = String({"time": "+15초", "compass": "힌트", "ice": "얼음", "space": "공간", "rescue": "해제"}.get(id, id))
+		button.text = "%s  ×%d" % [label, count]
+		button.disabled = count <= 0 or game.state != "play"
 
 
 func _apply_responsive_layout() -> void:

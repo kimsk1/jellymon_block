@@ -6,6 +6,7 @@ const NAMES := ["pop", "pop_big", "merge", "grow", "clear", "fail", "shiny", "gr
 
 var streams := {}
 var players: Array = []
+var enabled := true
 
 
 func _ready() -> void:
@@ -20,7 +21,7 @@ func _ready() -> void:
 
 
 func play(n: String, pitch: float = 1.0, vol_db: float = 0.0) -> void:
-	if not streams.has(n):
+	if not enabled or not streams.has(n):
 		return
 	for p in players:
 		if not p.playing:

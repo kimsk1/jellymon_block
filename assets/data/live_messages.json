@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "notices": [
+    {"id": "welcome", "title": "젤리몬 구조대에 오신 걸 환영해요!", "body": "100개의 모험과 아지트 꾸미기가 준비되어 있어요. 매일 오늘의 구조도 확인해 주세요.", "date": "2026-08-12"},
+    {"id": "safety", "title": "계정 보호 안내", "body": "정식 서비스에서는 Google·Apple 계정 연결과 클라우드 저장을 지원할 예정이에요.", "date": "2026-08-12"}
+  ],
+  "mail": [
+    {"id": "launch_welcome", "title": "구조대 환영 선물", "body": "첫 모험을 응원하는 선물이에요!", "stardust": 20, "energy": 2}
+  ]
+}
