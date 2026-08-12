@@ -430,7 +430,7 @@ func _restore_clear_double_button() -> void:
 		clear_reward_label.text = "광고를 불러오지 못했어요. 잠시 후 다시 시도해 주세요."
 
 
-func show_fail(reason: String, stardust_total: int, on_continue: Callable, on_retry: Callable, on_map: Callable) -> void:
+func show_fail(reason: String, stardust_total: int, continue_available: bool, on_continue: Callable, on_retry: Callable, on_map: Callable) -> void:
 	var v := _popup_frame()
 	var dim: Control = v.get_parent().get_parent().get_parent()
 	v.add_child(_title_label("아쉬워요!", Color(0.55, 0.48, 0.68)))
@@ -441,15 +441,18 @@ func show_fail(reason: String, stardust_total: int, on_continue: Callable, on_re
 	l.add_theme_color_override("font_color", G.INK)
 	v.add_child(l)
 	var tip := Label.new()
-	tip.text = "현재 보드 그대로, 시간만 처음부터 다시 시작해요.\n보유 별가루  ★ %d" % stardust_total
+	tip.text = ("현재 보드 그대로, 시간만 처음부터 다시 시작해요.\n보유 별가루  ★ %d" % stardust_total
+		if continue_available else "이번 도전의 재시도 기회를 이미 사용했어요.\n처음부터 다시 도전하거나 모험으로 돌아가 주세요.")
 	tip.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	tip.add_theme_font_size_override("font_size", 24)
 	tip.add_theme_color_override("font_color", Color(0.6, 0.55, 0.7))
 	v.add_child(tip)
 	var b_continue := _big_button("★ 20  이어하기", Color("#9165c7"))
 	b_continue.custom_minimum_size = Vector2(430, 78)
-	b_continue.disabled = stardust_total < 20
-	if b_continue.disabled:
+	b_continue.disabled = not continue_available or stardust_total < 20
+	if not continue_available:
+		b_continue.text = "✓ 재시도 사용 완료"
+	elif b_continue.disabled:
 		b_continue.text = "별가루가 부족해요  (%d/20)" % stardust_total
 	b_continue.pressed.connect(func():
 		if bool(on_continue.call()):

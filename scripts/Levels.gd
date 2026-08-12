@@ -43,10 +43,24 @@ static func rebuild_and_bake_levels() -> Error:
 
 static func _build_levels() -> Array:
 	var out: Array = []
-	# 첫 4레벨만 작은 블록으로 조작과 색 장벽을 학습한다.
-	out.append(_level("첫 만남", [".....", ".RR..", "..R..", ".R.R.", "..R..", "....."], [_c("R", "S1", 2, 5)], 60, "끌어서 같은 색 젤리를 모두 구출하세요!"))
-	out.append(_level("두 가지 색", ["BBBBB", ".....", "RRRRR", ".....", ".....", "....."], [_c("B", "S1", 1, 5), _c("R", "S1", 3, 5)], 70, "다른 색은 길을 막아요. 알맞은 캐처를 골라 주세요."))
-	out.append(_level("넓게 쓸기", ["RRRRRR", "RRRRRR", "......", "Y.Y...", "...Y.Y", "......", "......"], [_c("R", "H2", 3, 6), _c("Y", "V2", 0, 5)], 80, "넓은 캐처는 한 번에 여러 칸을 쓸어요!"))
+	# 첫 세 레벨에서 기본 2×2 조작과 50레벨 이전 대표 기믹을 차례로 학습한다.
+	var level_one := _level("첫 만남 · 2×2 구출", ["......", ".RR...", ".RR...", "......", "......", "......", "......"], [_c("R", "SQ", 2, 5, 4)], 70, "2×2 블록을 끌어 빨간 젤리몬 네 마리를 블록 안에 담아 주세요!")
+	level_one["tutorial"] = "square_capture"
+	out.append(level_one)
+	var level_two := _level("오각 장벽과 모양 봉인", [".RR..", "..R.R", ".....", ".....", ".....", ".....", "....."], [_c("R", "H2", 1, 5, 4)], 90, "아래의 빛나는 두 칸에 블록을 맞추면 오각 장벽 5개가 모두 사라져요!")
+	# 젤리 구역과 조작 구역 사이의 한 행 전체를 오각형 장벽으로 막는다.
+	# 아래 빈 타일의 룬을 먼저 맞춰야 위쪽 젤리몬에게 접근할 수 있다.
+	level_two["shape_seals"] = [{
+		"color": "R", "shape": "H2",
+		"cells": [[1, 4], [2, 4]],
+		"gates": [[0, 2], [1, 2], [2, 2], [3, 2], [4, 2]],
+	}]
+	level_two["tutorial"] = "shape_seal"
+	out.append(level_two)
+	var level_three := _level("구출 배출구", ["......", ".RR...", ".RR...", "......", "......", "......", "......"], [_c("R", "SQ", 1, 4, 4)], 80, "젤리를 모두 담아 GO가 되면 오른쪽의 같은 색 출구로 내보내세요!")
+	level_three["exits"] = [{"color": "R", "catcher": 0, "cell": [5, 5], "direction": [1, 0]}]
+	level_three["tutorial"] = "rescue_exit"
+	out.append(level_three)
 	out.append(_level("순서가 중요해", ["......", ".BBBB.", ".BBBB.", "RRRRRR", "......", "......", "......"], [_c("R", "S1", 0, 5), _c("B", "S1", 5, 5)], 90, "앞을 막은 색부터 치우면 길이 열려요."))
 	for number in range(5, 101):
 		out.append(_generated_level(number))
@@ -94,6 +108,8 @@ static func _generated_level(number: int) -> Dictionary:
 		_fill_checker_lanes(board, colors, w, h)
 	_carve_irregular_board(board, number, chapter, w, h)
 	_add_walls(board, chapter, local, w, h)
+	if number >= 51:
+		_densify_late_board(board, colors, w, h, number)
 	if challenge:
 		_densify_challenge_board(board, colors, w, h, number)
 
@@ -102,9 +118,13 @@ static func _generated_level(number: int) -> Dictionary:
 	# L1~4 이후는 색/밀도가 늘어나며, 얼음 구간에서는 63초에서 52초까지 다시 압축한다.
 	var time_limit := maxf(63.0, 83.0 - float(number - 9) * 0.5)
 	if number >= 51:
-		time_limit = maxf(52.0, 63.0 - float(number - 50) * 0.22)
+		# 각 10레벨 구간 안에서 꾸준히 짧아지고, 다음 구간은 신규 기믹을
+		# 학습할 약간의 시간을 돌려준다. 구간 기본 시간도 3초씩 감소한다.
+		var late_tier := (number - 51) / 10
+		var late_local := (number - 51) % 10
+		time_limit = maxf(41.0, 60.0 - float(late_tier) * 3.0 - float(late_local) * 0.7)
 	if challenge:
-		time_limit = maxf(48.0, time_limit - 4.0)
+		time_limit = maxf(40.0 if number >= 51 else 48.0, time_limit - 4.0)
 	if milestone_challenge:
 		# 10단위 관문은 후반으로 갈수록 일반 도전보다 2~6초 더 촉박해진다.
 		time_limit = maxf(42.0, time_limit - (2.0 + float(number / 25)))
@@ -115,6 +135,9 @@ static func _generated_level(number: int) -> Dictionary:
 	elif milestone_challenge and number >= 50:
 		# 후반 관문은 50레벨부터 2초씩 줄어 최종 100레벨이 가장 촉박하다.
 		time_limit = minf(time_limit, 50.0 - float(number - 50) * 0.2)
+	if number == 60:
+		# 요청된 밸런스: 60레벨은 직전 59레벨과 동일한 제한 시간을 사용한다.
+		time_limit = 54.4
 	var chapter_name: String = CHAPTER_NAMES[chapter]
 	var titles := ["길 열기", "엇갈린 줄", "색의 성", "굽은 통로", "한붓 쓸기", "갈림길", "큰 몸 작은 문", "색깔 미로", "연쇄 구출", "최종 관문"]
 	var hint := "색의 층과 캐처 모양을 보고 구출 순서를 정하세요."
@@ -138,6 +161,9 @@ static func _generated_level(number: int) -> Dictionary:
 	if milestone_challenge:
 		result["milestone_challenge"] = true
 		result["difficulty_tier"] = number / 10
+	if number >= 51:
+		result["late_difficulty_tier"] = 1 + (number - 51) / 10
+		result["density_target"] = _late_density_target(number)
 	if not _is_greedily_solvable(result):
 		var changed := true
 		while changed and not _is_greedily_solvable(result):
@@ -180,13 +206,13 @@ static func _is_milestone_challenge(number: int) -> bool:
 
 static func _milestone_target_moves(number: int) -> int:
 	if number >= 100:
-		# 모든 기믹이 겹치는 최종 관문은 막힘 방지를 위해 정확히 두 갈래만 연다.
-		return 2
+		# 12개 캐처와 네 기믹이 겹쳐 네 방향 중에서도 정답 순서가 제한된다.
+		return 4
 	if number >= 90:
 		# 열쇠로 첫 순서가 한 번 더 제한되므로 세 방향 안에서도 선택 함정이 생긴다.
 		return 3
 	if number >= 80:
-		return 2
+		return 3
 	return 3
 
 
@@ -197,6 +223,40 @@ static func _level_jelly_count(level: Dictionary) -> int:
 			if G.COLORS.has(String(row)[x]):
 				count += 1
 	return count
+
+
+static func _late_density_target(number: int) -> int:
+	## 51레벨 26마리에서 시작해 약 6레벨마다 한 마리씩 늘린다.
+	## 100레벨은 별도의 최종 관문 보강으로 이보다 훨씬 높은 밀도를 사용한다.
+	return 26 + maxi(0, number - 51) / 6
+
+
+static func _densify_late_board(board: Array, colors: Array, w: int, h: int, number: int) -> void:
+	## 후반 일반 레벨도 빈 통로를 한 번에 훑지 못하도록 색 젤리를 교차 배치한다.
+	var current := 0
+	for row in board:
+		for ch in row:
+			if G.COLORS.has(ch):
+				current += 1
+	var needed := maxi(0, _late_density_target(number) - current)
+	if needed <= 0:
+		return
+	var candidates: Array[Vector2i] = []
+	# 블록 시작 공간을 완전히 없애지 않도록 마지막 두 행은 보존한다.
+	for y in range(maxi(0, h - 2)):
+		for x in range(w):
+			if board[y][x] == ".":
+				candidates.append(Vector2i(x, y))
+	candidates.sort_custom(func(a: Vector2i, b: Vector2i) -> bool:
+		var a_score := (a.x * 37 + a.y * 23 + number * 11) % 127
+		var b_score := (b.x * 37 + b.y * 23 + number * 11) % 127
+		return a_score < b_score
+	)
+	for i in range(mini(needed, candidates.size())):
+		var cell := candidates[i]
+		# 연속된 같은 색 띠 대신 모든 활성 색을 회전시켜 서로 길을 막게 한다.
+		var color_index := (i * 2 + number + cell.x + cell.y) % colors.size()
+		_put(board, cell.x, cell.y, colors[color_index])
 
 
 static func _densify_challenge_board(board: Array, colors: Array, w: int, h: int, number: int) -> void:
@@ -228,6 +288,10 @@ static func _densify_challenge_board(board: Array, colors: Array, w: int, h: int
 		if number == 50:
 			# L40의 고밀도 관문 다음 단계가 젤리 수에서 역전되지 않도록 추가 보강한다.
 			extra_count += 2
+	if number == 100:
+		# 후반 기본 밀도 보강과 합쳐 정확히 42마리가 되도록 제한한다.
+		# 이보다 높으면 12개 캐처의 시작 자리가 사라져 유효한 퍼즐이 되지 않는다.
+		extra_count = 8
 	var extra := mini(candidates.size(), extra_count)
 	if extra <= 0 or colors.is_empty():
 		return
@@ -242,36 +306,48 @@ static func _add_late_gimmicks(level: Dictionary, number: int) -> void:
 	if number < 51:
 		return
 	var flags := _gimmick_flags(number)
+	# 실제 이동 경로를 요구하는 열쇠/스위치를 먼저 잡고, 젤리 표식인 얼음과
+	# 체인을 나중에 얹어 후보 칸 선점 때문에 필수 기믹이 누락되지 않게 한다.
+	if flags.key:
+		_add_key_lock(level, number)
+	if flags.switch:
+		_add_rescue_switch(level, number)
 	if flags.frost:
 		_add_frozen_jellies(level, number)
 	if flags.chain:
 		_add_rescue_chain(level, number)
-	if flags.switch:
-		_add_rescue_switch(level, number)
-	if flags.key:
-		_add_key_lock(level, number)
-	if number >= 91:
-		var names: Array[String] = []
-		if flags.frost: names.append("❄얼음")
-		if flags.chain: names.append("⛓순서")
-		if flags.switch: names.append("◆스위치")
-		if flags.key: names.append("🔑열쇠")
-		level.hint = "종합 관문 · %s의 우선순위를 읽고 구출하세요." % " / ".join(names)
+	var active_names: Array[String] = []
+	if level.has("frozen"): active_names.append("❄얼음")
+	if level.has("chains"): active_names.append("⛓순서")
+	if level.has("switches"): active_names.append("◆스위치")
+	if level.has("key_locks"): active_names.append("🔑열쇠")
+	level["gimmick_count"] = active_names.size()
+	if active_names.size() >= 2:
+		level.hint = "복합 관문 · %s의 우선순위를 읽고 구출하세요." % " / ".join(active_names)
 
 
 static func _gimmick_flags(number: int) -> Dictionary:
-	var flags := {
-		"frost": number >= 51 and number <= 60,
-		"chain": number >= 61 and number <= 70,
-		"switch": number >= 71 and number <= 80,
-		"key": number >= 81 and number <= 90,
-	}
-	if number >= 91 and number <= 100:
+	var flags := {"frost": false, "chain": false, "switch": false, "key": false}
+	if number >= 51 and number <= 60:
+		flags.frost = true
+	elif number >= 61 and number <= 70:
+		flags.chain = true
+		flags.frost = number >= 62
+	elif number >= 71 and number <= 80:
+		flags.switch = true
+		flags.frost = number == 72 or number >= 74
+		flags.chain = number == 73 or number >= 74
+	elif number >= 81 and number <= 90:
+		flags.key = true
+		flags.frost = number == 82 or number >= 85
+		flags.chain = number == 83 or number >= 85
+		flags.switch = number == 84 or number >= 85
+	elif number >= 91 and number <= 100:
 		var mixes := [
-			[true, true, false, false], [false, false, true, true],
-			[true, false, true, false], [false, true, false, true],
-			[true, false, false, true], [false, true, true, false],
-			[true, true, true, false], [true, false, true, true],
+			[true, true, true, false], [true, true, false, true],
+			[true, false, true, true], [false, true, true, true],
+			[true, true, true, true], [true, true, true, false],
+			[true, true, false, true], [true, false, true, true],
 			[false, true, true, true], [true, true, true, true],
 		]
 		var mix: Array = mixes[number - 91]
@@ -437,7 +513,7 @@ static func _add_rescue_switch(level: Dictionary, number: int) -> void:
 	if candidates.is_empty():
 		return
 	var sealed: Array = []
-	var count := mini(candidates.size(), 2 + (number % 3))
+	var count := mini(candidates.size(), 2 + maxi(0, number - 71) / 3)
 	for i in range(count):
 		sealed.append([candidates[i].x, candidates[i].y])
 	level["switches"] = [[switch_cell.x, switch_cell.y]]
@@ -711,10 +787,13 @@ static func _shape_seal_is_valid(level: Dictionary) -> bool:
 	var seal_origin: Vector2i = first - G.SHAPES[seal.shape][0]
 	for pair in seal.gates:
 		_put(board, int(pair[0]), int(pair[1]), "#")
-	var valid := _can_reach_origin(board, specs, positions, active, chosen_index, seal_origin) and _is_greedily_solvable(level)
+	# 닫힌 상태에서는 봉인 룬까지만 도달하면 된다. 룬을 맞춘 뒤 장벽이
+	# 사라진 열린 상태에서 남은 젤리를 전부 구출할 수 있는지 별도로 검사한다.
+	var seal_reachable := _can_reach_origin(board, specs, positions, active, chosen_index, seal_origin)
 	for pair in seal.gates:
 		_put(board, int(pair[0]), int(pair[1]), ".")
-	return valid
+	var solvable_after_open := _is_greedily_solvable(level)
+	return seal_reachable and solvable_after_open
 
 
 static func _can_reach_origin(board: Array, specs: Array, positions: Array[Vector2i], active: Array[bool], ci: int, target: Vector2i) -> bool:
@@ -877,7 +956,9 @@ static func _pack_milestone_catchers(level: Dictionary, target_options: int) -> 
 	var best_options := _initial_move_options(level)
 	if best_options <= target_options:
 		return
-	for _pass in range(2):
+	# 후반에는 캐처가 10개 이상이므로 앞 블록을 옮긴 뒤 뒤 블록의 더 좋은
+	# 위치가 새로 생긴다. 여러 차례 반복해 시작 선택지를 목표까지 압축한다.
+	for _pass in range(5):
 		var improved := false
 		for si in range(level.catchers.size()):
 			var spec: Dictionary = level.catchers[si]
@@ -1201,7 +1282,7 @@ static func _capacity_catchers(board: Array, colors: Array, w: int, h: int, numb
 		while left > 0:
 			# L20/30/40은 같은 색도 서로 다른 모양의 캐처로 더 잘게 나눈다.
 			# 어느 캐처로 어느 젤리를 먼저 담는지가 남은 동선을 바꾸게 된다.
-			var max_capacity := 4 if _is_milestone_challenge(number) and number >= 20 else 5
+			var max_capacity := 4 if number >= 51 or (_is_milestone_challenge(number) and number >= 20) else 5
 			var amount := mini(max_capacity, left)
 			if left == 6:
 				amount = 3
@@ -1457,7 +1538,9 @@ static func validate_all() -> PackedStringArray:
 			if not expected_milestone and large_catchers < 2:
 				errors.append("L%d: 도전 스테이지 대형 블록 부족(%d)" % [number, large_catchers])
 		if expected_milestone:
-			var expected_large := 1 + number / 50
+			# 최종 관문은 12개 분할 캐처와 네 기믹을 배치하므로 대형 블록은
+			# 두 개를 유지하고 대신 최고 젤리 밀도와 최소 공간을 사용한다.
+			var expected_large := 2 if number == 100 else 1 + number / 50
 			var expected_jellies := 13 + number / 25
 			if large_catchers < expected_large:
 				errors.append("L%d: 대도전 대형 블록 단계 부족(%d/%d)" % [number, large_catchers, expected_large])
@@ -1465,7 +1548,10 @@ static func validate_all() -> PackedStringArray:
 				errors.append("L%d: 대도전 젤리 밀도 단계 부족(%d/%d)" % [number, total_jellies, expected_jellies])
 			if number > 1:
 				var previous_level: Dictionary = LEVELS[number - 2]
-				if total_jellies <= _level_jelly_count(previous_level) or float(level.time) >= float(previous_level.time):
+				var time_not_harder := float(level.time) >= float(previous_level.time)
+				if number == 60:
+					time_not_harder = float(level.time) > float(previous_level.time)
+				if total_jellies <= _level_jelly_count(previous_level) or time_not_harder:
 					errors.append("L%d: 직전 일반 레벨보다 대도전 난도 상승이 부족함" % number)
 			if number > 10:
 				var previous_milestone: Dictionary = LEVELS[number - 11]
@@ -1481,6 +1567,16 @@ static func validate_all() -> PackedStringArray:
 				errors.append("L%d: 대도전 시작 공간 압축 누락" % number)
 			if int(level.get("initial_move_options", 999)) > target_moves:
 				errors.append("L%d: 대도전 초기 이동 선택지가 너무 많음(%d/%d)" % [number, int(level.get("initial_move_options", 999)), target_moves])
+		if number >= 51:
+			if int(level.get("late_difficulty_tier", 0)) != 1 + (number - 51) / 10:
+				errors.append("L%d: 후반 난도 티어 오류" % number)
+			if total_jellies < int(level.get("density_target", 999)):
+				errors.append("L%d: 후반 젤리 밀도 부족(%d/%d)" % [number, total_jellies, int(level.get("density_target", 999))])
+			# 5단위 도전과 그 직후 레벨은 별도 시간 보너스/회복 곡선을 쓰므로 제외한다.
+			if number > 51 and (number - 51) % 10 != 0 and not expected_challenge and not _is_challenge_level(number - 1):
+				var previous_late: Dictionary = LEVELS[number - 2]
+				if float(level.time) >= float(previous_late.time):
+					errors.append("L%d: 같은 후반 구간에서 제한 시간이 증가함" % number)
 		var expected := _gimmick_flags(number)
 		if bool(expected.frost) != level.has("frozen"):
 			errors.append("L%d: 얼음 기믹 구간 구성 오류" % number)

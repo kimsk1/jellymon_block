@@ -775,7 +775,7 @@ func _fail() -> void:
 		if is_instance_valid(c):
 			c.sad()
 	await get_tree().create_timer(0.9).timeout
-	hud.show_fail("시간이 다 됐어요!", main.save.get_stardust(),
+	hud.show_fail("시간이 다 됐어요!", main.save.get_stardust(), not continued_after_fail,
 		_continue_with_stardust,
 		func(): main.start_level(level_idx),
 		func(): main.show_map())
@@ -783,7 +783,11 @@ func _fail() -> void:
 
 func _continue_with_stardust() -> bool:
 	const CONTINUE_COST := 20
-	if state != "fail" or not main.save.spend_stardust(CONTINUE_COST):
+	# 한 번 이어서 플레이한 판에서는 다시 시간이 끝나도 두 번째 재시도를 허용하지 않는다.
+	# 비용 결제보다 먼저 검사해 중복 입력이나 두 번째 실패에서 별가루가 빠지지 않게 한다.
+	if state != "fail" or continued_after_fail:
+		return false
+	if not main.save.spend_stardust(CONTINUE_COST):
 		return false
 	for j in jellies:
 		if is_instance_valid(j) and not j.absorbing:
