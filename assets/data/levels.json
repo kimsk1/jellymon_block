@@ -467,7 +467,7 @@
 			{
 				"capacity": 5,
 				"cell": [
-					2,
+					0,
 					3
 				],
 				"color": "R",
@@ -480,10 +480,10 @@
 					4
 				],
 				"color": "Y",
-				"shape": "SQ"
+				"shape": "H2"
 			},
 			{
-				"capacity": 4,
+				"capacity": 5,
 				"cell": [
 					1,
 					6
@@ -493,52 +493,57 @@
 			}
 		],
 		"challenge": true,
+		"constricted_start": true,
+		"difficulty_tier": 1,
 		"grid": [
-			"_..___",
-			".Y.R._",
-			"RBBBY_",
-			".Y.R._",
-			".Y.R..",
-			".B.R..",
-			"......"
+			"....._",
+			"BY..._",
+			"R.B.Y_",
+			".Y.RR_",
+			".Y.B..",
+			".BBRR_",
+			"..____"
 		],
 		"hint": "빛나는 모양 봉인에 같은 색 블록을 정확히 포개 장벽을 여세요!",
-		"name": "젤리 마을 · 최종 관문 ★도전",
+		"initial_empty_spaces": 12,
+		"initial_move_options": 2,
+		"milestone_challenge": true,
+		"name": "젤리 마을 · 최종 관문 ★★대도전",
 		"shape_seals": [
 			{
 				"cells": [
 					[
-						3,
+						0,
+						2
+					],
+					[
+						0,
 						3
 					],
 					[
-						3,
+						0,
 						4
 					],
 					[
-						3,
+						0,
 						5
-					],
-					[
-						3,
-						6
 					]
 				],
 				"color": "R",
 				"gates": [
 					[
-						4,
-						3
+						2,
+						1
 					]
 				],
 				"shape": "V4"
 			}
 		],
 		"stars": [
-			0.47,
-			0.22
+			0.505,
+			0.243333333333333
 		],
-		"time": 78.5
+		"time": 76.5
 	},
 	{
 		"catchers": [
@@ -1297,7 +1302,7 @@
 	{
 		"catchers": [
 			{
-				"capacity": 3,
+				"capacity": 4,
 				"cell": [
 					4,
 					6
@@ -1306,87 +1311,95 @@
 				"shape": "L4D"
 			},
 			{
-				"capacity": 3,
+				"capacity": 4,
 				"cell": [
 					3,
 					5
 				],
 				"color": "R",
-				"shape": "H2"
+				"shape": "H4"
 			},
 			{
-				"capacity": 4,
+				"capacity": 3,
 				"cell": [
 					1,
 					4
 				],
-				"color": "Y",
+				"color": "R",
 				"shape": "V4"
 			},
 			{
-				"capacity": 4,
+				"capacity": 3,
 				"cell": [
 					2,
 					6
 				],
-				"color": "B",
+				"color": "R",
 				"shape": "SQ"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					0,
+					5
+				],
+				"color": "Y",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					5,
+					4
+				],
+				"color": "Y",
+				"shape": "S1"
 			},
 			{
 				"capacity": 2,
 				"cell": [
-					5,
+					3,
 					0
 				],
-				"color": "G",
-				"shape": "V2"
+				"color": "B",
+				"shape": "S1"
 			}
 		],
 		"challenge": true,
+		"constricted_start": true,
+		"difficulty_tier": 2,
 		"exits": [
 			{
 				"catcher": -1,
 				"cell": [
-					1,
-					0
+					5,
+					4
 				],
 				"color": "R",
 				"direction": [
-					0,
-					-1
+					1,
+					0
 				]
 			},
 			{
 				"catcher": -1,
 				"cell": [
-					1,
-					5
+					3,
+					7
 				],
 				"color": "Y",
 				"direction": [
-					-1,
+					1,
 					0
 				]
 			},
 			{
 				"catcher": -1,
 				"cell": [
-					2,
-					7
+					6,
+					5
 				],
 				"color": "B",
-				"direction": [
-					0,
-					1
-				]
-			},
-			{
-				"catcher": -1,
-				"cell": [
-					5,
-					0
-				],
-				"color": "G",
 				"direction": [
 					0,
 					-1
@@ -1394,22 +1407,25 @@
 			}
 		],
 		"grid": [
-			"R....._",
-			"_YYG.._",
-			"RBB.R._",
-			"_Y.GRY_",
-			"R.B.RB_",
-			"_......",
-			"_......",
-			"_...__."
+			"##R.R_.",
+			"_#RYYY.",
+			"RRBYB.R",
+			"RYRYRY_",
+			"R.RRR._",
+			"..R....",
+			"#......",
+			"#..._#."
 		],
 		"hint": "젤리를 모두 담아 GO가 된 블록을 같은 색 화살표 출구로 내보내세요!",
-		"name": "캔디 숲 · 최종 관문 ★도전",
+		"initial_empty_spaces": 3,
+		"initial_move_options": 2,
+		"milestone_challenge": true,
+		"name": "캔디 숲 · 최종 관문 ★★대도전",
 		"stars": [
-			0.47,
-			0.22
+			0.51,
+			0.246666666666667
 		],
-		"time": 73.5
+		"time": 62.0
 	},
 	{
 		"catchers": [
@@ -2284,10 +2300,10 @@
 	{
 		"catchers": [
 			{
-				"capacity": 4,
+				"capacity": 2,
 				"cell": [
-					1,
-					4
+					0,
+					5
 				],
 				"color": "R",
 				"shape": "L4A"
@@ -2295,120 +2311,99 @@
 			{
 				"capacity": 4,
 				"cell": [
-					5,
+					2,
 					5
 				],
 				"color": "Y",
-				"shape": "SQ"
+				"shape": "L4B"
 			},
 			{
 				"capacity": 4,
 				"cell": [
-					0,
+					3,
+					6
+				],
+				"color": "Y",
+				"shape": "L4C"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					4,
+					5
+				],
+				"color": "Y",
+				"shape": "L4D"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					3,
+					4
+				],
+				"color": "B",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					1,
 					6
 				],
 				"color": "B",
-				"shape": "V2"
+				"shape": "S1"
 			},
 			{
-				"capacity": 2,
+				"capacity": 4,
 				"cell": [
-					4,
-					1
+					1,
+					2
 				],
 				"color": "G",
-				"shape": "H2"
+				"shape": "S1"
+			},
+			{
+				"capacity": 1,
+				"cell": [
+					1,
+					5
+				],
+				"color": "G",
+				"shape": "S1"
 			},
 			{
 				"capacity": 2,
 				"cell": [
-					4,
-					6
+					1,
+					0
 				],
 				"color": "P",
 				"shape": "S1"
 			}
 		],
 		"challenge": true,
-		"exits": [
-			{
-				"catcher": -1,
-				"cell": [
-					0,
-					7
-				],
-				"color": "R",
-				"direction": [
-					0,
-					1
-				]
-			},
-			{
-				"catcher": -1,
-				"cell": [
-					3,
-					0
-				],
-				"color": "Y",
-				"direction": [
-					0,
-					-1
-				]
-			},
-			{
-				"catcher": -1,
-				"cell": [
-					0,
-					6
-				],
-				"color": "B",
-				"direction": [
-					-1,
-					0
-				]
-			},
-			{
-				"catcher": -1,
-				"cell": [
-					4,
-					7
-				],
-				"color": "G",
-				"direction": [
-					1,
-					0
-				]
-			},
-			{
-				"catcher": -1,
-				"cell": [
-					5,
-					4
-				],
-				"color": "P",
-				"direction": [
-					1,
-					0
-				]
-			}
-		],
+		"constricted_start": true,
+		"difficulty_tier": 3,
 		"grid": [
-			"R....__",
-			".Y.G.._",
-			"RBB.PB_",
-			"YYYG.R_",
-			"R.B.P._",
+			"R.##...",
+			"RBY.BYG",
+			"Y.BYGYP",
+			"YYBBGY_",
+			"BYG.PY_",
 			".......",
-			".......",
-			".....__"
+			"....GY.",
+			"......#"
 		],
-		"hint": "젤리를 모두 담아 GO가 된 블록을 같은 색 화살표 출구로 내보내세요!",
-		"name": "소다 해변 · 최종 관문 ★도전",
+		"hint": "★★ 대도전 · 이번 챕터의 모든 이동 순서와 기믹을 함께 풀어내세요!",
+		"initial_empty_spaces": 4,
+		"initial_move_options": 1,
+		"milestone_challenge": true,
+		"name": "소다 해변 · 최종 관문 ★★대도전",
 		"stars": [
-			0.47,
-			0.22
+			0.515,
+			0.25
 		],
-		"time": 68.5
+		"time": 57.0
 	},
 	{
 		"catchers": [
@@ -3346,7 +3341,7 @@
 	{
 		"catchers": [
 			{
-				"capacity": 3,
+				"capacity": 4,
 				"cell": [
 					1,
 					6
@@ -3355,12 +3350,12 @@
 				"shape": "TU"
 			},
 			{
-				"capacity": 3,
+				"capacity": 4,
 				"cell": [
 					6,
 					6
 				],
-				"color": "R",
+				"color": "Y",
 				"shape": "V2"
 			},
 			{
@@ -3369,8 +3364,8 @@
 					4,
 					6
 				],
-				"color": "Y",
-				"shape": "L4A"
+				"color": "B",
+				"shape": "V2"
 			},
 			{
 				"capacity": 3,
@@ -3378,23 +3373,14 @@
 					0,
 					7
 				],
-				"color": "Y",
-				"shape": "H2"
-			},
-			{
-				"capacity": 5,
-				"cell": [
-					5,
-					0
-				],
 				"color": "B",
-				"shape": "S1"
+				"shape": "SQ"
 			},
 			{
-				"capacity": 5,
+				"capacity": 4,
 				"cell": [
-					3,
-					8
+					0,
+					0
 				],
 				"color": "G",
 				"shape": "S1"
@@ -3403,31 +3389,134 @@
 				"capacity": 4,
 				"cell": [
 					7,
+					7
+				],
+				"color": "G",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					7,
 					8
+				],
+				"color": "G",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					5,
+					6
+				],
+				"color": "G",
+				"shape": "S1"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					6,
+					8
+				],
+				"color": "O",
+				"shape": "S1"
+			},
+			{
+				"capacity": 1,
+				"cell": [
+					1,
+					0
 				],
 				"color": "O",
 				"shape": "S1"
 			}
 		],
 		"challenge": true,
+		"constricted_start": true,
+		"difficulty_tier": 4,
+		"exits": [
+			{
+				"catcher": -1,
+				"cell": [
+					0,
+					0
+				],
+				"color": "R",
+				"direction": [
+					0,
+					-1
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					6,
+					1
+				],
+				"color": "Y",
+				"direction": [
+					1,
+					0
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					1,
+					8
+				],
+				"color": "B",
+				"direction": [
+					0,
+					1
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					2,
+					0
+				],
+				"color": "G",
+				"direction": [
+					0,
+					-1
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					6,
+					6
+				],
+				"color": "O",
+				"direction": [
+					1,
+					0
+				]
+			}
+		],
 		"grid": [
-			"_____.__",
-			"____Y.B_",
-			"R..OO.__",
-			"_YGGYRG_",
-			"RBBRO.Y_",
-			"_YYGGRBB",
+			"......._",
+			"RGY.BG._",
+			"YOBGGGO_",
+			"YRBGGGO_",
+			"BGGYO.R_",
+			"B.GGOGR_",
 			"_......_",
-			"...O.R._",
-			"___....."
+			"...G.B..",
+			"...__..."
 		],
-		"hint": "★ 도전 스테이지 · 큰 블록과 뒤섞인 색의 이동 순서를 먼저 읽으세요!",
-		"name": "아이스 설산 · 최종 관문 ★도전",
+		"hint": "젤리를 모두 담아 GO가 된 블록을 같은 색 화살표 출구로 내보내세요!",
+		"initial_empty_spaces": 11,
+		"initial_move_options": 3,
+		"milestone_challenge": true,
+		"name": "아이스 설산 · 최종 관문 ★★대도전",
 		"stars": [
-			0.47,
-			0.22
+			0.52,
+			0.253333333333333
 		],
-		"time": 63.5
+		"time": 52.0
 	},
 	{
 		"catchers": [
@@ -4408,118 +4497,182 @@
 	{
 		"catchers": [
 			{
-				"capacity": 3,
+				"capacity": 4,
 				"cell": [
 					4,
 					6
 				],
 				"color": "R",
-				"shape": "L4D"
+				"shape": "L4A"
 			},
 			{
 				"capacity": 3,
 				"cell": [
-					3,
-					7
+					0,
+					8
 				],
 				"color": "R",
-				"shape": "TU"
+				"shape": "H4"
 			},
 			{
-				"capacity": 5,
+				"capacity": 3,
 				"cell": [
-					1,
-					6
+					4,
+					0
+				],
+				"color": "R",
+				"shape": "S1"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					7,
+					0
 				],
 				"color": "Y",
-				"shape": "TR"
+				"shape": "S1"
 			},
 			{
-				"capacity": 3,
+				"capacity": 4,
 				"cell": [
 					6,
-					5
+					0
+				],
+				"color": "Y",
+				"shape": "S1"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					5,
+					1
 				],
 				"color": "B",
-				"shape": "S1"
-			},
-			{
-				"capacity": 3,
-				"cell": [
-					2,
-					5
-				],
-				"color": "G",
-				"shape": "S1"
-			},
-			{
-				"capacity": 5,
-				"cell": [
-					1,
-					4
-				],
-				"color": "P",
 				"shape": "S1"
 			},
 			{
 				"capacity": 4,
 				"cell": [
 					4,
-					3
+					5
+				],
+				"color": "P",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					5,
+					7
+				],
+				"color": "P",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					6,
+					1
+				],
+				"color": "P",
+				"shape": "S1"
+			},
+			{
+				"capacity": 1,
+				"cell": [
+					5,
+					0
 				],
 				"color": "O",
 				"shape": "S1"
 			}
 		],
 		"challenge": true,
-		"grid": [
-			"___...._",
-			"__O.Y.G_",
-			"RYB.PPR_",
-			"_YBG.OR_",
-			"R.B.P.R_",
-			"PY.GPO.Y",
-			"..OR..._",
-			"......._",
-			"..__.___"
-		],
-		"hint": "빛나는 모양 봉인에 같은 색 블록을 정확히 포개 장벽을 여세요!",
-		"name": "초코 화산 · 최종 관문 ★도전",
-		"shape_seals": [
+		"constricted_start": true,
+		"difficulty_tier": 5,
+		"exits": [
 			{
-				"cells": [
-					[
-						0,
-						6
-					],
-					[
-						0,
-						7
-					],
-					[
-						1,
-						7
-					],
-					[
-						0,
-						8
-					]
+				"catcher": -1,
+				"cell": [
+					4,
+					8
+				],
+				"color": "R",
+				"direction": [
+					0,
+					1
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					7,
+					2
 				],
 				"color": "Y",
-				"gates": [
-					[
-						5,
-						1
-					]
+				"direction": [
+					1,
+					0
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					5,
+					8
 				],
-				"shape": "TR"
+				"color": "B",
+				"direction": [
+					1,
+					0
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					6,
+					3
+				],
+				"color": "P",
+				"direction": [
+					1,
+					0
+				]
+			},
+			{
+				"catcher": -1,
+				"cell": [
+					4,
+					0
+				],
+				"color": "O",
+				"direction": [
+					0,
+					-1
+				]
 			}
 		],
-		"stars": [
-			0.47,
-			0.22
+		"grid": [
+			"____....",
+			"__P_Y...",
+			"RPB_BPY.",
+			"PYOBPB._",
+			"R.YPYYY_",
+			"PRPR.RPR",
+			"___..RY_",
+			"_PRR..R_",
+			"......__"
 		],
-		"time": 59.0
+		"hint": "젤리를 모두 담아 GO가 된 블록을 같은 색 화살표 출구로 내보내세요!",
+		"initial_empty_spaces": 5,
+		"initial_move_options": 2,
+		"milestone_challenge": true,
+		"name": "초코 화산 · 최종 관문 ★★대도전",
+		"stars": [
+			0.525,
+			0.256666666666667
+		],
+		"time": 50.0
 	},
 	{
 		"catchers": [
@@ -5664,45 +5817,54 @@
 	{
 		"catchers": [
 			{
-				"capacity": 5,
+				"capacity": 4,
 				"cell": [
-					4,
-					5
+					5,
+					6
 				],
 				"color": "R",
 				"shape": "L4C"
 			},
 			{
-				"capacity": 3,
+				"capacity": 4,
 				"cell": [
-					1,
+					2,
 					6
 				],
 				"color": "R",
-				"shape": "L4D"
+				"shape": "S1"
 			},
 			{
-				"capacity": 3,
+				"capacity": 4,
 				"cell": [
-					5,
+					1,
 					7
 				],
-				"color": "Y",
-				"shape": "L4D"
+				"color": "R",
+				"shape": "H4"
 			},
 			{
-				"capacity": 3,
+				"capacity": 4,
+				"cell": [
+					4,
+					8
+				],
+				"color": "Y",
+				"shape": "H4"
+			},
+			{
+				"capacity": 1,
 				"cell": [
 					0,
 					6
 				],
 				"color": "Y",
-				"shape": "S1"
+				"shape": "L4A"
 			},
 			{
 				"capacity": 3,
 				"cell": [
-					1,
+					2,
 					8
 				],
 				"color": "B",
@@ -5711,8 +5873,17 @@
 			{
 				"capacity": 3,
 				"cell": [
-					5,
-					0
+					3,
+					8
+				],
+				"color": "B",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					1,
+					6
 				],
 				"color": "G",
 				"shape": "S1"
@@ -5720,97 +5891,34 @@
 			{
 				"capacity": 3,
 				"cell": [
-					5,
-					8
+					6,
+					6
+				],
+				"color": "G",
+				"shape": "S1"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					1,
+					5
 				],
 				"color": "P",
 				"shape": "S1"
 			},
 			{
-				"capacity": 3,
+				"capacity": 2,
 				"cell": [
-					2,
-					7
+					3,
+					4
 				],
 				"color": "O",
 				"shape": "S1"
 			}
 		],
 		"challenge": true,
-		"exits": [
-			{
-				"catcher": -1,
-				"cell": [
-					0,
-					5
-				],
-				"color": "R",
-				"direction": [
-					-1,
-					0
-				]
-			},
-			{
-				"catcher": -1,
-				"cell": [
-					3,
-					8
-				],
-				"color": "Y",
-				"direction": [
-					0,
-					1
-				]
-			},
-			{
-				"catcher": -1,
-				"cell": [
-					5,
-					0
-				],
-				"color": "B",
-				"direction": [
-					0,
-					-1
-				]
-			},
-			{
-				"catcher": -1,
-				"cell": [
-					2,
-					7
-				],
-				"color": "G",
-				"direction": [
-					0,
-					1
-				]
-			},
-			{
-				"catcher": -1,
-				"cell": [
-					7,
-					8
-				],
-				"color": "P",
-				"direction": [
-					1,
-					0
-				]
-			},
-			{
-				"catcher": -1,
-				"cell": [
-					0,
-					6
-				],
-				"color": "O",
-				"direction": [
-					-1,
-					0
-				]
-			}
-		],
+		"constricted_start": true,
+		"difficulty_tier": 6,
 		"frozen": [
 			[
 				2,
@@ -5834,23 +5942,26 @@
 			]
 		],
 		"grid": [
-			"___...._",
-			"___.Y.Y_",
-			"ROB.P.R_",
-			"RY.GYOG_",
-			"R.BRP.R_",
-			".YRG.OPY",
-			"......._",
-			".B..R...",
-			"_._....."
+			"RR__....",
+			"R.YRBYG.",
+			"Y.BRGYPR",
+			"YRB.GRP_",
+			"BBG.PRO_",
+			"B.GRPROR",
+			"....G.._",
+			"........",
+			"........"
 		],
-		"hint": "젤리를 모두 담아 GO가 된 블록을 같은 색 화살표 출구로 내보내세요!\n❄ 얼음 젤리는 같은 색 블록으로 얼음을 깨고 다시 지나가야 구출돼요.",
-		"name": "서리 정원 · 최종 관문 ★도전",
+		"hint": "★★ 대도전 · 이번 챕터의 모든 이동 순서와 기믹을 함께 풀어내세요!\n❄ 얼음 젤리는 같은 색 블록으로 얼음을 깨고 다시 지나가야 구출돼요.",
+		"initial_empty_spaces": 9,
+		"initial_move_options": 2,
+		"milestone_challenge": true,
+		"name": "서리 정원 · 최종 관문 ★★대도전",
 		"stars": [
-			0.47,
-			0.22
+			0.53,
+			0.26
 		],
-		"time": 56.8
+		"time": 48.0
 	},
 	{
 		"catchers": [
@@ -6980,40 +7091,31 @@
 	{
 		"catchers": [
 			{
-				"capacity": 3,
+				"capacity": 4,
 				"cell": [
 					3,
 					6
 				],
 				"color": "R",
-				"shape": "L4A"
+				"shape": "L4B"
 			},
 			{
 				"capacity": 3,
 				"cell": [
 					0,
-					5
+					6
 				],
 				"color": "R",
-				"shape": "V2"
+				"shape": "L4C"
 			},
 			{
-				"capacity": 5,
+				"capacity": 3,
 				"cell": [
 					5,
 					7
 				],
-				"color": "Y",
-				"shape": "H2"
-			},
-			{
-				"capacity": 5,
-				"cell": [
-					0,
-					7
-				],
-				"color": "B",
-				"shape": "SQ"
+				"color": "R",
+				"shape": "L4D"
 			},
 			{
 				"capacity": 4,
@@ -7021,25 +7123,61 @@
 					4,
 					7
 				],
-				"color": "G",
-				"shape": "S1"
+				"color": "Y",
+				"shape": "V2"
 			},
 			{
-				"capacity": 3,
-				"cell": [
-					4,
-					5
-				],
-				"color": "P",
-				"shape": "S1"
-			},
-			{
-				"capacity": 3,
+				"capacity": 4,
 				"cell": [
 					1,
+					0
+				],
+				"color": "Y",
+				"shape": "S1"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					0,
+					3
+				],
+				"color": "B",
+				"shape": "S1"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					3,
 					4
 				],
-				"color": "O",
+				"color": "B",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					6,
+					3
+				],
+				"color": "B",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					0,
+					8
+				],
+				"color": "B",
+				"shape": "S1"
+			},
+			{
+				"capacity": 1,
+				"cell": [
+					0,
+					0
+				],
+				"color": "G",
 				"shape": "S1"
 			}
 		],
@@ -7047,62 +7185,45 @@
 			{
 				"cells": [
 					[
-						6,
-						2
+						7,
+						5
 					],
 					[
-						0,
-						2
+						5,
+						6
 					],
 					[
-						6,
-						4
+						2,
+						1
 					]
 				],
 				"color": "R"
 			}
 		],
 		"challenge": true,
+		"constricted_start": true,
+		"difficulty_tier": 7,
 		"grid": [
-			"R..._.__",
-			".YOG..__",
-			"RYBBP.R_",
-			".Y.G.O._",
-			"R.B.PBR_",
-			".Y.G.O.Y",
-			".GR.P.__",
-			"..B...._",
-			".....___"
+			"..R_____",
+			"BYRYBYB_",
+			"R.BBBGY_",
+			".YBB#B._",
+			"RBY.YBY_",
+			"BR.RBR.R",
+			".RB..R._",
+			"........",
+			".__.._.."
 		],
-		"hint": "빛나는 모양 봉인에 같은 색 블록을 정확히 포개 장벽을 여세요!\n⛓ 번호가 붙은 젤리는 1번부터 차례대로 구출하세요.",
-		"name": "오로라 동굴 · 최종 관문 ★도전",
-		"shape_seals": [
-			{
-				"cells": [
-					[
-						0,
-						0
-					],
-					[
-						0,
-						1
-					]
-				],
-				"color": "R",
-				"gates": [
-					[
-						3,
-						4
-					]
-				],
-				"shape": "V2"
-			}
-		],
+		"hint": "★★ 대도전 · 이번 챕터의 모든 이동 순서와 기믹을 함께 풀어내세요!\n⛓ 번호가 붙은 젤리는 1번부터 차례대로 구출하세요.",
+		"initial_empty_spaces": 5,
+		"initial_move_options": 3,
+		"milestone_challenge": true,
+		"name": "오로라 동굴 · 최종 관문 ★★대도전",
 		"stars": [
-			0.47,
-			0.22
+			0.535,
+			0.263333333333333
 		],
-		"time": 54.6
+		"time": 46.0
 	},
 	{
 		"catchers": [
@@ -8349,46 +8470,46 @@
 	{
 		"catchers": [
 			{
-				"capacity": 3,
+				"capacity": 2,
 				"cell": [
-					4,
+					0,
 					8
 				],
 				"color": "R",
 				"shape": "H4"
 			},
 			{
-				"capacity": 3,
+				"capacity": 4,
 				"cell": [
 					5,
 					6
 				],
-				"color": "R",
+				"color": "Y",
 				"shape": "H2"
 			},
 			{
-				"capacity": 5,
-				"cell": [
-					2,
-					5
-				],
-				"color": "Y",
-				"shape": "S1"
-			},
-			{
 				"capacity": 3,
 				"cell": [
 					2,
-					7
+					6
 				],
 				"color": "B",
-				"shape": "H4"
+				"shape": "V2"
 			},
 			{
 				"capacity": 3,
 				"cell": [
-					6,
-					7
+					5,
+					0
+				],
+				"color": "B",
+				"shape": "H2"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					3,
+					6
 				],
 				"color": "G",
 				"shape": "S1"
@@ -8396,14 +8517,14 @@
 			{
 				"capacity": 3,
 				"cell": [
-					2,
-					1
+					4,
+					0
 				],
-				"color": "P",
+				"color": "G",
 				"shape": "S1"
 			},
 			{
-				"capacity": 3,
+				"capacity": 4,
 				"cell": [
 					7,
 					0
@@ -8414,56 +8535,88 @@
 			{
 				"capacity": 4,
 				"cell": [
-					3,
+					4,
 					8
+				],
+				"color": "P",
+				"shape": "H4"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					0,
+					7
+				],
+				"color": "P",
+				"shape": "S1"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					4,
+					6
+				],
+				"color": "P",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					3,
+					5
 				],
 				"color": "O",
 				"shape": "S1"
 			}
 		],
 		"challenge": true,
+		"constricted_start": true,
+		"difficulty_tier": 8,
 		"grid": [
-			"_____...",
-			"_...YOR_",
-			"R.B.PP__",
-			"_Y.GYOG_",
-			"R.BRP.R_",
-			"PY.GBOOY",
-			".PR...._",
-			".P....._",
+			"__......",
+			"RPYPB.G_",
+			"YPB.GPPO",
+			"YPBPGPP_",
+			"B.GPPRO_",
+			"BPG.PPOP",
+			"__....._",
+			".G.BYP..",
 			"........"
 		],
-		"hint": "★ 도전 스테이지 · 큰 블록과 뒤섞인 색의 이동 순서를 먼저 읽으세요!\n◆ 바닥 스위치를 먼저 밟아 보랏빛 봉인 젤리를 깨우세요.",
-		"name": "빙하 연구소 · 최종 관문 ★도전",
+		"hint": "★★ 대도전 · 이번 챕터의 모든 이동 순서와 기믹을 함께 풀어내세요!\n◆ 바닥 스위치를 먼저 밟아 보랏빛 봉인 젤리를 깨우세요.",
+		"initial_empty_spaces": 7,
+		"initial_move_options": 2,
+		"milestone_challenge": true,
+		"name": "빙하 연구소 · 최종 관문 ★★대도전",
 		"sealed_jellies": [
 			[
-				0,
-				2
-			],
-			[
-				6,
-				1
-			],
-			[
 				5,
-				1
+				7
+			],
+			[
+				1,
+				7
 			],
 			[
 				4,
-				1
+				7
+			],
+			[
+				3,
+				7
 			]
 		],
 		"stars": [
-			0.47,
-			0.22
+			0.54,
+			0.266666666666667
 		],
 		"switches": [
 			[
-				4,
-				6
+				3,
+				0
 			]
 		],
-		"time": 52.4
+		"time": 44.0
 	},
 	{
 		"catchers": [
@@ -9532,7 +9685,7 @@
 	{
 		"catchers": [
 			{
-				"capacity": 5,
+				"capacity": 4,
 				"cell": [
 					5,
 					6
@@ -9543,35 +9696,53 @@
 			{
 				"capacity": 4,
 				"cell": [
-					4,
-					6
+					1,
+					4
 				],
 				"color": "R",
-				"shape": "L4A"
-			},
-			{
-				"capacity": 3,
-				"cell": [
-					1,
-					6
-				],
-				"color": "Y",
-				"shape": "L4A"
-			},
-			{
-				"capacity": 3,
-				"cell": [
-					0,
-					5
-				],
-				"color": "Y",
 				"shape": "V2"
 			},
 			{
+				"capacity": 4,
+				"cell": [
+					3,
+					6
+				],
+				"color": "R",
+				"shape": "L4B"
+			},
+			{
 				"capacity": 3,
 				"cell": [
-					2,
+					4,
 					7
+				],
+				"color": "R",
+				"shape": "L4C"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					0,
+					7
+				],
+				"color": "Y",
+				"shape": "SQ"
+			},
+			{
+				"capacity": 1,
+				"cell": [
+					0,
+					6
+				],
+				"color": "Y",
+				"shape": "L4D"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					5,
+					5
 				],
 				"color": "B",
 				"shape": "S1"
@@ -9580,7 +9751,16 @@
 				"capacity": 3,
 				"cell": [
 					3,
-					6
+					3
+				],
+				"color": "B",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					2,
+					8
 				],
 				"color": "G",
 				"shape": "S1"
@@ -9588,72 +9768,64 @@
 			{
 				"capacity": 3,
 				"cell": [
-					4,
-					5
+					5,
+					2
+				],
+				"color": "G",
+				"shape": "S1"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					1,
+					1
 				],
 				"color": "P",
 				"shape": "S1"
 			},
 			{
-				"capacity": 3,
+				"capacity": 2,
 				"cell": [
-					1,
-					4
+					3,
+					0
 				],
 				"color": "O",
 				"shape": "S1"
 			}
 		],
 		"challenge": true,
+		"constricted_start": true,
+		"difficulty_tier": 9,
 		"grid": [
-			"_____.._",
-			"__...OY_",
-			"RRB.PYR_",
-			"YY.G.OG_",
-			"R.BRPRR_",
-			".YRG.ORY",
-			"..B...._",
-			"...P..._",
-			"..._..__"
+			"RRY.BRGY",
+			"R.YRBRG.",
+			"YRBRG.PR",
+			"YRB.GRP_",
+			"B.GRPRO_",
+			"B.GRP.OR",
+			"......._",
+			".......#",
+			".......#"
 		],
-		"hint": "빛나는 모양 봉인에 같은 색 블록을 정확히 포개 장벽을 여세요!\n🔑 열쇠 젤리를 먼저 구출하면 자물쇠 블록이 움직여요.",
+		"hint": "★★ 대도전 · 이번 챕터의 모든 이동 순서와 기믹을 함께 풀어내세요!\n🔑 열쇠 젤리를 먼저 구출하면 자물쇠 블록이 움직여요.",
+		"initial_empty_spaces": 1,
+		"initial_move_options": 3,
 		"key_locks": [
 			{
-				"catcher": 7,
+				"catcher": 11,
 				"key": [
-					2,
-					6
+					1,
+					3
 				]
 			}
 		],
-		"name": "별빛 극지 · 최종 관문 ★도전",
-		"shape_seals": [
-			{
-				"cells": [
-					[
-						0,
-						7
-					],
-					[
-						0,
-						8
-					]
-				],
-				"color": "Y",
-				"gates": [
-					[
-						3,
-						2
-					]
-				],
-				"shape": "V2"
-			}
-		],
+		"milestone_challenge": true,
+		"name": "별빛 극지 · 최종 관문 ★★대도전",
 		"stars": [
-			0.47,
-			0.22
+			0.545,
+			0.27
 		],
-		"time": 50.2
+		"time": 42.0
 	},
 	{
 		"catchers": [
@@ -11156,46 +11328,37 @@
 	{
 		"catchers": [
 			{
-				"capacity": 3,
+				"capacity": 2,
 				"cell": [
-					6,
-					5
+					4,
+					7
 				],
 				"color": "R",
-				"shape": "V4"
+				"shape": "H4"
 			},
 			{
-				"capacity": 3,
+				"capacity": 4,
 				"cell": [
 					2,
 					6
 				],
-				"color": "R",
-				"shape": "H2"
-			},
-			{
-				"capacity": 5,
-				"cell": [
-					4,
-					6
-				],
 				"color": "Y",
-				"shape": "S1"
+				"shape": "SQ"
 			},
 			{
-				"capacity": 3,
-				"cell": [
-					0,
-					6
-				],
-				"color": "B",
-				"shape": "L4A"
-			},
-			{
-				"capacity": 3,
+				"capacity": 4,
 				"cell": [
 					1,
 					7
+				],
+				"color": "B",
+				"shape": "V2"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					4,
+					8
 				],
 				"color": "B",
 				"shape": "H4"
@@ -11203,8 +11366,44 @@
 			{
 				"capacity": 4,
 				"cell": [
-					5,
-					2
+					0,
+					8
+				],
+				"color": "B",
+				"shape": "S1"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					2,
+					8
+				],
+				"color": "B",
+				"shape": "S1"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					7,
+					0
+				],
+				"color": "B",
+				"shape": "S1"
+			},
+			{
+				"capacity": 3,
+				"cell": [
+					0,
+					6
+				],
+				"color": "B",
+				"shape": "S1"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					3,
+					8
 				],
 				"color": "G",
 				"shape": "S1"
@@ -11212,17 +11411,26 @@
 			{
 				"capacity": 3,
 				"cell": [
-					2,
-					1
+					0,
+					7
+				],
+				"color": "G",
+				"shape": "S1"
+			},
+			{
+				"capacity": 4,
+				"cell": [
+					1,
+					6
 				],
 				"color": "P",
 				"shape": "S1"
 			},
 			{
-				"capacity": 3,
+				"capacity": 2,
 				"cell": [
-					0,
-					1
+					4,
+					6
 				],
 				"color": "O",
 				"shape": "S1"
@@ -11232,22 +11440,24 @@
 			{
 				"cells": [
 					[
-						0,
+						2,
 						0
 					],
 					[
-						6,
-						2
+						2,
+						1
 					],
 					[
 						0,
 						2
 					]
 				],
-				"color": "R"
+				"color": "Y"
 			}
 		],
 		"challenge": true,
+		"constricted_start": true,
+		"difficulty_tier": 10,
 		"frozen": [
 			[
 				5,
@@ -11270,67 +11480,70 @@
 				1
 			],
 			[
-				4,
-				5,
+				1,
+				0,
 				1
 			],
 			[
-				0,
 				4,
+				5,
 				2
 			],
 			[
-				6,
+				0,
 				4,
 				1
 			]
 		],
 		"grid": [
-			"R._.....",
-			".Y.GBOBY",
-			"RPBBP.R.",
-			".Y.G.OR_",
-			"R.B.PBR_",
-			"_Y.GGO.Y",
-			"......._",
-			"....._._",
-			"...___._"
+			"RBYBB_G.",
+			"RBY.BBGB",
+			"YBBBGBP_",
+			"YBBBG#P_",
+			"BBGBPBO_",
+			"BBGBPBOG",
+			".....B#_",
+			"........",
+			"........"
 		],
 		"hint": "종합 관문 · ❄얼음 / ⛓순서 / ◆스위치 / 🔑열쇠의 우선순위를 읽고 구출하세요.",
+		"initial_empty_spaces": 1,
+		"initial_move_options": 2,
 		"key_locks": [
 			{
-				"catcher": 7,
+				"catcher": 11,
 				"key": [
-					6,
-					3
+					7,
+					1
 				]
 			}
 		],
-		"name": "영원의 빙궁 · 최종 관문 ★도전",
+		"milestone_challenge": true,
+		"name": "영원의 빙궁 · 최종 관문 ★★대도전",
 		"sealed_jellies": [
 			[
-				1,
-				1
+				0,
+				0
 			],
 			[
-				1,
-				2
+				6,
+				0
 			],
 			[
-				3,
+				0,
 				1
 			]
 		],
 		"stars": [
-			0.47,
-			0.22
+			0.55,
+			0.27
 		],
 		"switches": [
 			[
-				6,
-				5
+				4,
+				7
 			]
 		],
-		"time": 48.0
+		"time": 40.0
 	}
 ]

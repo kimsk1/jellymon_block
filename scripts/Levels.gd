@@ -57,6 +57,7 @@ static func _generated_level(number: int) -> Dictionary:
 	var chapter := (number - 1) / 10
 	var local := (number - 1) % 10
 	var challenge := _is_challenge_level(number)
+	var milestone_challenge := _is_milestone_challenge(number)
 	var w := mini(8, 6 + (chapter + 1) / 2)
 	var h := mini(9, 7 + (chapter + 1) / 2)
 	var palette := ["R", "Y", "B", "G", "P", "O"]
@@ -78,6 +79,11 @@ static func _generated_level(number: int) -> Dictionary:
 		board.append(".".repeat(w))
 
 	var pattern := local % 4
+	if milestone_challenge and number >= 20:
+		# 모든 챕터 끝 레벨은 local=9라 기본값이 늘 세로 줄무늬였다.
+		# 이 배치는 같은 색을 한 번에 쓸기 쉬우므로, L13에서 난도가 검증된
+		# 고리/엇갈림 배치를 사용해 색이 서로의 길을 막게 한다.
+		pattern = 2 if number in [20, 50, 70] else 3
 	if pattern == 0:
 		_fill_bands(board, colors, w, h)
 	elif pattern == 1:
@@ -99,19 +105,39 @@ static func _generated_level(number: int) -> Dictionary:
 		time_limit = maxf(52.0, 63.0 - float(number - 50) * 0.22)
 	if challenge:
 		time_limit = maxf(48.0, time_limit - 4.0)
+	if milestone_challenge:
+		# 10단위 관문은 후반으로 갈수록 일반 도전보다 2~6초 더 촉박해진다.
+		time_limit = maxf(42.0, time_limit - (2.0 + float(number / 25)))
+	if [20, 30, 40].has(number):
+		# 초중반 보스 관문은 탐색할 여유는 주되, 무작정 전부 훑는 플레이는
+		# 별 3개를 받을 수 없도록 별도 상한을 둔다.
+		time_limit = minf(time_limit, 62.0 - float(number - 20) * 0.5)
+	elif milestone_challenge and number >= 50:
+		# 후반 관문은 50레벨부터 2초씩 줄어 최종 100레벨이 가장 촉박하다.
+		time_limit = minf(time_limit, 50.0 - float(number - 50) * 0.2)
 	var chapter_name: String = CHAPTER_NAMES[chapter]
 	var titles := ["길 열기", "엇갈린 줄", "색의 성", "굽은 통로", "한붓 쓸기", "갈림길", "큰 몸 작은 문", "색깔 미로", "연쇄 구출", "최종 관문"]
 	var hint := "색의 층과 캐처 모양을 보고 구출 순서를 정하세요."
 	if local == 9:
 		hint = "%s의 모든 규칙이 섞인 하이라이트 레벨!" % chapter_name
-	if challenge:
+	if milestone_challenge:
+		hint = "★★ 대도전 · 이번 챕터의 모든 이동 순서와 기믹을 함께 풀어내세요!"
+	elif challenge:
 		hint = "★ 도전 스테이지 · 큰 블록과 뒤섞인 색의 이동 순서를 먼저 읽으세요!"
 	var level_name := "%s · %s" % [chapter_name, titles[local]]
-	if challenge:
+	if milestone_challenge:
+		level_name += " ★★대도전"
+	elif challenge:
 		level_name += " ★도전"
-	var result := _level(level_name, board, specs, time_limit, hint, [0.47, 0.22] if challenge else ([0.45, 0.2] if local == 9 else [0.5, 0.25]))
+	var star_targets := [0.47, 0.22] if challenge else ([0.45, 0.2] if local == 9 else [0.5, 0.25])
+	if milestone_challenge:
+		star_targets = [0.50 + minf(0.05, float(number) / 2000.0), 0.24 + minf(0.03, float(number) / 3000.0)]
+	var result := _level(level_name, board, specs, time_limit, hint, star_targets)
 	if challenge:
 		result["challenge"] = true
+	if milestone_challenge:
+		result["milestone_challenge"] = true
+		result["difficulty_tier"] = number / 10
 	if not _is_greedily_solvable(result):
 		var changed := true
 		while changed and not _is_greedily_solvable(result):
@@ -125,11 +151,18 @@ static func _generated_level(number: int) -> Dictionary:
 						break
 	_promote_tetrominoes(result, _level_shape_pool(number), 2 + number / 12 + (2 if challenge else 0))
 	if challenge:
-		_ensure_challenge_tetrominoes(result, _level_shape_pool(number), 2)
+		# 대도전은 50·100레벨에서 큰 블록 최소치가 한 단계씩 상승한다.
+		# 그 이상 강제하면 후반 복합 기믹의 이동 공간이 사라지므로 자동 승격분은 그대로 둔다.
+		var minimum_large := 1 + number / 50 if milestone_challenge else 2
+		_ensure_challenge_tetrominoes(result, _level_shape_pool(number), minimum_large)
 	if _is_greedily_solvable(result):
 		_intermix_level(result, number)
+		if milestone_challenge and number >= 20:
+			_pack_milestone_catchers(result, _milestone_target_moves(number))
 		_add_shape_seal(result, number)
 		_reduce_empty_space(result, number)
+		if milestone_challenge:
+			_tighten_milestone_start(result, number)
 		_remove_unused_islands(result)
 		_fix_known_mobility_traps(result, number)
 		_validate_shape_seal(result)
@@ -137,9 +170,33 @@ static func _generated_level(number: int) -> Dictionary:
 		_add_late_gimmicks(result, number)
 	return result
 
-
 static func _is_challenge_level(number: int) -> bool:
 	return number >= 10 and number % 5 == 0
+
+
+static func _is_milestone_challenge(number: int) -> bool:
+	return number >= 10 and number % 10 == 0
+
+
+static func _milestone_target_moves(number: int) -> int:
+	if number >= 100:
+		# 모든 기믹이 겹치는 최종 관문은 막힘 방지를 위해 정확히 두 갈래만 연다.
+		return 2
+	if number >= 90:
+		# 열쇠로 첫 순서가 한 번 더 제한되므로 세 방향 안에서도 선택 함정이 생긴다.
+		return 3
+	if number >= 80:
+		return 2
+	return 3
+
+
+static func _level_jelly_count(level: Dictionary) -> int:
+	var count := 0
+	for row in level.get("grid", []):
+		for x in range(String(row).length()):
+			if G.COLORS.has(String(row)[x]):
+				count += 1
+	return count
 
 
 static func _densify_challenge_board(board: Array, colors: Array, w: int, h: int, number: int) -> void:
@@ -155,7 +212,23 @@ static func _densify_challenge_board(board: Array, colors: Array, w: int, h: int
 		var b_score := (b.x * 19 + b.y * 31 + number * 7) % 101
 		return a_score < b_score
 	)
-	var extra := mini(candidates.size(), 2 + mini(2, number / 40))
+	var extra_count := 2 + mini(2, number / 40)
+	if _is_milestone_challenge(number):
+		# 10단위 관문은 3개에서 시작해 최종 관문에서 최대 8개까지 추가한다.
+		extra_count += 1 + number / 30
+	if _is_milestone_challenge(number) and number >= 20:
+		# 초중반 핵심 관문은 벽을 나중에 두르는 대신 생성 시점부터 색을 촘촘히
+		# 교차시켜, 젤리가 길을 막고 같은 색도 여러 블록으로 갈라지게 한다.
+		# 이후 10단위 관문도 같은 밀도 보너스를 유지해 난도가 역전되지 않게 한다.
+		extra_count += 4
+		if number >= 60:
+			extra_count += mini(3, 1 + (number - 60) / 20)
+		if number == 100:
+			extra_count += 3
+		if number == 50:
+			# L40의 고밀도 관문 다음 단계가 젤리 수에서 역전되지 않도록 추가 보강한다.
+			extra_count += 2
+	var extra := mini(candidates.size(), extra_count)
 	if extra <= 0 or colors.is_empty():
 		return
 	var focus_index := (number / 5) % colors.size()
@@ -742,6 +815,8 @@ static func _reduce_empty_space(level: Dictionary, number: int) -> void:
 		target = 5
 	if _is_challenge_level(number):
 		target = maxi(4, target - 2)
+	if _is_milestone_challenge(number):
+		target = maxi(3, target - 1)
 	var safety := w * h
 	while free_empty > target and safety > 0:
 		safety -= 1
@@ -777,6 +852,139 @@ static func _reduce_empty_space(level: Dictionary, number: int) -> void:
 			_put(board, cell.x, cell.y, ".")
 		if not removed:
 			break
+
+
+static func _initial_move_options(level: Dictionary) -> int:
+	var specs: Array = level.catchers
+	var positions: Array[Vector2i] = []
+	var active: Array[bool] = []
+	for spec in specs:
+		positions.append(Vector2i(int(spec.cell[0]), int(spec.cell[1])))
+		active.append(true)
+	var options := 0
+	for ci in range(specs.size()):
+		for direction in [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]:
+			if _test_can_place(level.grid, specs, positions, active, ci, positions[ci] + direction):
+				options += 1
+	return options
+
+
+static func _pack_milestone_catchers(level: Dictionary, target_options: int) -> void:
+	## 흩어진 시작 블록을 빈 타일 안에서 다시 배치해 서로가 자연스러운 벽이 되게 한다.
+	## 단순 통로를 새로 그리지 않고 기존 맵/모양을 유지하며, 매 후보마다 전체 풀이를
+	## 통과한 경우에만 확정한다.
+	var board: Array = level.grid
+	var best_options := _initial_move_options(level)
+	if best_options <= target_options:
+		return
+	for _pass in range(2):
+		var improved := false
+		for si in range(level.catchers.size()):
+			var spec: Dictionary = level.catchers[si]
+			var original_cell: Array = spec.cell.duplicate()
+			var chosen_cell: Array = original_cell.duplicate()
+			var chosen_options := best_options
+			for y in range(board.size()):
+				for x in range(board[y].length()):
+					var origin := Vector2i(x, y)
+					if not _shape_fits_level_at(level, si, spec.shape, origin):
+						continue
+					spec.cell = [x, y]
+					var options := _initial_move_options(level)
+					if options < chosen_options and _is_greedily_solvable(level):
+						chosen_options = options
+						chosen_cell = [x, y]
+						if chosen_options <= target_options:
+							break
+				if chosen_options <= target_options:
+					break
+			spec.cell = chosen_cell
+			if chosen_options < best_options:
+				best_options = chosen_options
+				improved = true
+			else:
+				spec.cell = original_cell
+			if best_options <= target_options:
+				return
+		if not improved:
+			break
+
+
+static func _tighten_milestone_start(level: Dictionary, number: int) -> void:
+	## 대도전 시작부의 자유 이동을 내부 벽으로 줄인다. 매 벽 추가 후 전체 풀이를
+	## 다시 검사하므로 유일한 시작 수순에 가까워지되 클리어 불가능해지지는 않는다.
+	var board: Array = level.grid
+	var occupied := {}
+	for spec in level.catchers:
+		var origin := Vector2i(int(spec.cell[0]), int(spec.cell[1]))
+		for off in G.SHAPES[spec.shape]:
+			occupied[origin + off] = true
+	var protected := {}
+	for seal in level.get("shape_seals", []):
+		for pair in seal.get("cells", []):
+			protected[Vector2i(int(pair[0]), int(pair[1]))] = true
+		for pair in seal.get("gates", []):
+			protected[Vector2i(int(pair[0]), int(pair[1]))] = true
+	var target_empty := maxi(1, 4 - number / 20)
+	var target_moves := maxi(2, 6 - number / 10)
+	var safety: int = board.size() * String(board[0]).length()
+	while safety > 0:
+		safety -= 1
+		var free_empty := 0
+		var candidates: Array[Vector2i] = []
+		for y in range(board.size()):
+			for x in range(board[y].length()):
+				var cell := Vector2i(x, y)
+				if board[y][x] == "." and not occupied.has(cell) and not protected.has(cell):
+					free_empty += 1
+					candidates.append(cell)
+		var move_options := _initial_move_options(level)
+		if candidates.is_empty() or (free_empty <= target_empty and move_options <= target_moves):
+			break
+		# 블록 시작점과 가까운 빈칸부터 막아 초반 자유 이동을 우선 줄인다.
+		candidates.sort_custom(func(a: Vector2i, b: Vector2i) -> bool:
+			var distance_a := 999
+			var distance_b := 999
+			for origin in positions_from_specs(level.catchers):
+				distance_a = mini(distance_a, int(a.distance_squared_to(origin)))
+				distance_b = mini(distance_b, int(b.distance_squared_to(origin)))
+			if distance_a == distance_b:
+				return (a.x * 17 + a.y * 29 + number) % 97 < (b.x * 17 + b.y * 29 + number) % 97
+			return distance_a < distance_b
+		)
+		var added := false
+		for cell in candidates:
+			_put(board, cell.x, cell.y, "#")
+			if _is_greedily_solvable(level) and (not level.has("shape_seals") or _shape_seal_is_valid(level)):
+				added = true
+				break
+			_put(board, cell.x, cell.y, ".")
+		if not added:
+			break
+	level["constricted_start"] = true
+	level["initial_move_options"] = _initial_move_options(level)
+	level["initial_empty_spaces"] = _count_free_empty(level)
+
+
+static func positions_from_specs(specs: Array) -> Array[Vector2i]:
+	var positions: Array[Vector2i] = []
+	for spec in specs:
+		positions.append(Vector2i(int(spec.cell[0]), int(spec.cell[1])))
+	return positions
+
+
+static func _count_free_empty(level: Dictionary) -> int:
+	var occupied := {}
+	for spec in level.catchers:
+		var origin := Vector2i(int(spec.cell[0]), int(spec.cell[1]))
+		for off in G.SHAPES[spec.shape]:
+			occupied[origin + off] = true
+	var count := 0
+	for y in range(level.grid.size()):
+		for x in range(level.grid[y].length()):
+			if level.grid[y][x] == "." and not occupied.has(Vector2i(x, y)):
+				count += 1
+	return count
 
 
 static func _promote_tetrominoes(level: Dictionary, pool: Array[String], target_count: int) -> void:
@@ -898,6 +1106,8 @@ static func _intermix_level(level: Dictionary, number: int) -> void:
 			if x > 0 and y > 0 and x < w - 1 and y < h - 1 and board[y][x] == "." and not occupied.has(cell) and not near_holes.has(cell):
 				near_holes.append(cell)
 	var move_goal := mini(16, 2 + number / 4 + (4 if _is_challenge_level(number) else 0))
+	if _is_milestone_challenge(number):
+		move_goal = mini(22, move_goal + 2 + number / 25)
 	var moved := 0
 	for target in near_holes:
 		if moved >= move_goal:
@@ -989,7 +1199,10 @@ static func _capacity_catchers(board: Array, colors: Array, w: int, h: int, numb
 	for color in colors:
 		var left: int = counts.get(color, 0)
 		while left > 0:
-			var amount := mini(5, left)
+			# L20/30/40은 같은 색도 서로 다른 모양의 캐처로 더 잘게 나눈다.
+			# 어느 캐처로 어느 젤리를 먼저 담는지가 남은 동선을 바꾸게 된다.
+			var max_capacity := 4 if _is_milestone_challenge(number) and number >= 20 else 5
+			var amount := mini(max_capacity, left)
 			if left == 6:
 				amount = 3
 			var wanted: String = shape_pool[(block_index + number) % shape_pool.size()]
@@ -1233,13 +1446,41 @@ static func validate_all() -> PackedStringArray:
 			errors.append("L%d: 신규 얼음 기믹이 50레벨 이전에 등장함" % (idx + 1))
 		var number := idx + 1
 		var expected_challenge := _is_challenge_level(number)
+		var expected_milestone := _is_milestone_challenge(number)
 		if bool(level.get("challenge", false)) != expected_challenge:
 			errors.append("L%d: 5단위 도전 스테이지 표시 오류" % number)
+		if bool(level.get("milestone_challenge", false)) != expected_milestone:
+			errors.append("L%d: 10단위 대도전 스테이지 표시 오류" % number)
 		if expected_challenge:
 			if total_jellies < 13:
 				errors.append("L%d: 도전 스테이지 젤리 밀도 부족(%d)" % [number, total_jellies])
-			if large_catchers < 2:
+			if not expected_milestone and large_catchers < 2:
 				errors.append("L%d: 도전 스테이지 대형 블록 부족(%d)" % [number, large_catchers])
+		if expected_milestone:
+			var expected_large := 1 + number / 50
+			var expected_jellies := 13 + number / 25
+			if large_catchers < expected_large:
+				errors.append("L%d: 대도전 대형 블록 단계 부족(%d/%d)" % [number, large_catchers, expected_large])
+			if total_jellies < expected_jellies:
+				errors.append("L%d: 대도전 젤리 밀도 단계 부족(%d/%d)" % [number, total_jellies, expected_jellies])
+			if number > 1:
+				var previous_level: Dictionary = LEVELS[number - 2]
+				if total_jellies <= _level_jelly_count(previous_level) or float(level.time) >= float(previous_level.time):
+					errors.append("L%d: 직전 일반 레벨보다 대도전 난도 상승이 부족함" % number)
+			if number > 10:
+				var previous_milestone: Dictionary = LEVELS[number - 11]
+				# 밀도 또는 제한 시간 중 적어도 한 축이 강화되면 다음 티어로 인정한다.
+				# 신규 기믹이 더해지는 후반부까지 두 수치를 동시에 강제하면 맵이 과밀해진다.
+				if total_jellies <= _level_jelly_count(previous_milestone) and float(level.time) >= float(previous_milestone.time):
+					errors.append("L%d: 이전 대도전보다 난도 단계가 상승하지 않음" % number)
+			if int(level.get("difficulty_tier", 0)) != number / 10:
+				errors.append("L%d: 대도전 난도 티어 오류" % number)
+		if expected_milestone and number >= 20:
+			var target_moves := _milestone_target_moves(number)
+			if not bool(level.get("constricted_start", false)):
+				errors.append("L%d: 대도전 시작 공간 압축 누락" % number)
+			if int(level.get("initial_move_options", 999)) > target_moves:
+				errors.append("L%d: 대도전 초기 이동 선택지가 너무 많음(%d/%d)" % [number, int(level.get("initial_move_options", 999)), target_moves])
 		var expected := _gimmick_flags(number)
 		if bool(expected.frost) != level.has("frozen"):
 			errors.append("L%d: 얼음 기믹 구간 구성 오류" % number)
