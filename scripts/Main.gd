@@ -30,6 +30,14 @@ func _ready() -> void:
 		level_errors.append("이어하기 클리어 별가루 1개 제한 오류")
 	if continued_reward_test.award_stars(999, 3, 1) != 0:
 		level_errors.append("이어하기 클리어 별가루 중복 지급 오류")
+	var clear_time_test := SaveGame.new()
+	clear_time_test.persistence_enabled = false
+	if not clear_time_test.record_clear_time(999, 42.37):
+		level_errors.append("최초 클리어 시간 기록 오류")
+	if clear_time_test.record_clear_time(999, 48.0) or not is_equal_approx(clear_time_test.get_best_clear_time(999), 42.37):
+		level_errors.append("느린 클리어 시간으로 최고 기록이 덮어써짐")
+	if not clear_time_test.record_clear_time(999, 39.21) or not is_equal_approx(clear_time_test.get_best_clear_time(999), 39.21):
+		level_errors.append("빠른 클리어 시간 갱신 오류")
 	if SaveGame.ATTENDANCE_WEEK1_STARDUST != [10, 20, 30, 40, 50, 60, 100] or SaveGame.ATTENDANCE_WEEK1_ENERGY != [5, 5, 5, 5, 5, 5, 5]:
 		level_errors.append("1주차 출석 보상 구성 오류")
 	if SaveGame.ATTENDANCE_REPEAT_STARDUST != [10, 0, 15, 0, 20, 0, 20] or SaveGame.ATTENDANCE_REPEAT_ENERGY != [0, 5, 0, 7, 0, 10, 10]:
@@ -255,10 +263,12 @@ func play_chapter_end_if_needed(level_idx: int, destination: Callable) -> bool:
 	return false
 
 
-func on_level_finished(idx: int, stars: int, cleared: bool, refund_reserved_energy: bool = false, reward_cap: int = -1) -> int:
+func on_level_finished(idx: int, stars: int, cleared: bool, refund_reserved_energy: bool = false, reward_cap: int = -1, clear_time: float = 0.0) -> int:
 	var stardust_reward := 0
 	last_furniture_reward = {}
 	if cleared:
+		if clear_time > 0.0:
+			save.record_clear_time(idx, clear_time)
 		var first_clear := save.get_stars(idx) == 0
 		stardust_reward = save.award_stars(idx, stars, reward_cap)
 		if first_clear:
@@ -373,7 +383,7 @@ func _screenshot_run() -> void:
 	await get_tree().create_timer(0.14).timeout
 	await _snap("shot_play.png")
 	if game:
-		game.hud.show_result(3, 1234, 5, save.get_stardust(), true, func(): pass, func(): pass, func(): pass)
+		game.hud.show_result(3, 1234, 5, save.get_stardust(), 42.35, 39.2, true, func(): pass, func(): pass, func(): pass)
 	await get_tree().create_timer(0.25).timeout
 	await _snap("shot_clear_reward.png")
 	if game:

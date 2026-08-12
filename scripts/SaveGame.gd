@@ -17,6 +17,7 @@ const ATTENDANCE_REPEAT_ENERGY := [0, 5, 0, 7, 0, 10, 10]
 const MAX_NICKNAME_LENGTH := 12
 
 var stars := {}
+var best_clear_times := {}
 var stardust := 0
 var room_placements: Array = []
 var owned_furniture: Array[String] = []
@@ -40,6 +41,7 @@ func load_data() -> void:
 			var d = JSON.parse_string(f.get_as_text())
 			if typeof(d) == TYPE_DICTIONARY:
 				stars = d.get("stars", {})
+				best_clear_times = d.get("best_clear_times", {})
 				stardust = maxi(0, int(d.get("stardust", 0)))
 				room_placements = d.get("room_placements", [])
 				for raw_id in d.get("owned_furniture", []):
@@ -100,6 +102,7 @@ func save_data() -> void:
 	if f:
 		f.store_string(JSON.stringify({
 			"stars": stars,
+			"best_clear_times": best_clear_times,
 			"stardust": stardust,
 			"room_placements": room_placements,
 			"owned_furniture": owned_furniture,
@@ -180,6 +183,21 @@ func get_stars(idx: int) -> int:
 
 func set_stars(idx: int, n: int) -> void:
 	award_stars(idx, n)
+
+
+func get_best_clear_time(idx: int) -> float:
+	return maxf(0.0, float(best_clear_times.get(str(idx), 0.0)))
+
+
+func record_clear_time(idx: int, elapsed_seconds: float) -> bool:
+	## 비정상 값은 버리고, 레벨별 가장 빠른 실제 플레이 시간만 영구 저장한다.
+	var elapsed := snappedf(maxf(0.01, elapsed_seconds), 0.01)
+	var previous := get_best_clear_time(idx)
+	if previous > 0.0 and elapsed >= previous:
+		return false
+	best_clear_times[str(idx)] = elapsed
+	save_data()
+	return true
 
 
 func award_stars(idx: int, n: int, reward_cap: int = -1) -> int:

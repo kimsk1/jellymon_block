@@ -354,7 +354,23 @@ func _level_button(i: int) -> Button:
 		tr.modulate = Color(1.0, 0.85, 0.2) if s < earned else Color(1, 1, 1, 0.35)
 		tr.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		row.add_child(tr)
+	var best_time: float = main.save.get_best_clear_time(i)
+	if earned > 0 and best_time > 0.0:
+		var record := Label.new()
+		record.text = "⏱ %s" % _format_clear_time(best_time)
+		record.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		record.add_theme_font_size_override("font_size", 14)
+		record.add_theme_color_override("font_color", Color(1, 1, 1, 0.96))
+		record.add_theme_color_override("font_outline_color", col.darkened(0.38))
+		record.add_theme_constant_override("outline_size", 2)
+		record.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		v.add_child(record)
 
 	var idx := i
 	b.pressed.connect(func(): main.start_level(idx))
 	return b
+
+
+static func _format_clear_time(seconds: float) -> String:
+	var centiseconds := maxi(0, int(round(seconds * 100.0)))
+	return "%d:%02d.%02d" % [centiseconds / 6000, (centiseconds / 100) % 60, centiseconds % 100]

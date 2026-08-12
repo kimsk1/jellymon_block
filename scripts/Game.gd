@@ -43,6 +43,7 @@ var last_blocked_feedback_msec := 0
 
 var time_left := 0.0
 var total_time := 1.0
+var elapsed_play_time := 0.0
 var goals := {}             # color -> 남은 젤리 수
 var score := 0
 var state := "play"
@@ -460,6 +461,7 @@ func _try_step(c: Catcher, dir: Vector2i) -> bool:
 func _physics_process(delta: float) -> void:
 	if state != "play":
 		return
+	elapsed_play_time += delta
 	time_left -= delta
 	hud.set_time(time_left, total_time)
 	if time_left <= 0.0:
@@ -730,14 +732,14 @@ func _clear_level() -> void:
 	# 이어하기로 시간을 초기화한 판은 별 기록은 정상 반영하되 신규 별가루
 	# 보상을 최대 1개로 제한한다. 이미 받은 단계는 기존처럼 다시 지급하지 않는다.
 	var reward_cap := 1 if continued_after_fail else -1
-	var stardust_reward: int = main.on_level_finished(level_idx, stars_n, true, energy_reserved, reward_cap)
+	var stardust_reward: int = main.on_level_finished(level_idx, stars_n, true, energy_reserved, reward_cap, elapsed_play_time)
 	energy_reserved = false
 	await get_tree().create_timer(1.3).timeout
 	var has_next := level_idx + 1 < Levels.LEVELS.size()
 	var show_clear_result := func():
 		if not is_instance_valid(hud):
 			return
-		hud.show_result(stars_n, score, stardust_reward, main.save.get_stardust(), has_next,
+		hud.show_result(stars_n, score, stardust_reward, main.save.get_stardust(), elapsed_play_time, main.save.get_best_clear_time(level_idx), has_next,
 			func(): main.start_level(level_idx + 1),
 			func(): main.show_map(),
 			func(): main.start_level(level_idx))

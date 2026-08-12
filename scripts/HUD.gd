@@ -308,7 +308,7 @@ func _title_label(text: String, col: Color) -> Label:
 	return l
 
 
-func show_result(stars_n: int, score: int, stardust_reward: int, stardust_total: int, has_next: bool, on_next: Callable, on_map: Callable, on_retry: Callable) -> void:
+func show_result(stars_n: int, score: int, stardust_reward: int, stardust_total: int, clear_time: float, best_time: float, has_next: bool, on_next: Callable, on_map: Callable, on_retry: Callable) -> void:
 	clear_base_reward = stardust_reward
 	clear_bonus_claimed = false
 	var v := _popup_frame()
@@ -353,6 +353,12 @@ func show_result(stars_n: int, score: int, stardust_reward: int, stardust_total:
 	sc.add_theme_font_size_override("font_size", 34)
 	sc.add_theme_color_override("font_color", G.INK)
 	v.add_child(sc)
+	var record := Label.new()
+	record.text = "클리어  %s   ·   최고 기록  %s" % [_format_clear_time(clear_time), _format_clear_time(best_time)]
+	record.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	record.add_theme_font_size_override("font_size", 23)
+	record.add_theme_color_override("font_color", Color("#5e8cac"))
+	v.add_child(record)
 	var dust := Label.new()
 	clear_reward_label = dust
 	dust.text = "★ 별가루 +%d   보유 %d" % [stardust_reward, stardust_total] if stardust_reward > 0 else "★ 이미 받은 별 보상이에요   보유 %d" % stardust_total
@@ -391,6 +397,11 @@ func show_result(stars_n: int, score: int, stardust_reward: int, stardust_total:
 		var b_next := _result_button("다음 레벨", Color(0.28, 0.75, 0.42))
 		b_next.pressed.connect(on_next)
 		btns.add_child(b_next)
+
+
+static func _format_clear_time(seconds: float) -> String:
+	var centiseconds := maxi(0, int(round(seconds * 100.0)))
+	return "%d:%02d.%02d" % [centiseconds / 6000, (centiseconds / 100) % 60, centiseconds % 100]
 
 
 func _request_clear_double_reward() -> void:
