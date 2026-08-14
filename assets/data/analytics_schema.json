@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "events": {
+    "session_start": ["build", "platform"],
+    "screen_view": ["screen"],
+    "level_start": ["level", "energy", "previous_stars"],
+    "level_clear": ["level", "stars", "elapsed_seconds", "stardust_reward", "continued"],
+    "level_fail": ["level", "reason", "elapsed_seconds", "continued"],
+    "level_continue": ["level", "cost"],
+    "rewarded_ad_offer": ["placement"],
+    "rewarded_ad_result": ["placement", "result"],
+    "shop_purchase": ["item_id", "kind", "result"],
+    "currency_source": ["currency", "amount", "source"],
+    "currency_sink": ["currency", "amount", "sink"],
+    "resident_bond": ["resident_id", "level", "affection"]
+  }
+}

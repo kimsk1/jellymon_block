@@ -6,6 +6,9 @@ const RoomDataLib = preload("res://scripts/RoomData.gd")
 const FurnitureRewardCatalogLib = preload("res://scripts/FurnitureRewardCatalog.gd")
 const DailyMissionCatalogLib = preload("res://scripts/DailyMissionCatalog.gd")
 const LiveProgressionCatalogLib = preload("res://scripts/LiveProgressionCatalog.gd")
+const CharacterCatalogLib = preload("res://scripts/CharacterCatalog.gd")
+const GameBalanceCatalogLib = preload("res://scripts/GameBalanceCatalog.gd")
+const MetaProgressionCatalogLib = preload("res://scripts/MetaProgressionCatalog.gd")
 
 const PATH := "user://jellymon_save.json"
 const MAX_ENERGY := 5
@@ -26,6 +29,9 @@ var owned_furniture: Array[String] = []
 var claimed_furniture_reward_levels: Array[int] = []
 var room_grid_version := ROOM_GRID_VERSION
 var rescued_jellies: Array[String] = []
+var resident_records: Array = []
+var resident_relationships := {}
+var album_memories: Array = []
 var attendance_claimed_days := 0
 var attendance_last_claim_date := ""
 var ads_removed := false
@@ -80,8 +86,15 @@ func load_data() -> void:
 					if not value.is_empty() and not seen_scenarios.has(value):
 						seen_scenarios.append(value)
 				for color in d.get("rescued_jellies", []):
-					if G.COLORS.has(String(color)) and not rescued_jellies.has(String(color)) and rescued_jellies.size() < 5:
+					if G.COLORS.has(String(color)) and not rescued_jellies.has(String(color)) and rescued_jellies.size() < 6:
 						rescued_jellies.append(String(color))
+				var loaded_residents = d.get("resident_records", [])
+				if loaded_residents is Array:
+					resident_records = loaded_residents.duplicate(true)
+				resident_relationships = d.get("resident_relationships", {})
+				var loaded_memories = d.get("album_memories", [])
+				if loaded_memories is Array:
+					album_memories = loaded_memories.duplicate(true)
 				# 구매한 보너스 하트는 최대치 5를 넘어 보유할 수 있다.
 				energy = maxi(0, int(d.get("energy", MAX_ENERGY)))
 				energy_updated_at = int(d.get("energy_updated_at", _now()))
@@ -131,14 +144,15 @@ func load_data() -> void:
 			placement["x"] = int(placement.get("x", 0)) + 1
 		room_grid_version = ROOM_GRID_VERSION
 		save_data()
-	# 구버전 저장 파일은 주민 목록이 없으므로 완료한 챕터 기록에서 최대 5마리를 복원한다.
+	# 구버전 저장 파일은 주민 목록이 없으므로 완료한 챕터 기록에서 최대 6마리를 복원한다.
 	if rescued_jellies.is_empty() and not stars.is_empty():
-		var chapter_colors := ["R", "Y", "B", "G", "P"]
-		for chapter in range(5):
+		var chapter_colors := ["R", "Y", "B", "G", "P", "O"]
+		for chapter in range(6):
 			for idx in range(chapter * 10, chapter * 10 + 10):
 				if get_stars(idx) > 0:
 					rescued_jellies.append(chapter_colors[chapter])
 					break
+	_migrate_resident_records()
 	refresh_energy()
 	refresh_daily_missions()
 	refresh_weekly_progress()
@@ -158,6 +172,9 @@ func save_data() -> void:
 			"claimed_furniture_reward_levels": claimed_furniture_reward_levels,
 			"room_grid_version": room_grid_version,
 			"rescued_jellies": rescued_jellies,
+			"resident_records": resident_records,
+			"resident_relationships": resident_relationships,
+			"album_memories": album_memories,
 			"attendance_claimed_days": attendance_claimed_days,
 			"attendance_last_claim_date": attendance_last_claim_date,
 			"ads_removed": ads_removed,
@@ -441,6 +458,9 @@ func progression_snapshot() -> Dictionary:
 		"owned_furniture": owned_furniture.duplicate(),
 		"room_placements": room_placements.duplicate(true),
 		"rescued_jellies": rescued_jellies.duplicate(),
+		"resident_records": resident_records.duplicate(true),
+		"resident_relationships": resident_relationships.duplicate(true),
+		"album_memories": album_memories.duplicate(true),
 		"nickname": nickname,
 		"jelly_capture_counts": jelly_capture_counts.duplicate(true),
 		"shiny_discoveries": shiny_discoveries.duplicate(),
@@ -751,18 +771,123 @@ func set_room_placements(value: Array) -> void:
 
 
 func register_rescued_jelly(level_idx: int) -> bool:
-	## 각 챕터에서 처음 클리어한 순간 대표 주민 한 마리를 아지트에 초대한다(최대 5마리).
-	var colors := ["R", "Y", "B", "G", "P"]
-	var color: String = colors[clampi(level_idx / 10, 0, 4)]
-	if rescued_jellies.has(color) or rescued_jellies.size() >= 5:
+	## 1~6챕터 첫 클리어에서 각 색 대표 주민을 한 명씩 아지트에 초대한다.
+	var colors := ["R", "Y", "B", "G", "P", "O"]
+	var color: String = colors[clampi(level_idx / 10, 0, 5)]
+	if rescued_jellies.has(color) or rescued_jellies.size() >= 6:
 		return false
 	rescued_jellies.append(color)
+	_create_resident_record(color, level_idx)
 	save_data()
 	return true
 
 
 func get_rescued_jellies() -> Array[String]:
 	return rescued_jellies.duplicate()
+
+
+func _migrate_resident_records() -> void:
+	for index in range(rescued_jellies.size()):
+		var color_id := rescued_jellies[index]
+		var exists := false
+		for record in resident_records:
+			if String(record.get("color", "")) == color_id:
+				exists = true
+				break
+		if not exists:
+			_create_resident_record(color_id, index * 10)
+
+
+func _create_resident_record(color_id: String, level_idx: int) -> Dictionary:
+	var profile := CharacterCatalogLib.profile(color_id)
+	var record := {
+		"id": "%s_%d_%d" % [color_id, level_idx + 1, resident_records.size() + 1],
+		"color": color_id,
+		"name": String(profile.get("name", G.COLOR_NAMES.get(color_id, "젤리몬"))),
+		"personality": String(profile.get("personality", "다정한 친구")),
+		"trait": String(profile.get("trait", "kind")),
+		"rescued_level": level_idx + 1,
+		"rescued_at": int(Time.get_unix_time_from_system()),
+		"affection": 0,
+		"affection_date": "",
+		"affection_today": 0,
+		"accessories": [],
+		"favorite_furniture": String(profile.get("favorite_furniture", [""])[0]),
+	}
+	resident_records.append(record)
+	return record
+
+
+func get_resident_records() -> Array:
+	_migrate_resident_records()
+	return resident_records.duplicate(true)
+
+
+func add_resident_affection(resident_id: String, amount: int = 1) -> Dictionary:
+	## 방치/연속 터치로 무제한 성장하지 않도록 주민별 일일 상한을 적용한다.
+	if amount <= 0:
+		return {}
+	var today := Time.get_date_string_from_system()
+	var daily_cap := GameBalanceCatalogLib.retention("resident_affection_daily_cap", 5)
+	for record in resident_records:
+		if String(record.get("id", "")) == resident_id:
+			if String(record.get("affection_date", "")) != today:
+				record["affection_date"] = today
+				record["affection_today"] = 0
+			var earned_today := maxi(0, int(record.get("affection_today", 0)))
+			var granted := mini(amount, maxi(0, daily_cap - earned_today))
+			if granted <= 0:
+				return {"granted": 0, "capped": true, "level": get_resident_bond_level(record), "affection": int(record.get("affection", 0))}
+			var previous_level := get_resident_bond_level(record)
+			record["affection"] = maxi(0, int(record.get("affection", 0)) + granted)
+			record["affection_today"] = earned_today + granted
+			var current_level := get_resident_bond_level(record)
+			save_data()
+			return {
+				"granted": granted,
+				"capped": int(record.affection_today) >= daily_cap,
+				"level": current_level,
+				"affection": int(record.affection),
+				"level_up": current_level > previous_level,
+			}
+	return {}
+
+
+func get_resident_bond_level(record: Dictionary) -> int:
+	return MetaProgressionCatalogLib.bond_level(maxi(0, int(record.get("affection", 0))))
+
+
+func get_resident_bond_progress(record: Dictionary) -> Dictionary:
+	var affection := maxi(0, int(record.get("affection", 0)))
+	var level := MetaProgressionCatalogLib.bond_level(affection)
+	var info := MetaProgressionCatalogLib.bond_level_data(level)
+	var next_affection := MetaProgressionCatalogLib.next_bond_affection(level)
+	return {
+		"level": level,
+		"title": String(info.get("title", "친구")),
+		"affection": affection,
+		"next_affection": next_affection,
+		"maxed": next_affection < 0,
+	}
+
+
+func record_resident_interaction(first_id: String, second_id: String, interaction_id: String) -> void:
+	var pair := [first_id, second_id]
+	pair.sort()
+	var key := "%s|%s" % pair
+	var data: Dictionary = resident_relationships.get(key, {"count": 0, "last": ""})
+	data.count = int(data.get("count", 0)) + 1
+	data.last = interaction_id
+	resident_relationships[key] = data
+	save_data()
+
+
+func add_album_memory(kind: String, caption: String, residents: Array = []) -> void:
+	album_memories.push_front({"kind": kind, "caption": caption, "residents": residents.duplicate(), "created_at": int(Time.get_unix_time_from_system())})
+	var memory_limit := GameBalanceCatalogLib.retention("album_memory_limit", 30)
+	if album_memories.size() > memory_limit:
+		album_memories.resize(memory_limit)
+	save_data()
 
 
 func is_unlocked(idx: int) -> bool:

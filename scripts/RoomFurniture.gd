@@ -78,6 +78,11 @@ func _bounds() -> Rect2:
 	return Rect2(Vector2.ZERO, Vector2(max_cell) * RoomData.CELL)
 
 
+func interaction_point() -> Vector2:
+	## 방 주민이 가구를 사용하러 갈 때 바라보는 대표 지점이다.
+	return position + _bounds().get_center()
+
+
 func _round_box(rect: Rect2, fill: Color, border: Color, radius: float = 16.0, width: int = 3, shadow := true) -> void:
 	var style := StyleBoxFlat.new()
 	style.bg_color = fill

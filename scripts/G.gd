@@ -55,8 +55,7 @@ const SHAPES := {
 
 
 static func jelly_tex(c: String) -> Texture2D:
-	# 퍼즐·방·목표 UI가 모두 같은 고해상도 젤리 재질을 사용한다.
-	# 초록은 크로마키 색 손실을 막기 위해 별도 원본을 사용한다.
+	# 기존 젤리몬의 단순하고 읽기 쉬운 실루엣을 유지한다.
 	if c == "G":
 		return load("res://assets/jelly_G_v4.png")
 	if ["R", "Y", "B", "P", "O"].has(c):
@@ -65,7 +64,6 @@ static func jelly_tex(c: String) -> Texture2D:
 
 
 static func hero_tex() -> Texture2D:
-	## 메인 캐릭터 전용 고해상도 아트. 퍼즐판 젤리는 기존 색상 세트의 통일감을 유지한다.
 	return load("res://assets/jelly_R_v2.png")
 
 

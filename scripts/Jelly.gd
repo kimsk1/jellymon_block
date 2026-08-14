@@ -19,6 +19,9 @@ var frost_layers := 0
 var frost_panel: PanelContainer
 var frost_label: Label
 var seal_panel: PanelContainer
+var expression: JellyExpression
+var personality_id := ""
+var personality_state := 0
 
 
 func setup(cid: String, p_shiny: bool, p_frost_layers: int = 0) -> void:
@@ -27,7 +30,7 @@ func setup(cid: String, p_shiny: bool, p_frost_layers: int = 0) -> void:
 	frost_layers = maxi(0, p_frost_layers)
 	phase = randf() * TAU
 	sprite = Sprite2D.new()
-	sprite.texture = G.jelly_tex(cid)
+	sprite.texture = CharacterCatalog.character_texture(cid)
 	base_scale = (G.CELL * 0.94) / float(sprite.texture.get_width())
 	# PNG의 투명 여백이 비대칭이어도 실제 그림의 중심이 타일 정중앙에 오도록 보정한다.
 	var image := sprite.texture.get_image()
@@ -50,6 +53,9 @@ func setup(cid: String, p_shiny: bool, p_frost_layers: int = 0) -> void:
 	sprite.position = art_offset
 	sprite.scale = Vector2.ONE * base_scale
 	add_child(sprite)
+	expression = JellyExpression.new()
+	expression.setup(G.COLORS[cid])
+	add_child(expression)
 	if frost_layers > 0:
 		_build_frost_shell()
 	if shiny:
@@ -185,6 +191,23 @@ func _shiny_sparkle() -> void:
 	fx.sparkle(global_position + Vector2(randf_range(-24, 24), randf_range(-30, 10)), 1)
 
 
+func set_personality(value: String) -> void:
+	personality_id = value
+	if value.is_empty():
+		return
+	var symbols := {"shy":"↝", "sleepy":"Z", "playful":"↔", "lonely":"♡"}
+	_status_badge(String(symbols.get(value, "•")), G.COLORS[color_id].darkened(0.18), Vector2(9, -43))
+
+
+func show_personality_feedback(text: String) -> void:
+	if fx:
+		fx.float_text(global_position, text, Color("#fff2c7"), 22)
+	var tw := create_tween()
+	tw.tween_property(sprite, "rotation", -0.12, 0.08)
+	tw.tween_property(sprite, "rotation", 0.12, 0.08)
+	tw.tween_property(sprite, "rotation", 0.0, 0.1)
+
+
 func _process(_delta: float) -> void:
 	if absorbing:
 		if trapped:
@@ -218,6 +241,7 @@ func absorb_anim(to: Vector2) -> void:
 func trap_in(catcher: Catcher, local_target: Vector2) -> void:
 	## 젤리를 캐처의 자식으로 옮겨 블록이 계속 움직여도 내부에서 함께 따라가게 한다.
 	absorbing = true
+	expression.set_mood("panic")
 	trapped = false
 	# 블록 표면보다 위, 숫자 배지보다 아래에 보여 실제로 안에 갇힌 것처럼 보인다.
 	z_index = 3
@@ -241,6 +265,7 @@ func trap_in(catcher: Catcher, local_target: Vector2) -> void:
 func pop_trapped() -> void:
 	## 블록 내부에서 잠깐 눌렸다가 터지는 마무리 모션.
 	trapped = false
+	expression.set_mood("purified")
 	var tw := create_tween()
 	tw.set_parallel(true)
 	tw.tween_property(sprite, "scale", Vector2(base_scale * 0.82, base_scale * 0.18), 0.08).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)

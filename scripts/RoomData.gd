@@ -1,6 +1,8 @@
 class_name RoomData
 ## 젤리 아지트의 수집·성장·가구 데이터. 가구 외형은 코드로 그려 별도 에셋 없이 일관되게 표시한다.
 
+const MetaProgressionCatalogLib = preload("res://scripts/MetaProgressionCatalog.gd")
+
 const GRID_W := 8
 const GRID_H := 6
 const CELL := 76.0
@@ -149,20 +151,24 @@ static func item_unlocked(item: Dictionary, save) -> bool:
 
 
 static func growth_stage(save) -> int:
-	var total := total_stars(save)
-	if total >= 60:
-		return 3
-	if total >= 15:
-		return 2
-	return 1
+	return MetaProgressionCatalogLib.hero_stage(total_stars(save))
 
 
 static func growth_name(stage: int) -> String:
-	return ["", "말랑 씨앗", "꼬마 젤리", "별빛 젤리몬"][clampi(stage, 1, 3)]
+	return String(MetaProgressionCatalogLib.hero_stage_data(stage).get("name", "젤리몬"))
 
 
 static func next_growth_stars(stage: int) -> int:
-	return 15 if stage == 1 else (60 if stage == 2 else 150)
+	var next := MetaProgressionCatalogLib.hero_stage_data(stage + 1)
+	return int(next.get("stars", -1))
+
+
+static func max_growth_stage() -> int:
+	return MetaProgressionCatalogLib.max_hero_stage()
+
+
+static func growth_badge(stage: int) -> String:
+	return String(MetaProgressionCatalogLib.hero_stage_data(stage).get("badge", ""))
 
 
 static func default_placements() -> Array:

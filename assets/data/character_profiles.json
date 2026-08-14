@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "profiles": {
+    "R": {"name":"말랑","species":"하트 젤리","personality":"다정한 리더","trait":"kind","silhouette":"heart","greeting":"오늘도 같이 모험해요!","idle":["wave","heart","bounce"],"touch":["hug","giggle"],"favorite_furniture":["cushion_r","rug_r","bed_r"]},
+    "Y": {"name":"별콩","species":"별빛 젤리","personality":"호기심 많은 탐험가","trait":"curious","silhouette":"star","greeting":"저 반짝이는 건 뭘까?","idle":["look","sparkle","hop"],"touch":["surprise","wink"],"favorite_furniture":["lamp_y","counter_y","stage_y"]},
+    "B": {"name":"방울","species":"소다 젤리","personality":"수줍은 잠꾸러기","trait":"shy","silhouette":"drop","greeting":"조금만 더 같이 있어 줄래요?","idle":["doze","yawn","sway"],"touch":["startle","smile"],"favorite_furniture":["table_b","slide_b","fountain_b"]},
+    "G": {"name":"새롬","species":"새싹 젤리","personality":"느긋한 정원사","trait":"calm","silhouette":"sprout","greeting":"천천히 자라도 괜찮아요.","idle":["sprout","breathe","water"],"touch":["nod","leaf"],"favorite_furniture":["shelf_g","plant_g","garden_g"]},
+    "P": {"name":"포포","species":"포도 젤리","personality":"장난꾸러기 마술사","trait":"playful","silhouette":"ears","greeting":"깜짝! 놀랐지?","idle":["hide","prank","spin"],"touch":["peek","laugh"],"favorite_furniture":["sofa_p","piano_p","castle_p"]},
+    "O": {"name":"귤링","species":"귤꽃 젤리","personality":"활발한 요리사","trait":"energetic","silhouette":"flower","greeting":"간식 먹고 힘내자!","idle":["cook","dash","tumble"],"touch":["cheer","snack"],"favorite_furniture":["bench_o","tea_o"]}
+  },
+  "interactions": [
+    {"id":"greeting","actors":2,"text":"둘이 반갑게 인사해요!"},
+    {"id":"nap_together","traits":["shy","calm"],"text":"포근하게 낮잠을 자요."},
+    {"id":"chase","traits":["playful","energetic"],"text":"장난치며 방을 빙글빙글 달려요!"},
+    {"id":"comfort","traits":["kind","shy"],"text":"말랑이가 수줍은 친구를 안심시켜요."},
+    {"id":"explore","traits":["curious","energetic"],"text":"새로운 보물을 함께 찾아요!"},
+    {"id":"garden","traits":["calm","kind"],"text":"새싹을 함께 돌보고 있어요."},
+    {"id":"magic","traits":["playful","curious"],"text":"작은 별빛 마술을 보여줘요!"},
+    {"id":"tea_party","actors":3,"text":"주민들이 조촐한 티파티를 열었어요."},
+    {"id":"dance","actors":3,"text":"음악에 맞춰 말랑말랑 춤춰요!"},
+    {"id":"group_photo","actors":5,"text":"모두 모여 기념사진 포즈!"}
+  ],
+  "personality_gimmicks": {
+    "shy":{"label":"겁쟁이","behavior":"evade_once"},
+    "sleepy":{"label":"잠꾸러기","behavior":"wake_twice"},
+    "playful":{"label":"장난꾸러기","behavior":"swap_neighbor"},
+    "lonely":{"label":"외로움","behavior":"capture_pair"}
+  }
+}

@@ -366,6 +366,38 @@ func show_result(stars_n: int, score: int, stardust_reward: int, stardust_total:
 	mascot_tween.tween_property(mascot, "rotation", -0.08, 0.22).set_trans(Tween.TRANS_SINE)
 	mascot_tween.tween_property(mascot, "rotation", 0.08, 0.22).set_trans(Tween.TRANS_SINE)
 	v.add_child(_title_label("클리어!", Color(1.0, 0.5, 0.35)))
+	var new_resident: Dictionary = game.main.last_new_resident
+	if not new_resident.is_empty():
+		var resident_card := PanelContainer.new()
+		resident_card.custom_minimum_size = Vector2(430, 118)
+		resident_card.add_theme_stylebox_override("panel", ArtDirection.panel(Color("#fff0f7"), G.COLORS[String(new_resident.get("color", "R"))].darkened(0.2), 24, 0.3, 4))
+		var resident_row := HBoxContainer.new()
+		resident_card.add_child(resident_row)
+		var portrait := TextureRect.new()
+		portrait.texture = CharacterCatalog.character_texture(String(new_resident.get("color", "R")))
+		portrait.custom_minimum_size = Vector2(105, 100)
+		portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		resident_row.add_child(portrait)
+		var reveal := VBoxContainer.new()
+		reveal.alignment = BoxContainer.ALIGNMENT_CENTER
+		resident_row.add_child(reveal)
+		var joined := Label.new()
+		joined.text = "새 주민이 찾아왔어요!"
+		joined.add_theme_font_size_override("font_size", 18)
+		joined.add_theme_color_override("font_color", Color("#b45a75"))
+		reveal.add_child(joined)
+		var resident_name := Label.new()
+		resident_name.text = "%s · %s" % [String(new_resident.get("name", "젤리몬")), String(new_resident.get("personality", "다정한 친구"))]
+		resident_name.add_theme_font_size_override("font_size", 23)
+		resident_name.add_theme_color_override("font_color", Color("#57386a"))
+		reveal.add_child(resident_name)
+		var origin := Label.new()
+		origin.text = "LEVEL %d에서 구조 · 아지트 입주 완료" % int(new_resident.get("rescued_level", game.level_idx + 1))
+		origin.add_theme_font_size_override("font_size", 15)
+		origin.add_theme_color_override("font_color", Color("#846f8c"))
+		reveal.add_child(origin)
+		v.add_child(resident_card)
 	# 별 3개 (순차 팝)
 	var row := HBoxContainer.new()
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -455,7 +487,7 @@ func _request_clear_double_reward() -> void:
 		clear_double_button.text = "2배 보상 지급 중..."
 	else:
 		clear_double_button.text = "광고 재생 중..."
-	game.main.request_rewarded_ad(_finish_clear_double_reward, _restore_clear_double_button)
+	game.main.request_rewarded_ad(_finish_clear_double_reward, _restore_clear_double_button, "clear_reward_double")
 
 
 func _finish_clear_double_reward() -> void:
@@ -464,6 +496,8 @@ func _finish_clear_double_reward() -> void:
 	if not game.main.save.grant_stardust(clear_base_reward):
 		_restore_clear_double_button()
 		return
+	if game.main.analytics:
+		game.main.analytics.track("currency_source", {"currency": "stardust", "amount": clear_base_reward, "source": "clear_reward_double"})
 	clear_bonus_claimed = true
 	clear_double_button.text = "✓ 2배 보상 받음"
 	_set_reward_complete_style(clear_double_button)

@@ -6,6 +6,8 @@ class_name Game
 ##   · 다른 색 젤리는 통과 불가(장애물), 캐처끼리도 통과 불가, 벽 통과 불가
 ##   · 모든 젤리를 흡수하면 클리어
 
+const GameBalanceCatalogLib = preload("res://scripts/GameBalanceCatalog.gd")
+
 var main = null
 var audio: AudioMgr
 var level_idx := 0
@@ -34,6 +36,7 @@ var switch_at := {}          # 구조 스위치 타일
 var rescue_switch_active := false
 var key_unlock_at := {}      # 열쇠 젤리 셀 -> 잠금 캐처 인덱스 배열
 var locked_catcher_indices := {}
+var personality_spawn_count := 0
 
 var grabbed: Catcher = null
 var grab_offset := Vector2.ZERO
@@ -186,6 +189,13 @@ func _spawn_jelly(cid: String, cell: Vector2i) -> void:
 	var j := Jelly.new()
 	j.fx = fx
 	j.setup(cid, randf() < 0.02, int(frozen_at.get(cell, 0)))
+	# 51레벨부터 성격 기믹을 점진적으로 섞는다. 레벨당 수를 제한해
+	# 기존 색/경로 퍼즐의 해답을 망가뜨리지 않고 읽을 수 있는 밀도로 유지한다.
+	var personality_limit := clampi(1 + (level_idx - 50) / 18, 1, 3) if level_idx >= 50 else 0
+	if personality_spawn_count < personality_limit and posmod(cell.x * 3 + cell.y * 5 + level_idx, 7) == 0:
+		var traits := ["shy", "sleepy", "playful", "lonely"]
+		j.set_personality(traits[posmod(level_idx / 10 + personality_spawn_count, traits.size())])
+		personality_spawn_count += 1
 	if chain_at.has(cell):
 		j.set_chain_badge(int(chain_at[cell].index) + 1)
 	if sealed_at.has(cell):
@@ -443,6 +453,8 @@ func _try_step(c: Catcher, dir: Vector2i) -> bool:
 	var org: Vector2i = c.origin_cell + dir
 	if not _can_place(c, org):
 		return false
+	if _trigger_moving_personality(c, org):
+		return false
 	var from_center := c.center_px()
 	for off in c.cells:
 		catcher_at.erase(c.origin_cell + off)
@@ -454,6 +466,61 @@ func _try_step(c: Catcher, dir: Vector2i) -> bool:
 	fx.move_streak(from_center, from_center + Vector2(dir) * G.CELL, G.COLORS[c.color_id])
 	queue_redraw()
 	return true
+
+
+func _target_footprint(c: Catcher, org: Vector2i) -> Dictionary:
+	var footprint := {}
+	for off in c.cells:
+		footprint[org + off] = true
+	return footprint
+
+
+func _personality_destination(cell: Vector2i, forbidden: Dictionary) -> Vector2i:
+	for dir in [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]:
+		var target: Vector2i = cell + dir
+		if target.x < 0 or target.y < 0 or target.x >= cols or target.y >= rows:
+			continue
+		if forbidden.has(target) or walls.has(target) or voids.has(target) or seal_gates.has(target) or jelly_at.has(target) or catcher_at.has(target):
+			continue
+		return target
+	return cell
+
+
+func _move_personality_jelly(j: Jelly, from: Vector2i, to: Vector2i, text: String) -> void:
+	jelly_at.erase(from)
+	jelly_at[to] = j
+	j.cell = to
+	j.personality_state = 1
+	j.show_personality_feedback(text)
+	j.create_tween().tween_property(j, "position", cell_pos(to), 0.24).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+
+func _trigger_moving_personality(c: Catcher, org: Vector2i) -> bool:
+	var footprint := _target_footprint(c, org)
+	for cell in footprint:
+		var j = jelly_at.get(cell)
+		if j == null or j.color_id != c.color_id or j.personality_state > 0:
+			continue
+		if j.personality_id == "shy":
+			var target := _personality_destination(cell, footprint)
+			if target != cell:
+				_move_personality_jelly(j, cell, target, "앗, 부끄러워!")
+				return true
+		elif j.personality_id == "playful":
+			for dir in [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]:
+				var other_cell: Vector2i = cell + dir
+				var other = jelly_at.get(other_cell)
+				if other != null and not footprint.has(other_cell) and not other.absorbing:
+					jelly_at[cell] = other
+					jelly_at[other_cell] = j
+					j.cell = other_cell
+					other.cell = cell
+					j.personality_state = 1
+					j.show_personality_feedback("자리 바꾸기!")
+					j.create_tween().tween_property(j, "position", cell_pos(other_cell), 0.22).set_trans(Tween.TRANS_BACK)
+					other.create_tween().tween_property(other, "position", cell_pos(cell), 0.22).set_trans(Tween.TRANS_BACK)
+					return true
+	return false
 
 
 # ────────────────────────── 메인 루프 ──────────────────────────
@@ -592,6 +659,8 @@ func _absorb_footprint(c: Catcher) -> void:
 		if j != null and not j.absorbing and j.color_id == c.color_id:
 			if not _special_jelly_ready(cl):
 				continue
+			if not _personality_jelly_ready(j, cl):
+				continue
 			if j.hit_frost():
 				cracked += 1
 				frozen_at[cl] = j.frost_layers
@@ -609,6 +678,24 @@ func _absorb_footprint(c: Catcher) -> void:
 	if eaten + cracked > 0:
 		if eaten > 0:
 			c.gulp()
+
+
+func _personality_jelly_ready(j: Jelly, cell: Vector2i) -> bool:
+	if j.personality_id == "sleepy" and j.personality_state == 0:
+		j.personality_state = 1
+		j.show_personality_feedback("Zzz… 한 번 더!")
+		return false
+	if j.personality_id == "lonely" and j.personality_state == 0:
+		for dir in [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]:
+			var friend = jelly_at.get(cell + dir)
+			if friend != null and friend != j and not friend.absorbing:
+				j.personality_state = 1
+				return true
+		# 막다른 해답이 생기지 않게 첫 접촉 뒤에는 혼자서도 용기를 내게 한다.
+		j.personality_state = 1
+		j.show_personality_feedback("친구가 필요해…")
+		return false
+	return true
 
 
 func _special_jelly_ready(cell: Vector2i) -> bool:
@@ -736,6 +823,8 @@ func _clear_level() -> void:
 	# 보상을 최대 1개로 제한한다. 이미 받은 단계는 기존처럼 다시 지급하지 않는다.
 	var reward_cap := 1 if continued_after_fail else -1
 	var stardust_reward: int = main.on_level_finished(level_idx, stars_n, true, energy_reserved, reward_cap, elapsed_play_time)
+	if main.analytics:
+		main.analytics.track("level_clear", {"level": level_idx + 1, "stars": stars_n, "elapsed_seconds": snappedf(elapsed_play_time, 0.01), "stardust_reward": stardust_reward, "continued": continued_after_fail})
 	energy_reserved = false
 	await get_tree().create_timer(1.3).timeout
 	var has_next := level_idx + 1 < Levels.LEVELS.size()
@@ -773,6 +862,8 @@ func _fail() -> void:
 	_release()
 	audio.play("fail")
 	G.haptic(25)
+	if main.analytics:
+		main.analytics.track("level_fail", {"level": level_idx + 1, "reason": "time_out", "elapsed_seconds": snappedf(elapsed_play_time, 0.01), "continued": continued_after_fail})
 	for j in jellies:
 		if is_instance_valid(j) and not j.absorbing:
 			j.sad()
@@ -787,13 +878,16 @@ func _fail() -> void:
 
 
 func _continue_with_stardust() -> bool:
-	const CONTINUE_COST := 20
+	var continue_cost: int = GameBalanceCatalogLib.economy("continue_stardust_cost", 20)
 	# 한 번 이어서 플레이한 판에서는 다시 시간이 끝나도 두 번째 재시도를 허용하지 않는다.
 	# 비용 결제보다 먼저 검사해 중복 입력이나 두 번째 실패에서 별가루가 빠지지 않게 한다.
 	if state != "fail" or continued_after_fail:
 		return false
-	if not main.save.spend_stardust(CONTINUE_COST):
+	if not main.save.spend_stardust(continue_cost):
 		return false
+	if main.analytics:
+		main.analytics.track("level_continue", {"level": level_idx + 1, "cost": continue_cost})
+		main.analytics.track("currency_sink", {"currency": "stardust", "amount": continue_cost, "sink": "level_continue"})
 	for j in jellies:
 		if is_instance_valid(j) and not j.absorbing:
 			j.revive()

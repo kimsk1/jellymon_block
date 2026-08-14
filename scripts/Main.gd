@@ -6,15 +6,21 @@ const JellyDexCatalogLib = preload("res://scripts/JellyDexCatalog.gd")
 const LiveMessageCatalogLib = preload("res://scripts/LiveMessageCatalog.gd")
 const LiveProgressionCatalogLib = preload("res://scripts/LiveProgressionCatalog.gd")
 const PlatformServiceLib = preload("res://scripts/PlatformService.gd")
+const CharacterCatalogLib = preload("res://scripts/CharacterCatalog.gd")
+const GameBalanceCatalogLib = preload("res://scripts/GameBalanceCatalog.gd")
+const MetaProgressionCatalogLib = preload("res://scripts/MetaProgressionCatalog.gd")
+const AnalyticsServiceLib = preload("res://scripts/AnalyticsService.gd")
 
 signal rewarded_ad_requested(on_reward: Callable, on_unavailable: Callable)
 
 var audio: AudioMgr
 var platform: Node
+var analytics: Node
 var save := SaveGame.new()
 var current_screen: Node = null
 var game: Game = null
 var last_furniture_reward: Dictionary = {}
+var last_new_resident: Dictionary = {}
 
 
 func _ready() -> void:
@@ -28,6 +34,12 @@ func _ready() -> void:
 	level_errors.append_array(JellyDexCatalogLib.validate())
 	level_errors.append_array(LiveMessageCatalogLib.validate())
 	level_errors.append_array(LiveProgressionCatalogLib.validate())
+	level_errors.append_array(CharacterCatalogLib.validate())
+	level_errors.append_array(GameBalanceCatalogLib.validate())
+	level_errors.append_array(MetaProgressionCatalogLib.validate())
+	level_errors.append_array(AnalyticsServiceLib.validate_schema())
+	if GameBalanceCatalogLib.economy("max_energy") != SaveGame.MAX_ENERGY or GameBalanceCatalogLib.economy("energy_regen_seconds") != SaveGame.ENERGY_REGEN_SECONDS:
+		level_errors.append("게임 밸런스 JSON과 하트 상수가 일치하지 않습니다")
 	if SaveGame.calculate_stardust_reward(0, 1) != 1:
 		level_errors.append("별가루 보상 오류: 0성→1성")
 	if SaveGame.calculate_stardust_reward(1, 3) != 5:
@@ -114,6 +126,27 @@ func _ready() -> void:
 		live_test_save.record_weekly_action(String(mission.get("id", "")), int(mission.get("target", 0)))
 	if live_test_save.claim_weekly_reward().is_empty() or not live_test_save.claim_weekly_reward().is_empty():
 		level_errors.append("주간 보상 수령/중복 차단 오류")
+	if MetaProgressionCatalogLib.hero_stage(0) != 1 or MetaProgressionCatalogLib.hero_stage(150) != 5 or MetaProgressionCatalogLib.hero_stage(300) != 7:
+		level_errors.append("대표 젤리몬 장기 성장 단계 오류")
+	var bond_test_save := SaveGame.new()
+	bond_test_save.persistence_enabled = false
+	bond_test_save.register_rescued_jelly(0)
+	var bond_records := bond_test_save.get_resident_records()
+	if bond_records.is_empty():
+		level_errors.append("주민 친밀도 테스트용 주민 생성 오류")
+	else:
+		var bond_id := String(bond_records[0].get("id", ""))
+		var first_bond_gain := bond_test_save.add_resident_affection(bond_id, 99)
+		var capped_bond_gain := bond_test_save.add_resident_affection(bond_id, 1)
+		var updated_bond: Dictionary = bond_test_save.get_resident_records()[0]
+		if int(first_bond_gain.get("granted", 0)) != GameBalanceCatalogLib.retention("resident_affection_daily_cap", 5) or int(capped_bond_gain.get("granted", -1)) != 0 or int(updated_bond.get("affection", 0)) != 5:
+			level_errors.append("주민 친밀도 일일 상한 오류")
+	var analytics_test := AnalyticsServiceLib.new()
+	analytics_test.initialize(false)
+	if not analytics_test.track("screen_view", {"screen": "validation"}):
+		level_errors.append("분석 이벤트 기록 오류")
+	analytics_test.flush()
+	analytics_test.free()
 	if not level_errors.is_empty():
 		for message in level_errors:
 			push_error("[level validation] " + message)
@@ -137,6 +170,10 @@ func _ready() -> void:
 	platform = PlatformServiceLib.new()
 	add_child(platform)
 	platform.initialize()
+	analytics = AnalyticsServiceLib.new()
+	add_child(analytics)
+	analytics.initialize(DisplayServer.get_name() != "headless")
+	analytics.track("session_start", {"build": "debug" if OS.is_debug_build() else "release", "platform": OS.get_name()})
 	# 자동 QA는 메모리에서만 진행해 개발자의 실제 플레이 계정을 오염시키지 않는다.
 	if OS.get_cmdline_user_args().has("--shots") or OS.get_cmdline_user_args().has("--shot-room-refresh") or OS.get_cmdline_user_args().has("--shot-home-menu") or OS.get_cmdline_user_args().has("--shot-room-edit") or OS.get_cmdline_user_args().has("--shot-level-39") or OS.get_cmdline_user_args().has("--shot-level-51") or OS.get_cmdline_user_args().has("--shot-late-gimmicks") or DisplayServer.get_name() == "headless":
 		save.persistence_enabled = false
@@ -180,6 +217,8 @@ func _ready() -> void:
 		_headless_late_play_test()
 	elif OS.get_cmdline_user_args().has("--validate-memory"):
 		_headless_memory_stress_test()
+	elif OS.get_cmdline_user_args().has("--validate-characters"):
+		_headless_character_system_test()
 	elif DisplayServer.get_name() == "headless":
 		_headless_smoke_test()
 
@@ -197,6 +236,8 @@ func show_title() -> void:
 	t.main = self
 	add_child(t)
 	current_screen = t
+	if analytics:
+		analytics.track("screen_view", {"screen": "home"})
 
 
 func show_map(skip_pending_story: bool = false) -> void:
@@ -213,6 +254,8 @@ func show_map(skip_pending_story: bool = false) -> void:
 	m.main = self
 	add_child(m)
 	current_screen = m
+	if analytics:
+		analytics.track("screen_view", {"screen": "level_map"})
 
 
 func show_story(sequence: Dictionary, on_finished: Callable) -> void:
@@ -280,6 +323,8 @@ func start_level(idx: int, bypass_energy: bool = false, skip_story: bool = false
 	add_child(g)
 	current_screen = g
 	game = g
+	if analytics:
+		analytics.track("level_start", {"level": idx + 1, "energy": save.get_energy(), "previous_stars": save.get_stars(idx)})
 
 
 func play_chapter_end_if_needed(level_idx: int, destination: Callable) -> bool:
@@ -298,6 +343,7 @@ func play_chapter_end_if_needed(level_idx: int, destination: Callable) -> bool:
 func on_level_finished(idx: int, stars: int, cleared: bool, refund_reserved_energy: bool = false, reward_cap: int = -1, clear_time: float = 0.0) -> int:
 	var stardust_reward := 0
 	last_furniture_reward = {}
+	last_new_resident = {}
 	if cleared:
 		save.record_daily_action("clear")
 		save.record_weekly_action("clear")
@@ -305,8 +351,13 @@ func on_level_finished(idx: int, stars: int, cleared: bool, refund_reserved_ener
 			save.record_clear_time(idx, clear_time)
 		var first_clear := save.get_stars(idx) == 0
 		stardust_reward = save.award_stars(idx, stars, reward_cap)
+		if analytics and stardust_reward > 0:
+			analytics.track("currency_source", {"currency": "stardust", "amount": stardust_reward, "source": "level_star_reward"})
 		if first_clear:
-			save.register_rescued_jelly(idx)
+			if save.register_rescued_jelly(idx):
+				var records := save.get_resident_records()
+				if not records.is_empty():
+					last_new_resident = records.back()
 			last_furniture_reward = save.claim_level_furniture_reward(idx + 1)
 		if refund_reserved_energy:
 			save.refund_energy()
@@ -318,18 +369,32 @@ func on_level_finished(idx: int, stars: int, cleared: bool, refund_reserved_ener
 	return stardust_reward
 
 
-func request_rewarded_ad(on_reward: Callable, on_unavailable: Callable = Callable()) -> void:
+func request_rewarded_ad(on_reward: Callable, on_unavailable: Callable = Callable(), placement: String = "unknown") -> void:
 	## 광고 제거 보유자는 광고 없이 즉시 완료한다.
+	if analytics:
+		analytics.track("rewarded_ad_offer", {"placement": placement})
+	var rewarded := func():
+		if analytics:
+			analytics.track("rewarded_ad_result", {"placement": placement, "result": "completed"})
+		if on_reward.is_valid():
+			on_reward.call()
+	var unavailable := func():
+		if analytics:
+			analytics.track("rewarded_ad_result", {"placement": placement, "result": "unavailable"})
+		if on_unavailable.is_valid():
+			on_unavailable.call()
 	if save.has_removed_ads():
+		if analytics:
+			analytics.track("rewarded_ad_result", {"placement": placement, "result": "ad_free_entitlement"})
 		if on_reward.is_valid():
 			on_reward.call_deferred()
 		return
 	if platform:
-		platform.show_rewarded_ad(on_reward, on_unavailable)
+		platform.show_rewarded_ad(rewarded, unavailable)
 	elif not get_signal_connection_list("rewarded_ad_requested").is_empty():
-		rewarded_ad_requested.emit(on_reward, on_unavailable)
+		rewarded_ad_requested.emit(rewarded, unavailable)
 	elif on_unavailable.is_valid():
-		on_unavailable.call_deferred()
+		unavailable.call_deferred()
 
 
 func _screenshot_run() -> void:
@@ -699,6 +764,26 @@ func _headless_smoke_test() -> void:
 		await get_tree().create_timer(1.0).timeout
 	print("[smoke] done")
 	get_tree().quit(1 if smoke_failed else 0)
+
+
+func _headless_character_system_test() -> void:
+	var errors := CharacterCatalogLib.validate()
+	var mock := SaveGame.new()
+	mock.persistence_enabled = false
+	for chapter in range(6):
+		if not mock.register_rescued_jelly(chapter * 10):
+			errors.append("주민 등록 실패: chapter %d" % (chapter + 1))
+	var residents := mock.get_resident_records()
+	if residents.size() != 6:
+		errors.append("주민 수 오류: %d/6" % residents.size())
+	var colors: Array = residents.map(func(record): return String(record.get("color", "")))
+	for color_id in ["R", "Y", "B", "G", "P", "O"]:
+		if not colors.has(color_id):
+			errors.append("주민 색 누락: %s" % color_id)
+	print("[character validation] residents=", residents.size(), " interactions=", CharacterCatalogLib.interactions().size(), " errors=", errors.size())
+	for message in errors:
+		push_error("[character validation] " + message)
+	get_tree().quit(0 if errors.is_empty() else 1)
 
 
 func _memory_snapshot() -> Dictionary:

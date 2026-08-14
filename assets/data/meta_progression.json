@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "hero_growth": [
+    {"stage": 1, "stars": 0, "name": "말랑 씨앗", "badge": ""},
+    {"stage": 2, "stars": 15, "name": "꼬마 젤리", "badge": "✦"},
+    {"stage": 3, "stars": 45, "name": "반짝 젤리", "badge": "★"},
+    {"stage": 4, "stars": 90, "name": "구조대 젤리", "badge": "♛"},
+    {"stage": 5, "stars": 150, "name": "마을 수호자", "badge": "♛"},
+    {"stage": 6, "stars": 225, "name": "별빛 대장", "badge": "✦"},
+    {"stage": 7, "stars": 300, "name": "전설의 젤리몬", "badge": "★"}
+  ],
+  "resident_bond": [
+    {"level": 1, "affection": 0, "title": "새 친구"},
+    {"level": 2, "affection": 3, "title": "낯익은 얼굴"},
+    {"level": 3, "affection": 8, "title": "놀이 친구", "unlock": "special_greeting"},
+    {"level": 4, "affection": 15, "title": "마음이 통하는 사이"},
+    {"level": 5, "affection": 25, "title": "소중한 친구", "unlock": "memory_scene_1"},
+    {"level": 6, "affection": 40, "title": "단짝"},
+    {"level": 7, "affection": 60, "title": "믿음직한 동료", "unlock": "special_pose"},
+    {"level": 8, "affection": 85, "title": "가족 같은 친구"},
+    {"level": 9, "affection": 115, "title": "영원한 단짝", "unlock": "memory_scene_2"},
+    {"level": 10, "affection": 150, "title": "마음의 별", "unlock": "bond_badge"}
+  ]
+}

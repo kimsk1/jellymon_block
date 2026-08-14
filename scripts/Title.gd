@@ -35,6 +35,9 @@ var nickname_input: LineEdit
 var nickname_error: Label
 var nickname_confirm_button: Button
 var _last_home_energy_second := -1
+var resident_nodes: Array[Sprite2D] = []
+var resident_home_positions := {}
+var resident_action_timer: Timer
 var placements: Array = []
 var furniture_nodes: Array[RoomFurniture] = []
 var edit_mode := false
@@ -66,6 +69,7 @@ func _ready() -> void:
 	_build_header()
 	_build_navigation()
 	_refresh_room()
+	_start_resident_life()
 	# 최초 닉네임 설정을 출석 안내보다 먼저 처리한다. 자동 QA에서는 기존 화면 캡처를 가리지 않는다.
 	var interactive := not OS.get_cmdline_user_args().has("--shots") and not OS.get_cmdline_user_args().has("--shot-room-refresh") and not OS.get_cmdline_user_args().has("--shot-room-edit") and not OS.get_cmdline_user_args().has("--shot-level-51") and DisplayServer.get_name() != "headless"
 	if interactive and not main.save.has_nickname():
@@ -228,7 +232,7 @@ func _build_header() -> void:
 	info.add_child(header_name_label)
 	var stars := RoomData.total_stars(main.save)
 	var progress := Label.new()
-	progress.text = "%s · 성장 별 %d / %d" % [RoomData.growth_name(stage), stars, RoomData.next_growth_stars(stage)] if stage < 3 else "%s · 별 %d" % [RoomData.growth_name(stage), stars]
+	progress.text = "%s · 성장 별 %d / %d" % [RoomData.growth_name(stage), stars, RoomData.next_growth_stars(stage)] if stage < RoomData.max_growth_stage() else "%s · 별 %d" % [RoomData.growth_name(stage), stars]
 	progress.add_theme_font_size_override("font_size", 19)
 	progress.add_theme_color_override("font_color", Color("#8d6b98"))
 	info.add_child(progress)
@@ -714,6 +718,8 @@ func _close_purchase_confirmation() -> void:
 
 
 func _purchase_shop_item(item: Dictionary, buy_button: Button) -> void:
+	var analytics_item_id := String(item.get("id", item.get("furniture_id", "unknown")))
+	var analytics_item_kind := String(item.get("type", "unknown"))
 	if String(item.get("type", "")) == "furniture":
 		var furniture_id := String(item.get("furniture_id", ""))
 		var price := RoomData.furniture_price(furniture_id)
@@ -725,7 +731,12 @@ func _purchase_shop_item(item: Dictionary, buy_button: Button) -> void:
 			return
 		if not main.save.purchase_furniture(furniture_id, price):
 			shop_status_label.text = "가구를 구매하지 못했어요."
+			if main.analytics:
+				main.analytics.track("shop_purchase", {"item_id": analytics_item_id, "kind": analytics_item_kind, "result": "failed"})
 			return
+		if main.analytics:
+			main.analytics.track("shop_purchase", {"item_id": analytics_item_id, "kind": analytics_item_kind, "result": "success"})
+			main.analytics.track("currency_sink", {"currency": "stardust", "amount": price, "sink": "furniture"})
 		main.audio.play("shiny", 1.05)
 		G.haptic(18)
 		stardust_label.text = "★ 별가루 %d" % main.save.get_stardust()
@@ -736,10 +747,16 @@ func _purchase_shop_item(item: Dictionary, buy_button: Button) -> void:
 		return
 	if not OS.is_debug_build():
 		shop_status_label.text = "플랫폼 결제 공급자를 연결한 뒤 구매할 수 있어요."
+		if main.analytics:
+			main.analytics.track("shop_purchase", {"item_id": analytics_item_id, "kind": analytics_item_kind, "result": "provider_unavailable"})
 		return
 	if not main.save.apply_verified_shop_item(item):
 		shop_status_label.text = "이미 구매했거나 지급할 수 없는 상품이에요."
+		if main.analytics:
+			main.analytics.track("shop_purchase", {"item_id": analytics_item_id, "kind": analytics_item_kind, "result": "failed"})
 		return
+	if main.analytics:
+		main.analytics.track("shop_purchase", {"item_id": analytics_item_id, "kind": analytics_item_kind, "result": "debug_success"})
 	main.audio.play("shiny", 1.05)
 	G.haptic(18)
 	stardust_label.text = "★ 별가루 %d" % main.save.get_stardust()
@@ -1518,8 +1535,8 @@ func _next_level_index() -> int:
 
 func _next_resident_text() -> String:
 	var count: int = main.save.get_rescued_jellies().size()
-	if count >= 5:
-		return "주민 5/5 · 모두 구조했어요"
+	if count >= 6:
+		return "주민 6/6 · 모두 구조했어요"
 	var target_level := count * 10 + 1
 	return "다음 친구 · LEVEL %d에서 만나요" % target_level
 
@@ -1527,7 +1544,7 @@ func _next_resident_text() -> String:
 func _growth_goal_text() -> String:
 	var stage := RoomData.growth_stage(main.save)
 	var stars := RoomData.total_stars(main.save)
-	if stage >= 3:
+	if stage >= RoomData.max_growth_stage():
 		return "최종 성장 완료 · 별 %d" % stars
 	var target := RoomData.next_growth_stars(stage)
 	return "다음 성장까지 ★ %d" % maxi(0, target - stars)
@@ -1610,28 +1627,31 @@ func _refresh_furniture() -> void:
 
 func _refresh_characters() -> void:
 	_clear_layer(character_layer)
+	resident_nodes.clear()
+	resident_home_positions.clear()
 	var stage := RoomData.growth_stage(main.save)
 	var aura := Sprite2D.new()
 	aura.texture = load("res://assets/fx/soft.png")
 	aura.position = Vector2(360, 610)
-	var aura_size := 210.0 + stage * 42.0
+	var aura_size := 210.0 + minf(stage, 7) * 20.0
 	aura.scale = Vector2.ONE * aura_size / float(aura.texture.get_width())
-	aura.modulate = Color(1.0, 0.72, 0.88, 0.24 + stage * 0.08)
+	aura.modulate = Color(1.0, 0.72, 0.88, minf(0.66, 0.24 + stage * 0.055))
 	character_layer.add_child(aura)
 	var hero := Sprite2D.new()
 	hero.name = "Hero"
 	hero.texture = G.hero_tex()
 	hero.position = Vector2(360, 615)
-	var hero_size: float = [0.0, 148.0, 182.0, 220.0][stage]
+	var hero_size: float = minf(220.0, 146.0 + float(stage - 1) * 13.0)
 	hero.scale = Vector2.ONE * hero_size / float(hero.texture.get_width())
 	character_layer.add_child(hero)
 	var bounce := hero.create_tween().set_loops()
 	bounce.tween_property(hero, "scale", hero.scale * Vector2(1.04, 0.96), 0.8).set_trans(Tween.TRANS_SINE)
 	bounce.tween_property(hero, "scale", hero.scale * Vector2(0.97, 1.04), 0.8).set_trans(Tween.TRANS_SINE)
-	if stage >= 2:
+	var growth_badge := RoomData.growth_badge(stage)
+	if not growth_badge.is_empty():
 		var badge := Label.new()
-		badge.text = "✦" if stage == 2 else "♛"
-		badge.position = Vector2(329, 475 if stage == 3 else 500)
+		badge.text = growth_badge
+		badge.position = Vector2(329, 492 - mini(stage, 7) * 4)
 		badge.size = Vector2(64, 64)
 		badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		badge.add_theme_font_size_override("font_size", 48)
@@ -1640,20 +1660,157 @@ func _refresh_characters() -> void:
 		badge.add_theme_constant_override("outline_size", 6)
 		badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		character_layer.add_child(badge)
-	var spots := [Vector2(222, 565), Vector2(500, 545), Vector2(190, 742), Vector2(530, 728), Vector2(360, 785)]
-	var residents: Array[String] = main.save.get_rescued_jellies()
-	for i in range(mini(5, residents.size())):
+	var spots := [Vector2(222, 565), Vector2(500, 545), Vector2(170, 725), Vector2(550, 710), Vector2(295, 790), Vector2(440, 790)]
+	var residents: Array = main.save.get_resident_records()
+	for i in range(mini(6, residents.size())):
+		var record: Dictionary = residents[i]
+		var color_id := String(record.get("color", "R"))
 		var resident := Sprite2D.new()
-		resident.texture = G.hero_tex() if residents[i] == "R" else G.jelly_tex(residents[i])
+		resident.name = "Resident_%s" % String(record.get("id", i))
+		resident.texture = CharacterCatalog.character_texture(color_id)
 		resident.position = spots[i]
 		resident.scale = Vector2.ONE * 82.0 / float(resident.texture.get_width())
 		resident.z_index = 2 + i
+		resident.set_meta("record", record)
 		character_layer.add_child(resident)
-		var home := resident.position
-		var move := resident.create_tween().set_loops()
-		move.tween_interval(i * 0.15)
-		move.tween_property(resident, "position", home + Vector2(13 if i % 2 else -13, -12), 0.65).set_trans(Tween.TRANS_SINE)
-		move.tween_property(resident, "position", home + Vector2(-10 if i % 2 else 10, 2), 0.75).set_trans(Tween.TRANS_SINE)
+		resident_nodes.append(resident)
+		resident_home_positions[resident.get_instance_id()] = resident.position
+		_play_resident_idle(resident, String(record.get("trait", "kind")), i % 3)
+
+
+func _start_resident_life() -> void:
+	resident_action_timer = Timer.new()
+	resident_action_timer.wait_time = 5.4
+	resident_action_timer.autostart = true
+	resident_action_timer.timeout.connect(_play_random_resident_interaction)
+	add_child(resident_action_timer)
+
+
+func _play_resident_idle(resident: Sprite2D, trait_id: String, variant_index: int) -> void:
+	if not is_instance_valid(resident):
+		return
+	var home: Vector2 = resident_home_positions.get(resident.get_instance_id(), resident.position)
+	resident.position = home
+	resident.rotation = 0.0
+	resident.modulate.a = 1.0
+	var base_scale := Vector2.ONE * 82.0 / float(resident.texture.get_width())
+	resident.scale = base_scale
+	var tw := resident.create_tween()
+	match variant_index % 3:
+		0: # 인사 점프
+			tw.tween_property(resident, "position", home + Vector2(0, -16 if trait_id == "energetic" else -10), 0.24).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+			tw.tween_property(resident, "position", home, 0.34).set_trans(Tween.TRANS_BOUNCE)
+		1: # 말랑 호흡
+			tw.tween_property(resident, "scale", base_scale * Vector2(1.08, 0.92), 0.32).set_trans(Tween.TRANS_SINE)
+			tw.tween_property(resident, "scale", base_scale * Vector2(0.95, 1.06), 0.32).set_trans(Tween.TRANS_SINE)
+			tw.tween_property(resident, "scale", base_scale, 0.24)
+		_: # 좌우 호기심
+			var angle := 0.14 if trait_id == "playful" else 0.09
+			tw.tween_property(resident, "rotation", -angle, 0.22).set_trans(Tween.TRANS_BACK)
+			tw.tween_property(resident, "rotation", angle, 0.28).set_trans(Tween.TRANS_BACK)
+			tw.tween_property(resident, "rotation", 0.0, 0.2)
+
+
+func _speech_bubble(text: String, position_at: Vector2) -> void:
+	var bubble := Label.new()
+	bubble.text = text
+	bubble.position = position_at - Vector2(105, 78)
+	bubble.size = Vector2(210, 58)
+	bubble.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	bubble.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	bubble.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	bubble.add_theme_font_size_override("font_size", 15)
+	bubble.add_theme_color_override("font_color", Color("#563d67"))
+	bubble.add_theme_stylebox_override("normal", _panel_style(Color("#fff9f2"), Color("#bc91ca"), 18))
+	bubble.z_index = 20
+	bubble.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	character_layer.add_child(bubble)
+	var tw := bubble.create_tween()
+	tw.tween_interval(2.2)
+	tw.tween_property(bubble, "modulate:a", 0.0, 0.3)
+	tw.tween_callback(bubble.queue_free)
+
+
+func _play_random_resident_interaction() -> void:
+	if edit_mode or photo_layer or resident_nodes.is_empty():
+		return
+	if not furniture_nodes.is_empty() and randf() < 0.38:
+		_play_furniture_behavior()
+		return
+	if randf() < 0.34:
+		var solo: Sprite2D = resident_nodes.pick_random()
+		_play_resident_idle(solo, String((solo.get_meta("record") as Dictionary).get("trait", "kind")), randi_range(0, 2))
+		return
+	if resident_nodes.size() == 1:
+		var only: Sprite2D = resident_nodes[0]
+		var record: Dictionary = only.get_meta("record")
+		_speech_bubble(String(CharacterCatalog.profile(String(record.color)).get("greeting", "말랑!")), only.position)
+		return
+	var first: Sprite2D = resident_nodes.pick_random()
+	var second: Sprite2D = resident_nodes.pick_random()
+	if first == second:
+		second = resident_nodes[(resident_nodes.find(first) + 1) % resident_nodes.size()]
+	var a: Dictionary = first.get_meta("record")
+	var b: Dictionary = second.get_meta("record")
+	var chosen: Dictionary = CharacterCatalog.interactions()[0]
+	for interaction in CharacterCatalog.interactions():
+		var traits: Array = interaction.get("traits", [])
+		if traits.is_empty() or (traits.has(String(a.trait)) and traits.has(String(b.trait))):
+			chosen = interaction
+			if not traits.is_empty():
+				break
+	var midpoint := (first.position + second.position) * 0.5
+	var first_home: Vector2 = resident_home_positions.get(first.get_instance_id(), first.position)
+	var second_home: Vector2 = resident_home_positions.get(second.get_instance_id(), second.position)
+	var tw := first.create_tween()
+	tw.tween_property(first, "position", midpoint + Vector2(-28, 0), 0.45).set_trans(Tween.TRANS_BACK)
+	tw.tween_interval(1.7)
+	tw.tween_property(first, "position", first_home, 0.42).set_trans(Tween.TRANS_SINE)
+	var tw2 := second.create_tween()
+	tw2.tween_property(second, "position", midpoint + Vector2(28, 0), 0.45).set_trans(Tween.TRANS_BACK)
+	tw2.tween_interval(1.7)
+	tw2.tween_property(second, "position", second_home, 0.42).set_trans(Tween.TRANS_SINE)
+	_speech_bubble(String(chosen.get("text", "친구와 함께 놀아요!")), midpoint)
+	main.save.record_resident_interaction(String(a.id), String(b.id), String(chosen.get("id", "greeting")))
+	main.save.add_album_memory("interaction", String(chosen.get("text", "친구와 함께 놀아요!")), [String(a.id), String(b.id)])
+
+
+func _play_furniture_behavior() -> void:
+	var resident: Sprite2D = resident_nodes.pick_random()
+	var record: Dictionary = resident.get_meta("record")
+	var favorite := String(record.get("favorite_furniture", ""))
+	var furniture: RoomFurniture = null
+	for candidate in furniture_nodes:
+		if favorite != "" and String(candidate.item.get("id", "")) == favorite:
+			furniture = candidate
+			break
+	if furniture == null:
+		furniture = furniture_nodes.pick_random()
+	var item_id := String(furniture.item.get("id", "furniture"))
+	var item_name := String(furniture.item.get("name", "가구"))
+	var lines := {
+		"cushion_r": "폭신폭신, 구름 같아!",
+		"lamp_y": "별빛을 세어 볼까?",
+		"table_b": "소다 한 모금, 톡톡!",
+		"shelf_g": "새싹에게 인사했어!",
+		"sofa_p": "소파에서 말랑 휴식!",
+		"bench_o": "귤 향기가 솔솔 나!",
+		"ach_first": "우리의 첫 만남이야!",
+	}
+	var line := String(lines.get(item_id, "%s이(가) 마음에 들어!" % item_name))
+	var home: Vector2 = resident_home_positions.get(resident.get_instance_id(), resident.position)
+	var destination := furniture.interaction_point() + Vector2(0, 42)
+	var tw := resident.create_tween()
+	tw.tween_property(resident, "position", destination, 0.55).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.tween_property(resident, "rotation", 0.12, 0.16)
+	tw.tween_property(resident, "rotation", -0.12, 0.16)
+	tw.tween_property(resident, "rotation", 0.0, 0.14)
+	tw.tween_interval(1.25)
+	tw.tween_property(resident, "position", home, 0.48).set_trans(Tween.TRANS_SINE)
+	_speech_bubble(line, destination)
+	var bond_gain: Dictionary = main.save.add_resident_affection(String(record.get("id", "")), 1)
+	_record_bond_analytics(record, bond_gain)
+	main.save.add_album_memory("furniture", line, [String(record.get("id", "")), item_id])
 
 
 func _placement_cells(placement: Dictionary) -> Array[Vector2i]:
@@ -1838,8 +1995,49 @@ func _gui_input(event: InputEvent) -> void:
 	if edit_mode:
 		_handle_edit_input(event)
 	elif event is InputEventScreenTouch and event.pressed:
-		if event.position.distance_to(Vector2(360, 615 + RoomData.SCREEN_Y_OFFSET)) < 125:
+		var touched_resident := false
+		for resident in resident_nodes:
+			if is_instance_valid(resident) and event.position.distance_to(resident.global_position) < 58:
+				_resident_touch_react(resident)
+				touched_resident = true
+				break
+		if not touched_resident and event.position.distance_to(Vector2(360, 615 + RoomData.SCREEN_Y_OFFSET)) < 125:
 			_hero_react()
+	elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		for resident in resident_nodes:
+			if is_instance_valid(resident) and event.position.distance_to(resident.global_position) < 58:
+				_resident_touch_react(resident)
+				return
+
+
+func _resident_touch_react(resident: Sprite2D) -> void:
+	var record: Dictionary = resident.get_meta("record")
+	var profile := CharacterCatalog.profile(String(record.get("color", "R")))
+	var reactions: Array = profile.get("touch", ["smile"])
+	var reaction := String(reactions[randi() % reactions.size()])
+	var home: Vector2 = resident.position
+	var tw := resident.create_tween()
+	if reaction in ["startle", "surprise", "peek"]:
+		tw.tween_property(resident, "scale", resident.scale * 1.22, 0.12).set_trans(Tween.TRANS_BACK)
+		tw.tween_property(resident, "scale", resident.scale, 0.25).set_trans(Tween.TRANS_BOUNCE)
+	else:
+		tw.tween_property(resident, "position", home + Vector2(0, -25), 0.16).set_trans(Tween.TRANS_QUAD)
+		tw.tween_property(resident, "position", home, 0.28).set_trans(Tween.TRANS_BOUNCE)
+	_speech_bubble(String(profile.get("greeting", "반가워요!")), resident.position)
+	var bond_gain: Dictionary = main.save.add_resident_affection(String(record.get("id", "")), 1)
+	_record_bond_analytics(record, bond_gain)
+	main.audio.play("pop", 1.12)
+	G.haptic(7)
+
+
+func _record_bond_analytics(record: Dictionary, result: Dictionary) -> void:
+	if not main.analytics or int(result.get("granted", 0)) <= 0:
+		return
+	main.analytics.track("resident_bond", {
+		"resident_id": String(record.get("id", "")),
+		"level": int(result.get("level", 1)),
+		"affection": int(result.get("affection", 0)),
+	})
 
 
 func _grid_cell(point: Vector2) -> Vector2i:
@@ -1917,14 +2115,35 @@ func _show_album() -> void:
 	title.add_theme_font_size_override("font_size", 42)
 	title.add_theme_color_override("font_color", Color("#674779"))
 	box.add_child(title)
-	var residents: Array[String] = main.save.get_rescued_jellies()
-	var resident_text := " · ".join(residents.map(func(c): return G.COLOR_NAMES[c])) if not residents.is_empty() else "아직 초대한 주민이 없어요"
+	var residents: Array = main.save.get_resident_records()
+	var resident_names: Array[String] = []
+	for resident in residents:
+		var bond: Dictionary = main.save.get_resident_bond_progress(resident)
+		resident_names.append("%s Lv.%d" % [String(resident.get("name", "젤리몬")), int(bond.level)])
+	var resident_text := " · ".join(resident_names) if not residents.is_empty() else "아직 초대한 주민이 없어요"
 	var resident_label := Label.new()
-	resident_label.text = "구출 주민 %d/5\n%s" % [residents.size(), resident_text]
+	resident_label.text = "구출 주민 %d/6\n%s" % [residents.size(), resident_text]
 	resident_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	resident_label.add_theme_font_size_override("font_size", 24)
 	resident_label.add_theme_color_override("font_color", Color("#7c657f"))
 	box.add_child(resident_label)
+	if not residents.is_empty():
+		var bond_summary := Label.new()
+		var bond_lines: Array[String] = []
+		for resident in residents:
+			var bond: Dictionary = main.save.get_resident_bond_progress(resident)
+			var progress_text := "MAX" if bool(bond.maxed) else "%d/%d" % [int(bond.affection), int(bond.next_affection)]
+			bond_lines.append("%s · %s · %s" % [String(resident.get("name", "젤리몬")), String(bond.title), progress_text])
+		bond_summary.text = "친밀도\n" + "\n".join(bond_lines)
+		bond_summary.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		bond_summary.add_theme_font_size_override("font_size", 18)
+		bond_summary.add_theme_color_override("font_color", Color("#8b5d8d"))
+		box.add_child(bond_summary)
+	var memory_title := Label.new()
+	memory_title.text = "최근 말랑 추억"
+	memory_title.add_theme_font_size_override("font_size", 22)
+	memory_title.add_theme_color_override("font_color", Color("#d06f91"))
+	box.add_child(memory_title)
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	box.add_child(scroll)
@@ -1932,6 +2151,13 @@ func _show_album() -> void:
 	list.custom_minimum_size = Vector2(540, 0)
 	list.add_theme_constant_override("separation", 7)
 	scroll.add_child(list)
+	for memory in main.save.album_memories.slice(0, 6):
+		var memory_row := Label.new()
+		memory_row.text = "♥  " + String(memory.get("caption", "함께 보낸 포근한 순간"))
+		memory_row.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		memory_row.add_theme_font_size_override("font_size", 18)
+		memory_row.add_theme_color_override("font_color", Color("#9c5f7a"))
+		list.add_child(memory_row)
 	for i in range(RoomData.ACHIEVEMENT_NAMES.size()):
 		var unlocked := RoomData.achievement_unlocked(i, main.save)
 		var row := Label.new()
@@ -1975,15 +2201,32 @@ func _enter_photo_mode() -> void:
 	title.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	photo_layer.add_child(title)
 	var controls := HBoxContainer.new()
-	controls.position = Vector2(170, 1150)
+	controls.position = Vector2(65, 1150)
 	controls.add_theme_constant_override("separation", 16)
 	photo_layer.add_child(controls)
+	var pose := _button("포즈", Color("#66a9d8"), Vector2(160, 78), 24)
+	pose.pressed.connect(_photo_pose)
+	controls.add_child(pose)
 	var save_button := _button("사진 저장", Color("#e580a7"), Vector2(190, 78), 27)
 	save_button.pressed.connect(_save_photo)
 	controls.add_child(save_button)
 	var close := _button("닫기", Color("#7d6a9e"), Vector2(190, 78), 27)
 	close.pressed.connect(_leave_photo_mode)
 	controls.add_child(close)
+	_play_random_resident_interaction()
+
+
+func _photo_pose() -> void:
+	if resident_nodes.is_empty():
+		return
+	var center := Vector2(360, 720)
+	for i in range(resident_nodes.size()):
+		var resident: Sprite2D = resident_nodes[i]
+		var angle := -PI * 0.85 + PI * 0.7 * float(i) / maxf(1.0, resident_nodes.size() - 1.0)
+		var target := center + Vector2(cos(angle) * 155, sin(angle) * 78)
+		resident.create_tween().tween_property(resident, "position", target, 0.42).set_trans(Tween.TRANS_BACK)
+	_speech_bubble("다 같이 말랑~!", center - Vector2(0, 95))
+	main.save.add_album_memory("pose", "모두 함께 기념사진 포즈!", main.save.get_resident_records().map(func(r): return String(r.id)))
 
 
 func _leave_photo_mode() -> void:
@@ -2010,6 +2253,8 @@ func _save_photo() -> void:
 	var stamp := Time.get_datetime_string_from_system().replace(":", "-").replace("T", "_")
 	var path := folder.path_join("jellymon_room_%s.png" % stamp)
 	var error := image.save_png(path)
+	if error == OK:
+		main.save.add_album_memory("photo", "아지트 사진을 남겼어요", main.save.get_resident_records().map(func(r): return String(r.id)))
 	photo_layer.visible = true
 	_show_toast("사진을 저장했어요!\n%s" % folder if error == OK else "사진 저장에 실패했어요")
 

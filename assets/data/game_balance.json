@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "economy": {
+    "max_energy": 5,
+    "energy_regen_seconds": 600,
+    "continue_stardust_cost": 20,
+    "continue_limit_per_run": 1,
+    "continued_clear_reward_cap": 1
+  },
+  "retention": {
+    "resident_affection_daily_cap": 5,
+    "album_memory_limit": 30
+  },
+  "analytics": {
+    "local_buffer_limit": 500,
+    "flush_batch_size": 10
+  }
+}
