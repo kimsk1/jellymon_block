@@ -52,6 +52,11 @@ var score := 0
 var state := "play"
 var shake_amt := 0.0
 var active_absorptions := 0
+var tutorial_id := ""
+var tutorial_active := false
+var tutorial_timer_paused := false
+var tutorial_wrong_color_shown := false
+var tutorial_replay := false
 var screen_offset := Vector2.ZERO
 var premium_bg: Sprite2D
 var board_plate_style: StyleBoxFlat
@@ -115,7 +120,14 @@ func _ready() -> void:
 	add_child(hud)
 	hud.setup(goals, L, level_idx)
 	hud.set_time(time_left, total_time)
-	hud.show_hint(L.get("hint", ""))
+	tutorial_id = String(L.get("tutorial", ""))
+	hud.set_tutorial_help_visible(not tutorial_id.is_empty())
+	if _tutorial_ui_enabled() and not tutorial_id.is_empty() and not main.save.has_completed_tutorial(tutorial_id):
+		call_deferred("_begin_tutorial", false)
+	else:
+		hud.show_hint(L.get("hint", ""))
+		if _tutorial_ui_enabled():
+			call_deferred("_start_late_tutorial_if_needed")
 
 
 func _add_premium_background() -> void:
@@ -295,6 +307,178 @@ func _setup_key_locks() -> void:
 		key_unlock_at[cell] = indices
 
 
+# ────────────────────────── 상황형 튜토리얼 ──────────────────────────
+
+func _tutorial_ui_enabled() -> bool:
+	if DisplayServer.get_name() == "headless":
+		return false
+	for arg in OS.get_cmdline_user_args():
+		if String(arg).begins_with("--shot") or String(arg).begins_with("--validate"):
+			return false
+	return true
+
+
+func _begin_tutorial(replay: bool = false) -> void:
+	if tutorial_id.is_empty() or not is_instance_valid(hud) or catchers.is_empty():
+		return
+	tutorial_replay = replay
+	tutorial_active = true
+	tutorial_timer_paused = true
+	tutorial_wrong_color_shown = false
+	var catcher: Catcher = catchers[0]
+	var target := catcher.center_px()
+	var message := "블록을 끌어 젤리몬을 안에 담아 주세요!"
+	match tutorial_id:
+		"shape_seal":
+			if not shape_seals.is_empty():
+				target = _cells_center(shape_seals[0].cells)
+			message = "빛나는 모양과 같은 블록을 정확히 포개 보세요!"
+		"rescue_exit":
+			target = _first_matching_jelly_position(catcher)
+			message = "먼저 같은 색 젤리몬을 블록 안에 모두 담아 주세요!"
+		"color_match":
+			target = _first_matching_jelly_position(catcher)
+			message = "블록과 같은 색·같은 문양의 젤리몬만 담을 수 있어요!"
+		_:
+			target = _first_matching_jelly_position(catcher)
+	var focus := _guide_focus(catcher.center_px(), target)
+	hud.show_tutorial_step(message, catcher.center_px(), target, focus)
+	_track_tutorial("tutorial_step_start", "first_drag")
+
+
+func replay_tutorial() -> void:
+	if tutorial_id in ["square_capture", "shape_seal", "rescue_exit", "color_match"]:
+		_begin_tutorial(true)
+
+
+func _tutorial_first_grab() -> void:
+	if not tutorial_active or not tutorial_timer_paused:
+		return
+	tutorial_timer_paused = false
+	hud.clear_tutorial_step()
+	_track_tutorial("tutorial_step_complete", "first_drag")
+
+
+func _complete_tutorial(step: String) -> void:
+	if not tutorial_active:
+		return
+	tutorial_active = false
+	tutorial_timer_paused = false
+	hud.clear_tutorial_step()
+	if not main.save.has_completed_tutorial(tutorial_id):
+		main.save.mark_tutorial_completed(tutorial_id)
+	_track_tutorial("tutorial_step_complete", step)
+
+
+func _show_exit_tutorial(c: Catcher) -> void:
+	if not tutorial_active or rescue_exits.is_empty():
+		return
+	var target := cell_pos(rescue_exits[0].cell)
+	hud.show_tutorial_step("GO가 됐어요! 같은 색 화살표 출구로 내보내세요.", c.center_px(), target, _guide_focus(c.center_px(), target))
+	_track_tutorial("tutorial_step_start", "move_to_exit")
+
+
+func _show_tutorial_wrong_color(c: Catcher, directions: Array) -> void:
+	if tutorial_id != "color_match" or not tutorial_active or tutorial_wrong_color_shown:
+		return
+	for direction in directions:
+		var wrong = _wrong_color_jelly(c, c.origin_cell + direction)
+		if wrong == null:
+			continue
+		tutorial_wrong_color_shown = true
+		var target: Vector2 = wrong.position
+		fx.float_text(target, "색이 달라요!", Color("#ffe7a6"), 25)
+		hud.show_tutorial_step("이 젤리몬은 색이 달라요. 같은 문양의 블록을 사용하세요!", c.center_px(), target, _guide_focus(c.center_px(), target))
+		_track_tutorial_error("wrong_color")
+		get_tree().create_timer(2.0).timeout.connect(func():
+			if tutorial_active and is_instance_valid(hud):
+				hud.clear_tutorial_step()
+		)
+		return
+
+
+func _wrong_color_jelly(c: Catcher, candidate_origin: Vector2i):
+	for off in c.cells:
+		var jelly = jelly_at.get(candidate_origin + off)
+		if jelly != null and jelly.color_id != c.color_id:
+			return jelly
+	return null
+
+
+func _first_matching_jelly_position(c: Catcher) -> Vector2:
+	for jelly in jellies:
+		if is_instance_valid(jelly) and jelly.color_id == c.color_id:
+			return jelly.position
+	return c.center_px()
+
+
+func _cells_center(cells: Array) -> Vector2:
+	if cells.is_empty():
+		return Vector2(G.W * 0.5, G.H * 0.5)
+	var center := Vector2.ZERO
+	for cell in cells:
+		center += cell_pos(cell)
+	return center / float(cells.size())
+
+
+func _guide_focus(from: Vector2, to: Vector2) -> Rect2:
+	var left := minf(from.x, to.x) - 72.0
+	var top := minf(from.y, to.y) - 72.0
+	var right := maxf(from.x, to.x) + 72.0
+	var bottom := maxf(from.y, to.y) + 72.0
+	return Rect2(left, top, right - left, bottom - top)
+
+
+func _track_tutorial(event_name: String, step: String) -> void:
+	if main.analytics:
+		main.analytics.track(event_name, {"tutorial_id": tutorial_id, "level": level_idx + 1, "step": step})
+
+
+func _track_tutorial_error(reason: String) -> void:
+	if main.analytics:
+		main.analytics.track("tutorial_error", {"tutorial_id": tutorial_id, "level": level_idx + 1, "reason": reason})
+
+
+func _start_late_tutorial_if_needed() -> void:
+	var late_id := ""
+	var text := ""
+	var target := Vector2.ZERO
+	match level_idx:
+		50:
+			late_id = "frozen_jelly"
+			text = "얼음 젤리는 같은 색 블록으로 한 번 깨고, 다시 지나가면 구조돼요!"
+			if not frozen_at.is_empty():
+				target = cell_pos(frozen_at.keys()[0])
+		60:
+			late_id = "rescue_chain"
+			text = "번호가 붙은 젤리몬은 1번부터 차례대로 구조하세요!"
+			if not chain_at.is_empty():
+				target = cell_pos(chain_at.keys()[0])
+		70:
+			late_id = "rescue_switch"
+			text = "바닥 스위치를 먼저 밟으면 봉인된 젤리몬이 깨어나요!"
+			if not switch_at.is_empty():
+				target = cell_pos(switch_at.keys()[0])
+		80:
+			late_id = "key_lock"
+			text = "열쇠 젤리몬을 먼저 구조하면 잠긴 블록을 움직일 수 있어요!"
+			if not key_unlock_at.is_empty():
+				target = cell_pos(key_unlock_at.keys()[0])
+	if late_id.is_empty() or target == Vector2.ZERO or main.save.has_completed_tutorial(late_id):
+		return
+	tutorial_id = late_id
+	tutorial_active = true
+	hud.show_tutorial_step(text, target + Vector2(-95, 70), target, Rect2(target - Vector2(54, 54), Vector2(108, 108)))
+	_track_tutorial("tutorial_step_start", "first_sighting")
+	await get_tree().create_timer(4.2).timeout
+	if not is_instance_valid(hud) or tutorial_id != late_id:
+		return
+	main.save.mark_tutorial_completed(late_id)
+	_track_tutorial("tutorial_step_complete", "first_sighting")
+	tutorial_active = false
+	hud.clear_tutorial_step()
+
+
 # ────────────────────────── 입력 ──────────────────────────
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -317,6 +501,7 @@ func _unhandled_input(event: InputEvent) -> void:
 				_release()
 			var c = _pick_catcher(event.position)
 			if c != null:
+				_tutorial_first_grab()
 				var local_position := to_local(event.position)
 				grabbed = c
 				active_touch_index = event.index
@@ -424,6 +609,7 @@ func _process_drag() -> void:
 			last_blocked_feedback_msec = Time.get_ticks_msec()
 			fx.blocked_bump(grabbed.center_px(), G.COLORS[grabbed.color_id])
 			G.haptic(5)
+			_show_tutorial_wrong_color(grabbed, dirs)
 
 
 func _can_place(c: Catcher, org: Vector2i) -> bool:
@@ -528,13 +714,14 @@ func _trigger_moving_personality(c: Catcher, org: Vector2i) -> bool:
 func _physics_process(delta: float) -> void:
 	if state != "play":
 		return
-	elapsed_play_time += delta
-	time_left -= delta
-	hud.set_time(time_left, total_time)
-	if time_left <= 0.0:
-		time_left = 0.0
-		_fail()
-		return
+	if not tutorial_timer_paused:
+		elapsed_play_time += delta
+		time_left -= delta
+		hud.set_time(time_left, total_time)
+		if time_left <= 0.0:
+			time_left = 0.0
+			_fail()
+			return
 	_resolve_catcher_arrivals()
 	_process_drag()
 	if shake_amt > 0.0:
@@ -611,6 +798,8 @@ func _evacuate_catcher(c: Catcher, exit: Dictionary) -> void:
 	G.haptic(40)
 	shake_amt = maxf(shake_amt, 8.0)
 	c.evacuate(exit.direction)
+	if tutorial_id == "rescue_exit":
+		_complete_tutorial("exit_reached")
 	_maybe_clear_level()
 
 
@@ -640,6 +829,8 @@ func _check_shape_seals(c: Catcher) -> void:
 		audio.play("pop_big", 1.25)
 		G.haptic(35)
 		shake_amt = maxf(shake_amt, 6.0)
+		if tutorial_id == "shape_seal":
+			_complete_tutorial("seal_opened")
 		queue_redraw()
 
 
@@ -722,6 +913,10 @@ func _absorb(j: Jelly, c: Catcher, cl: Vector2i) -> void:
 	main.save.record_daily_action("capture")
 	main.save.record_weekly_action("capture")
 	main.save.record_jelly_capture(j.color_id, j.shiny)
+	if tutorial_id == "square_capture":
+		_complete_tutorial("first_capture")
+	elif tutorial_id == "color_match":
+		_complete_tutorial("correct_color")
 	var col: Color = G.COLORS[j.color_id]
 	var jp := cell_pos(cl)
 	# 포획 즉시 수용량을 예약해 중복 포획은 막되, 블록 드래그는 잠그지 않는다.
@@ -769,6 +964,8 @@ func _absorb(j: Jelly, c: Catcher, cl: Vector2i) -> void:
 		if _has_rescue_exit(c):
 			c.set_full()
 			fx.float_text(c.center_px(), "출구로!", Color("#dcffb4"), 29)
+			if tutorial_id == "rescue_exit":
+				_show_exit_tutorial(c)
 			call_deferred("_try_rescue_exit", c)
 		else:
 			call_deferred("_finish_catcher", c)
@@ -1098,6 +1295,19 @@ func _draw() -> void:
 
 
 # ────────────────────────── 헤드리스/QA 유틸 ──────────────────────────
+
+func debug_validate_tutorial_flow() -> bool:
+	if catchers.is_empty() or tutorial_id.is_empty():
+		return false
+	main.save.completed_tutorials.erase(tutorial_id)
+	_begin_tutorial(false)
+	var valid := tutorial_active and tutorial_timer_paused and hud.tutorial_guide != null
+	_tutorial_first_grab()
+	valid = valid and tutorial_active and not tutorial_timer_paused and hud.tutorial_guide == null
+	_complete_tutorial("qa_complete")
+	valid = valid and not tutorial_active and not tutorial_timer_paused and main.save.has_completed_tutorial(tutorial_id)
+	valid = valid and hud.booster_tray != null and not hud.booster_tray.visible
+	return valid
 
 func debug_validate_touch_mapping(test_offset := Vector2(0, 160)) -> bool:
 	## 세로로 긴 Android 화면처럼 보드가 이동한 상태에서 선택 좌표와 멀티터치를 검증한다.

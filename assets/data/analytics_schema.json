@@ -13,5 +13,8 @@
     "currency_source": ["currency", "amount", "source"],
     "currency_sink": ["currency", "amount", "sink"],
     "resident_bond": ["resident_id", "level", "affection"]
+    ,"tutorial_step_start": ["tutorial_id", "level", "step"]
+    ,"tutorial_step_complete": ["tutorial_id", "level", "step"]
+    ,"tutorial_error": ["tutorial_id", "level", "reason"]
   }
 }

@@ -37,6 +37,7 @@ var attendance_last_claim_date := ""
 var ads_removed := false
 var nickname := ""
 var seen_scenarios: Array[String] = []
+var completed_tutorials: Array[String] = []
 var energy := MAX_ENERGY
 var energy_updated_at := 0
 var daily_mission_date := ""
@@ -85,6 +86,10 @@ func load_data() -> void:
 					var value := String(scenario_id)
 					if not value.is_empty() and not seen_scenarios.has(value):
 						seen_scenarios.append(value)
+				for tutorial_id in d.get("completed_tutorials", []):
+					var completed_id := String(tutorial_id)
+					if not completed_id.is_empty() and not completed_tutorials.has(completed_id):
+						completed_tutorials.append(completed_id)
 				for color in d.get("rescued_jellies", []):
 					if G.COLORS.has(String(color)) and not rescued_jellies.has(String(color)) and rescued_jellies.size() < 6:
 						rescued_jellies.append(String(color))
@@ -180,6 +185,7 @@ func save_data() -> void:
 			"ads_removed": ads_removed,
 			"nickname": nickname,
 			"seen_scenarios": seen_scenarios,
+			"completed_tutorials": completed_tutorials,
 			"energy": energy,
 			"energy_updated_at": energy_updated_at,
 			"daily_mission_date": daily_mission_date,
@@ -462,6 +468,7 @@ func progression_snapshot() -> Dictionary:
 		"resident_relationships": resident_relationships.duplicate(true),
 		"album_memories": album_memories.duplicate(true),
 		"nickname": nickname,
+		"completed_tutorials": completed_tutorials.duplicate(),
 		"jelly_capture_counts": jelly_capture_counts.duplicate(true),
 		"shiny_discoveries": shiny_discoveries.duplicate(),
 		"booster_inventory": booster_inventory.duplicate(true),
@@ -588,6 +595,17 @@ func mark_scenario_seen(sequence_id: String) -> void:
 	if sequence_id.is_empty() or seen_scenarios.has(sequence_id):
 		return
 	seen_scenarios.append(sequence_id)
+	save_data()
+
+
+func has_completed_tutorial(tutorial_id: String) -> bool:
+	return completed_tutorials.has(tutorial_id)
+
+
+func mark_tutorial_completed(tutorial_id: String) -> void:
+	if tutorial_id.is_empty() or completed_tutorials.has(tutorial_id):
+		return
+	completed_tutorials.append(tutorial_id)
 	save_data()
 
 

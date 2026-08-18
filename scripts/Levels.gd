@@ -61,7 +61,9 @@ static func _build_levels() -> Array:
 	level_three["exits"] = [{"color": "R", "catcher": 0, "cell": [5, 5], "direction": [1, 0]}]
 	level_three["tutorial"] = "rescue_exit"
 	out.append(level_three)
-	out.append(_level("순서가 중요해", ["......", ".BBBB.", ".BBBB.", "RRRRRR", "......", "......", "......"], [_c("R", "S1", 0, 5), _c("B", "S1", 5, 5)], 90, "앞을 막은 색부터 치우면 길이 열려요."))
+	var level_four := _level("순서가 중요해", ["......", ".BBBB.", ".BBBB.", "RRRRRR", "......", "......", "......"], [_c("R", "S1", 0, 5), _c("B", "S1", 5, 5)], 90, "같은 색 젤리몬만 담을 수 있어요. 앞을 막은 색부터 치우세요!")
+	level_four["tutorial"] = "color_match"
+	out.append(level_four)
 	for number in range(5, 101):
 		out.append(_generated_level(number))
 	return out

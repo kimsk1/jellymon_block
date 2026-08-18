@@ -219,6 +219,8 @@ func _ready() -> void:
 		_headless_memory_stress_test()
 	elif OS.get_cmdline_user_args().has("--validate-characters"):
 		_headless_character_system_test()
+	elif OS.get_cmdline_user_args().has("--validate-tutorial"):
+		_headless_tutorial_test()
 	elif DisplayServer.get_name() == "headless":
 		_headless_smoke_test()
 
@@ -783,6 +785,23 @@ func _headless_character_system_test() -> void:
 	print("[character validation] residents=", residents.size(), " interactions=", CharacterCatalogLib.interactions().size(), " errors=", errors.size())
 	for message in errors:
 		push_error("[character validation] " + message)
+	get_tree().quit(0 if errors.is_empty() else 1)
+
+
+func _headless_tutorial_test() -> void:
+	var errors := PackedStringArray()
+	for level_index in range(3):
+		start_level(level_index, true, true)
+		await get_tree().process_frame
+		if game == null or not game.debug_validate_tutorial_flow():
+			errors.append("상황형 튜토리얼 흐름 오류: LEVEL %d" % (level_index + 1))
+	start_level(3, true, true)
+	await get_tree().process_frame
+	if game == null or String(game.L.get("tutorial", "")) != "color_match":
+		errors.append("LEVEL 4 색상 매칭 튜토리얼 누락")
+	print("[tutorial validation] core=4 late=4 errors=", errors.size())
+	for message in errors:
+		push_error("[tutorial validation] " + message)
 	get_tree().quit(0 if errors.is_empty() else 1)
 
 

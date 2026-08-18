@@ -2,6 +2,8 @@ extends CanvasLayer
 class_name HUD
 ## 인게임 HUD + 팝업 (04 문서 5/6/7장)
 
+const TutorialGuideScene = preload("res://scripts/TutorialGuide.gd")
+
 var game = null
 var root: Control
 var time_label: Label
@@ -15,6 +17,9 @@ var clear_bonus_claimed := false
 var clear_reward_label: Label
 var clear_double_button: Button
 var booster_buttons := {}
+var booster_tray: Control
+var tutorial_guide: Control
+var tutorial_help_button: Button
 
 
 func _ready() -> void:
@@ -103,14 +108,17 @@ func _ready() -> void:
 	timer_bar.add_theme_stylebox_override("fill", timer_fill)
 	mid.add_child(timer_bar)
 	_build_booster_tray()
+	_build_tutorial_help()
 
 
 func _build_booster_tray() -> void:
 	var tray := PanelContainer.new()
+	booster_tray = tray
 	tray.position = Vector2(28, 1155)
 	tray.size = Vector2(G.W - 56, 92)
 	tray.add_theme_stylebox_override("panel", ArtDirection.panel(Color(0.12, 0.08, 0.22, 0.74), Color(1, 1, 1, 0.42), 25, 0.25, 3))
 	root.add_child(tray)
+	tray.visible = game.level_idx >= 3
 	var row := HBoxContainer.new()
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
 	row.add_theme_constant_override("separation", 7)
@@ -135,6 +143,37 @@ func _build_booster_tray() -> void:
 		button.pressed.connect(func(): game.use_booster(id))
 		row.add_child(button)
 		booster_buttons[id] = button
+
+
+func _build_tutorial_help() -> void:
+	tutorial_help_button = Button.new()
+	tutorial_help_button.text = "?"
+	tutorial_help_button.position = Vector2(648, 154)
+	tutorial_help_button.size = Vector2(52, 52)
+	tutorial_help_button.add_theme_font_size_override("font_size", 27)
+	ArtDirection.apply_button(tutorial_help_button, Color("#8d70bc"), 18)
+	tutorial_help_button.tooltip_text = "조작 안내 다시 보기"
+	tutorial_help_button.visible = false
+	tutorial_help_button.pressed.connect(func(): game.replay_tutorial())
+	root.add_child(tutorial_help_button)
+
+
+func set_tutorial_help_visible(value: bool) -> void:
+	if tutorial_help_button:
+		tutorial_help_button.visible = value
+
+
+func show_tutorial_step(text: String, from: Vector2, to: Vector2, focus: Rect2 = Rect2()) -> void:
+	clear_tutorial_step()
+	tutorial_guide = TutorialGuideScene.new()
+	root.add_child(tutorial_guide)
+	tutorial_guide.setup(text, from, to, focus)
+
+
+func clear_tutorial_step() -> void:
+	if tutorial_guide and is_instance_valid(tutorial_guide):
+		tutorial_guide.dismiss()
+	tutorial_guide = null
 
 
 func refresh_boosters() -> void:
