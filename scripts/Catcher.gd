@@ -28,6 +28,7 @@ var badge_panel: PanelContainer
 var badge_style: StyleBoxFlat
 var key_locked := false
 var key_lock_panel: PanelContainer
+var slow_until_msec := 0    # 끈끈이 바닥 감속이 끝나는 시각
 
 const SLIDE_SPEED := 1450.0
 const DRAG_PULL_MAX := 20.0
@@ -165,7 +166,11 @@ func _process(delta: float) -> void:
 	if grabbed and not arrival_pending:
 		visual_target += drag_pull_target
 	var before := position
-	position = position.move_toward(visual_target, SLIDE_SPEED * delta)
+	# 끈끈이 바닥을 밟는 동안에는 눈에 띄게 느리게 미끄러진다.
+	var speed := SLIDE_SPEED
+	if Time.get_ticks_msec() < slow_until_msec:
+		speed *= 0.32
+	position = position.move_toward(visual_target, speed * delta)
 	var motion := position - before
 	var moving_ratio := clampf(motion.length() / maxf(1.0, SLIDE_SPEED * delta), 0.0, 1.0)
 	var k := 0.04 if grabbed else 0.02

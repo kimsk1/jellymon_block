@@ -21,10 +21,30 @@ var current_screen: Node = null
 var game: Game = null
 var last_furniture_reward: Dictionary = {}
 var last_new_resident: Dictionary = {}
+var _level_gate_overlay: CanvasLayer = null
 
 
 func _ready() -> void:
 	randomize()
+	# 전체 레벨의 풀이 가능성/기믹 정합성 검사는 빌드·CI 단계에서만 수행한다.
+	# 일반 앱 실행에서 이 검사를 돌리면 레벨 수에 비례해 첫 화면이 늦어진다.
+	if not _should_run_full_validation() and OS.get_cmdline_user_args().is_empty():
+		_initialize_runtime()
+		if DisplayServer.get_name() == "headless":
+			_headless_smoke_test()
+		return
+	if OS.get_cmdline_user_args().has("--extend-levels"):
+		var extend_error := Levels.extend_and_bake_levels()
+		var extended_errors := Levels.validate_all() if extend_error == OK else PackedStringArray(["레벨 확장 베이크 실패"])
+		print("[level extend] levels=", Levels.level_count(), " error=", extend_error, " validation_errors=", extended_errors.size())
+		get_tree().quit(0 if extend_error == OK and extended_errors.is_empty() else 1)
+		return
+	if OS.get_cmdline_user_args().has("--repair-baked-levels"):
+		var repair_error := Levels.repair_and_bake_levels()
+		var repaired_errors := Levels.validate_all() if repair_error == OK else PackedStringArray(["레벨 복구 베이크 실패"])
+		print("[level repair] levels=", Levels.level_count(), " error=", repair_error, " validation_errors=", repaired_errors.size())
+		get_tree().quit(0 if repair_error == OK and repaired_errors.is_empty() else 1)
+		return
 	var level_errors := Levels.validate_all()
 	level_errors.append_array(RoomData.validate_catalog())
 	level_errors.append_array(ShopCatalog.validate_catalog())
@@ -99,6 +119,17 @@ func _ready() -> void:
 		level_errors.append("광고 제거 상점 지급 오류")
 	if shop_test_save.apply_verified_shop_item(ShopCatalog.item_by_id("remove_ads")):
 		level_errors.append("광고 제거 중복 구매 차단 오류")
+	var segment_test_save := SaveGame.new()
+	segment_test_save.persistence_enabled = false
+	if segment_test_save.is_level_segment_unlocked(1) or segment_test_save.can_unlock_level_segment(1):
+		level_errors.append("100레벨 구간이 조건 없이 열림")
+	segment_test_save.award_stars(99, 1)
+	if segment_test_save.is_unlocked(100) or not segment_test_save.can_unlock_level_segment(1):
+		level_errors.append("100레벨 클리어 후 광고 해금 대기 상태 오류")
+	if not segment_test_save.unlock_level_segment(1) or not segment_test_save.is_unlocked(100):
+		level_errors.append("광고 완료 후 101~200레벨 해금 오류")
+	if segment_test_save.unlock_level_segment(1):
+		level_errors.append("레벨 구간 중복 해금 차단 오류")
 	var furniture_test_save := SaveGame.new()
 	furniture_test_save.persistence_enabled = false
 	furniture_test_save.grant_stardust(1000)
@@ -156,15 +187,79 @@ func _ready() -> void:
 		print("[level bake] path=", Levels.BAKED_LEVELS_PATH, " error=", bake_error, " validation_errors=", rebuilt_errors.size())
 		get_tree().quit(0 if bake_error == OK and rebuilt_errors.is_empty() else 1)
 		return
+	if OS.get_cmdline_user_args().has("--bake-level-chunks"):
+		var chunk_error := Levels.bake_current_levels()
+		print("[level chunk bake] index=", Levels.LEVEL_INDEX_PATH, " error=", chunk_error, " validation_errors=", level_errors.size())
+		get_tree().quit(0 if chunk_error == OK and level_errors.is_empty() else 1)
+		return
 	if OS.get_cmdline_user_args().has("--validate-levels"):
-		print("[level validation] levels=", Levels.LEVELS.size(), " errors=", level_errors.size())
+		print("[level validation] levels=", Levels.level_count(), " errors=", level_errors.size())
 		var shape_counts := {}
-		for level in Levels.LEVELS:
+		for level in Levels.all_levels():
 			for spec in level.catchers:
 				shape_counts[spec.shape] = int(shape_counts.get(spec.shape, 0)) + 1
 		print("[level validation] shapes=", shape_counts)
 		get_tree().quit(0 if level_errors.is_empty() else 1)
 		return
+	_initialize_runtime()
+	if OS.get_cmdline_user_args().has("--shots"):
+		_screenshot_run()
+	elif OS.get_cmdline_user_args().has("--shot-room-refresh"):
+		_screenshot_room_refresh()
+	elif OS.get_cmdline_user_args().has("--shot-home-menu"):
+		_screenshot_home_menu()
+	elif OS.get_cmdline_user_args().has("--shot-room-edit"):
+		_screenshot_room_edit()
+	elif OS.get_cmdline_user_args().has("--shot-level-51"):
+		_screenshot_level_51()
+	elif OS.get_cmdline_user_args().has("--shot-level-39"):
+		_screenshot_level_39()
+	elif OS.get_cmdline_user_args().has("--shot-late-gimmicks"):
+		_screenshot_late_gimmicks()
+	elif OS.get_cmdline_user_args().has("--shot-endgame"):
+		_screenshot_endgame()
+	elif OS.get_cmdline_user_args().has("--validate-story-typing"):
+		_headless_story_typing_test()
+	elif OS.get_cmdline_user_args().has("--validate-story-overlay"):
+		_headless_story_overlay_test()
+	elif OS.get_cmdline_user_args().has("--validate-touch"):
+		_headless_touch_test()
+	elif OS.get_cmdline_user_args().has("--validate-delayed-trap"):
+		_headless_delayed_trap_test()
+	elif OS.get_cmdline_user_args().has("--validate-level-39"):
+		_headless_level_39_test()
+	elif OS.get_cmdline_user_args().has("--validate-level-17"):
+		_headless_level_17_test()
+	elif OS.get_cmdline_user_args().has("--validate-level-7"):
+		_headless_level_7_test()
+	elif OS.get_cmdline_user_args().has("--validate-level-44"):
+		_headless_level_44_test()
+	elif OS.get_cmdline_user_args().has("--validate-expansion"):
+		_headless_expansion_test()
+	elif OS.get_cmdline_user_args().has("--validate-advanced-expansion"):
+		_headless_advanced_expansion_test()
+	elif OS.get_cmdline_user_args().has("--validate-late-play"):
+		_headless_late_play_test()
+	elif OS.get_cmdline_user_args().has("--validate-endgame"):
+		_headless_endgame_test()
+	elif OS.get_cmdline_user_args().has("--validate-memory"):
+		_headless_memory_stress_test()
+	elif OS.get_cmdline_user_args().has("--validate-characters"):
+		_headless_character_system_test()
+	elif OS.get_cmdline_user_args().has("--validate-tutorial"):
+		_headless_tutorial_test()
+	elif OS.get_cmdline_user_args().has("--validate-level-gate"):
+		_headless_level_gate_test()
+	elif DisplayServer.get_name() == "headless":
+		_headless_smoke_test()
+
+
+func _should_run_full_validation() -> bool:
+	var args := OS.get_cmdline_user_args()
+	return args.has("--validate-levels") or args.has("--bake-levels") or args.has("--bake-level-chunks") or args.has("--extend-levels") or args.has("--repair-baked-levels")
+
+
+func _initialize_runtime() -> void:
 	audio = AudioMgr.new()
 	add_child(audio)
 	platform = PlatformServiceLib.new()
@@ -183,46 +278,6 @@ func _ready() -> void:
 	if OS.get_cmdline_user_args().has("--shot-room-refresh") or OS.get_cmdline_user_args().has("--shot-room-edit"):
 		save.room_placements = RoomData.default_placements()
 	show_title()
-	if OS.get_cmdline_user_args().has("--shots"):
-		_screenshot_run()
-	elif OS.get_cmdline_user_args().has("--shot-room-refresh"):
-		_screenshot_room_refresh()
-	elif OS.get_cmdline_user_args().has("--shot-home-menu"):
-		_screenshot_home_menu()
-	elif OS.get_cmdline_user_args().has("--shot-room-edit"):
-		_screenshot_room_edit()
-	elif OS.get_cmdline_user_args().has("--shot-level-51"):
-		_screenshot_level_51()
-	elif OS.get_cmdline_user_args().has("--shot-level-39"):
-		_screenshot_level_39()
-	elif OS.get_cmdline_user_args().has("--shot-late-gimmicks"):
-		_screenshot_late_gimmicks()
-	elif OS.get_cmdline_user_args().has("--validate-story-typing"):
-		_headless_story_typing_test()
-	elif OS.get_cmdline_user_args().has("--validate-touch"):
-		_headless_touch_test()
-	elif OS.get_cmdline_user_args().has("--validate-delayed-trap"):
-		_headless_delayed_trap_test()
-	elif OS.get_cmdline_user_args().has("--validate-level-39"):
-		_headless_level_39_test()
-	elif OS.get_cmdline_user_args().has("--validate-level-17"):
-		_headless_level_17_test()
-	elif OS.get_cmdline_user_args().has("--validate-level-7"):
-		_headless_level_7_test()
-	elif OS.get_cmdline_user_args().has("--validate-level-44"):
-		_headless_level_44_test()
-	elif OS.get_cmdline_user_args().has("--validate-expansion"):
-		_headless_expansion_test()
-	elif OS.get_cmdline_user_args().has("--validate-late-play"):
-		_headless_late_play_test()
-	elif OS.get_cmdline_user_args().has("--validate-memory"):
-		_headless_memory_stress_test()
-	elif OS.get_cmdline_user_args().has("--validate-characters"):
-		_headless_character_system_test()
-	elif OS.get_cmdline_user_args().has("--validate-tutorial"):
-		_headless_tutorial_test()
-	elif DisplayServer.get_name() == "headless":
-		_headless_smoke_test()
 
 
 func _clear_screen() -> void:
@@ -280,12 +335,21 @@ func show_story_overlay(sequence: Dictionary, on_finished: Callable) -> void:
 		if on_finished.is_valid():
 			on_finished.call_deferred()
 		return
+	# HUD는 CanvasLayer라 일반 Control의 z_index보다 항상 위에 그려진다.
+	# 시나리오도 더 높은 전용 CanvasLayer에 올려 플레이 힌트/HUD가 비치지 않게 한다.
+	var story_layer := CanvasLayer.new()
+	story_layer.name = "StoryOverlayLayer"
+	story_layer.layer = 100
+	add_child(story_layer)
 	var story := StoryScreen.new()
 	story.main = self
 	story.sequence = sequence
-	story.on_finished = on_finished
-	story.z_index = 200
-	add_child(story)
+	story.on_finished = func():
+		if is_instance_valid(story_layer):
+			story_layer.queue_free()
+		if on_finished.is_valid():
+			on_finished.call_deferred()
+	story_layer.add_child(story)
 
 
 func play_intro_if_needed() -> bool:
@@ -296,8 +360,11 @@ func play_intro_if_needed() -> bool:
 
 
 func start_level(idx: int, bypass_energy: bool = false, skip_story: bool = false) -> void:
-	if idx >= Levels.LEVELS.size():
+	if idx >= Levels.level_count():
 		show_map()
+		return
+	if not bypass_energy and not save.is_level_segment_unlocked(idx / SaveGame.LEVEL_GATE_SIZE):
+		request_level_segment_unlock(idx, func(): start_level(idx, false, skip_story))
 		return
 	# 현재 제작된 시나리오는 1~5장까지이며, 확장 챕터는 바로 게임으로 진입한다.
 	if not bypass_energy and not skip_story and idx % 10 == 0 and idx < 50:
@@ -327,6 +394,114 @@ func start_level(idx: int, bypass_energy: bool = false, skip_story: bool = false
 	game = g
 	if analytics:
 		analytics.track("level_start", {"level": idx + 1, "energy": save.get_energy(), "previous_stars": save.get_stars(idx)})
+
+
+func request_level_segment_unlock(target_level: int, on_unlocked: Callable = Callable()) -> void:
+	var segment := target_level / SaveGame.LEVEL_GATE_SIZE
+	if segment <= 0 or save.is_level_segment_unlocked(segment):
+		if on_unlocked.is_valid():
+			on_unlocked.call_deferred()
+		return
+	if not save.can_unlock_level_segment(segment) or _level_gate_overlay != null:
+		return
+	var first_level := segment * SaveGame.LEVEL_GATE_SIZE + 1
+	var last_level := mini((segment + 1) * SaveGame.LEVEL_GATE_SIZE, Levels.level_count())
+	var layer := CanvasLayer.new()
+	layer.layer = 300
+	add_child(layer)
+	_level_gate_overlay = layer
+	var dim := ColorRect.new()
+	dim.color = Color(0.08, 0.03, 0.14, 0.72)
+	dim.position = Vector2.ZERO
+	dim.size = get_viewport().get_visible_rect().size
+	dim.mouse_filter = Control.MOUSE_FILTER_STOP
+	layer.add_child(dim)
+	var center := CenterContainer.new()
+	center.position = G.safe_offset(get_viewport().get_visible_rect().size)
+	center.size = Vector2(G.W, G.H)
+	dim.add_child(center)
+	var panel := PanelContainer.new()
+	panel.custom_minimum_size = Vector2(600, 0)
+	var panel_style := ArtDirection.glass_panel(Color("#fff8ed"), 0.99, 34)
+	panel_style.set_border_width_all(6)
+	panel_style.border_color = Color("#9c6bd1")
+	panel_style.content_margin_left = 42
+	panel_style.content_margin_right = 42
+	panel_style.content_margin_top = 38
+	panel_style.content_margin_bottom = 38
+	panel.add_theme_stylebox_override("panel", panel_style)
+	center.add_child(panel)
+	var content := VBoxContainer.new()
+	content.alignment = BoxContainer.ALIGNMENT_CENTER
+	content.add_theme_constant_override("separation", 20)
+	panel.add_child(content)
+	var icon := Label.new()
+	icon.text = "🔓"
+	icon.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	icon.add_theme_font_size_override("font_size", 72)
+	content.add_child(icon)
+	var title := Label.new()
+	title.text = "새로운 모험을 열어요!"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 38)
+	title.add_theme_color_override("font_color", Color("#513663"))
+	content.add_child(title)
+	var guide := Label.new()
+	guide.text = "LEVEL %d~%d 구간을 열려면\n보상형 광고를 끝까지 시청해 주세요." % [first_level, last_level]
+	guide.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	guide.add_theme_font_size_override("font_size", 24)
+	guide.add_theme_color_override("font_color", Color("#75617f"))
+	content.add_child(guide)
+	var status := Label.new()
+	status.text = "해금하면 이 구간은 계속 이용할 수 있어요."
+	status.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	status.add_theme_font_size_override("font_size", 18)
+	status.add_theme_color_override("font_color", Color("#9a6683"))
+	content.add_child(status)
+	var buttons := HBoxContainer.new()
+	buttons.alignment = BoxContainer.ALIGNMENT_CENTER
+	buttons.add_theme_constant_override("separation", 16)
+	content.add_child(buttons)
+	var cancel := Button.new()
+	cancel.text = "나중에"
+	cancel.custom_minimum_size = Vector2(190, 72)
+	cancel.add_theme_font_size_override("font_size", 25)
+	ArtDirection.apply_button(cancel, Color("#8c8297"), 20)
+	buttons.add_child(cancel)
+	var unlock := Button.new()
+	unlock.text = "바로 열기" if save.has_removed_ads() else "광고 보고 열기"
+	unlock.custom_minimum_size = Vector2(280, 72)
+	unlock.add_theme_font_size_override("font_size", 25)
+	ArtDirection.apply_button(unlock, Color("#8e64c8"), 20)
+	buttons.add_child(unlock)
+	var close_overlay := func():
+		if is_instance_valid(layer):
+			layer.queue_free()
+		_level_gate_overlay = null
+	cancel.pressed.connect(close_overlay)
+	unlock.pressed.connect(func():
+		unlock.disabled = true
+		cancel.disabled = true
+		unlock.text = "해금 중..." if save.has_removed_ads() else "광고 재생 중..."
+		status.text = "광고를 닫지 말고 끝까지 시청해 주세요."
+		request_rewarded_ad(func():
+			if not save.unlock_level_segment(segment):
+				status.text = "구간을 열지 못했어요. 다시 시도해 주세요."
+				unlock.disabled = false
+				cancel.disabled = false
+				return
+			close_overlay.call()
+			if on_unlocked.is_valid():
+				on_unlocked.call_deferred(),
+		func():
+			unlock.disabled = false
+			cancel.disabled = false
+			unlock.text = "광고 보고 열기"
+			var reason := String(platform.rewarded_ad_message) if platform else ""
+			status.text = "광고를 끝까지 시청해야 열 수 있어요." if reason.contains("완료되지") else "광고를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.",
+		"level_segment_unlock_%d" % segment)
+	)
 
 
 func play_chapter_end_if_needed(level_idx: int, destination: Callable) -> bool:
@@ -551,6 +726,28 @@ func _screenshot_level_39() -> void:
 	get_tree().quit()
 
 
+func _screenshot_endgame() -> void:
+	## 보스 3종과 신규 기믹/대체 승리 조건 대표 레벨의 실제 화면을 캡처한다.
+	var picks := {}
+	for index in range(100, Levels.level_count()):
+		var data: Dictionary = Levels.get_level(index)
+		if data.has("boss"):
+			var key := "boss_" + String(data.boss.type)
+			if not picks.has(key):
+				picks[key] = index
+		for condition in ["move_limit", "color_order", "escort"]:
+			if data.has(condition) and not picks.has(condition):
+				picks[condition] = index
+		for name in ["ghost", "sticky", "one_way", "bomb"]:
+			if Levels._level_has_gimmick(data, name) and not picks.has(name):
+				picks[name] = index
+	for key in picks:
+		start_level(int(picks[key]), true, true)
+		await get_tree().create_timer(0.5).timeout
+		await _snap("endgame_%s_L%d.png" % [key, int(picks[key]) + 1])
+	get_tree().quit()
+
+
 func _screenshot_late_gimmicks() -> void:
 	## 구간별 대표 기믹과 100레벨 복합 관문의 실제 화면을 연속 캡처한다.
 	for level_index in [60, 70, 80, 99]:
@@ -571,6 +768,32 @@ func _headless_story_typing_test() -> void:
 		auto_valid = current_screen is StoryScreen and current_screen.line_index == 1 and current_screen.typing
 	print("[story typing validation] next_line_retypes=", typing_valid, " auto_advance_2_5s=", auto_valid)
 	get_tree().quit(0 if typing_valid and auto_valid else 1)
+
+
+func _headless_story_overlay_test() -> void:
+	start_level(0, true, true)
+	await get_tree().process_frame
+	var finished := [false]
+	show_story_overlay(ScenarioCatalog.chapter(0, "end"), func(): finished[0] = true)
+	await get_tree().process_frame
+	var story_layer := get_node_or_null("StoryOverlayLayer") as CanvasLayer
+	var story: StoryScreen = null
+	if story_layer:
+		for child in story_layer.get_children():
+			if child is StoryScreen:
+				story = child
+				break
+	var ordering_valid := story_layer != null and game != null and game.hud != null and story_layer.layer > game.hud.layer
+	if story:
+		story._finish()
+	await get_tree().process_frame
+	await get_tree().process_frame
+	var cleanup_valid := get_node_or_null("StoryOverlayLayer") == null and bool(finished[0])
+	print("[story overlay validation] above_hud=", ordering_valid, " cleanup=", cleanup_valid)
+	_clear_screen()
+	await get_tree().process_frame
+	await get_tree().process_frame
+	get_tree().quit(0 if ordering_valid and cleanup_valid else 1)
 
 
 func _headless_touch_test() -> void:
@@ -729,8 +952,127 @@ func _headless_expansion_test() -> void:
 		game._debug_clear_one_star_and_next()
 	await get_tree().create_timer(0.35).timeout
 	var debug_clear_valid := save.get_stars(50) == 1 and game != null and game.level_idx == 51
-	print("[expansion validation] levels=", Levels.LEVELS.size(), " visibility=", visibility_valid, " runtime=", runtime_valid, " c_key_clear=", debug_clear_valid)
-	get_tree().quit(0 if Levels.LEVELS.size() == 100 and visibility_valid and runtime_valid and debug_clear_valid else 1)
+	print("[expansion validation] levels=", Levels.level_count(), " visibility=", visibility_valid, " runtime=", runtime_valid, " c_key_clear=", debug_clear_valid)
+	get_tree().quit(0 if Levels.level_count() == Levels.TOTAL_LEVELS and visibility_valid and runtime_valid and debug_clear_valid else 1)
+
+
+func _headless_advanced_expansion_test() -> void:
+	## 501~1000 신규 규칙이 베이크 데이터뿐 아니라 실제 Game 런타임에도 연결됐는지 검증한다.
+	var targets := {
+		500: "portal",
+		600: "fragile",
+		700: "fog",
+		800: "current",
+		900: "time_rift",
+	}
+	var failed := false
+	for level_index in targets:
+		start_level(level_index, true, true)
+		await get_tree().process_frame
+		await get_tree().process_frame
+		var runtime_count := 0
+		if game:
+			match String(targets[level_index]):
+				"portal": runtime_count = game.portal_at.size()
+				"fragile": runtime_count = game.fragile_at.size()
+				"fog": runtime_count = game.fog_at.size()
+				"current": runtime_count = game.current_at.size()
+				"time_rift": runtime_count = game.time_rift_at.size()
+		var valid := game != null and runtime_count > 0
+		print("[advanced expansion] level=", level_index + 1, " gimmick=", targets[level_index], " runtime_count=", runtime_count, " valid=", valid)
+		failed = failed or not valid
+	var final_level := Levels.get_level(999)
+	var final_valid := int(final_level.get("advanced_difficulty_tier", 0)) == 5 and int(final_level.get("mechanic_generation", 0)) == 5
+	var cache_valid := Levels._chunk_cache.size() <= Levels.LEVEL_CHUNK_CACHE_LIMIT
+	print("[advanced expansion] levels=", Levels.level_count(), " final_tier=", final_level.get("advanced_difficulty_tier", 0), " cached_chunks=", Levels._chunk_cache.size(), " valid=", final_valid and cache_valid and not failed)
+	get_tree().quit(0 if Levels.level_count() == 1000 and final_valid and cache_valid and not failed else 1)
+
+
+func _headless_level_gate_test() -> void:
+	## 100레벨 클리어 → 광고 버튼 → 다음 100레벨 영구 해금 UI 흐름을 검증한다.
+	var test_save := SaveGame.new()
+	test_save.persistence_enabled = false
+	for chapter_end in range(9, 100, 10):
+		test_save.award_stars(chapter_end, 1)
+	save = test_save
+	show_map()
+	await get_tree().process_frame
+	var before_valid := not save.is_unlocked(100) and Levels.visible_chapter_count(save) == 10 and save.next_unlockable_level_segment(Levels.level_count()) == 1
+	request_level_segment_unlock(100, Callable(self, "show_map"))
+	await get_tree().process_frame
+	var unlock_button: Button = null
+	if _level_gate_overlay:
+		for node in _level_gate_overlay.find_children("*", "Button", true, false):
+			var button := node as Button
+			if button and (button.text.contains("광고") or button.text.contains("바로 열기")):
+				unlock_button = button
+				break
+	var button_found := unlock_button != null
+	if unlock_button:
+		unlock_button.pressed.emit()
+	await get_tree().create_timer(1.0).timeout
+	var after_valid := save.is_level_segment_unlocked(1) and save.is_unlocked(100) and Levels.visible_chapter_count(save) == 11 and _level_gate_overlay == null
+	print("[level gate validation] before=", before_valid, " button=", button_found, " after=", after_valid)
+	get_tree().quit(0 if before_valid and button_found and after_valid else 1)
+
+
+func _headless_endgame_test() -> void:
+	## 보스 3종·대체 승리 조건 3종·신규 기믹 4종이 런타임에서 실제로 작동하는지 검증한다.
+	var failed := false
+	var boss_levels: Array[int] = []
+	var condition_levels := {"move_limit": -1, "color_order": -1, "escort": -1}
+	var gimmick_levels := {"ghost": -1, "sticky": -1, "one_way": -1, "bomb": -1}
+	for index in range(100, Levels.level_count()):
+		var data: Dictionary = Levels.get_level(index)
+		if data.has("boss") and boss_levels.size() < 3:
+			var already := false
+			for existing in boss_levels:
+				if String(Levels.get_level(existing).boss.type) == String(data.boss.type):
+					already = true
+			if not already:
+				boss_levels.append(index)
+		for key in condition_levels:
+			if int(condition_levels[key]) < 0 and data.has(key):
+				condition_levels[key] = index
+		for key in gimmick_levels:
+			if int(gimmick_levels[key]) < 0 and Levels._level_has_gimmick(data, String(key)):
+				gimmick_levels[key] = index
+	var targets: Array[int] = []
+	for index in boss_levels:
+		targets.append(index)
+	for key in condition_levels:
+		if int(condition_levels[key]) >= 0:
+			targets.append(int(condition_levels[key]))
+	for key in gimmick_levels:
+		if int(gimmick_levels[key]) >= 0:
+			targets.append(int(gimmick_levels[key]))
+	for key in condition_levels:
+		if int(condition_levels[key]) < 0:
+			print("[endgame validation] 대체 승리 조건 없음: ", key)
+			failed = true
+	for key in gimmick_levels:
+		if int(gimmick_levels[key]) < 0:
+			print("[endgame validation] 신규 기믹 없음: ", key)
+			failed = true
+	if boss_levels.size() < 3:
+		print("[endgame validation] 보스 3종을 모두 찾지 못함: ", boss_levels.size())
+		failed = true
+	for level_index in targets:
+		start_level(level_index, true, true)
+		await get_tree().create_timer(0.25).timeout
+		if game == null:
+			print("[endgame validation] level=", level_index + 1, " 생성 실패")
+			failed = true
+			continue
+		# 이동 제한 규칙이 자동 플레이의 순간이동 때문에 실패로 끝나지 않게 해제한다.
+		game.move_limit = 0
+		await game.debug_drive()
+		var cleared := game != null and game.state == "clear"
+		print("[endgame validation] level=", level_index + 1, " state=", game.state if game else "none", " cleared=", cleared)
+		if not cleared:
+			failed = true
+	print("[endgame validation] bosses=", boss_levels, " conditions=", condition_levels, " gimmicks=", gimmick_levels, " failed=", failed)
+	get_tree().quit(1 if failed else 0)
 
 
 func _headless_late_play_test() -> void:
@@ -818,16 +1160,16 @@ func _headless_memory_stress_test() -> void:
 	## 모든 챕터의 텍스처/스타일 캐시를 한 번 워밍업한 뒤 같은 레벨을 다시
 	## 순회한다. Godot 메모리 할당자의 정상적인 고점 예약을 누수로 오판하지 않고,
 	## 두 번째 순회에서도 계속 증가하는 객체만 검출한다.
-	for i in range(Levels.LEVELS.size()):
-		start_level(i % Levels.LEVELS.size(), true, true)
+	for i in range(Levels.level_count()):
+		start_level(i % Levels.level_count(), true, true)
 		await get_tree().process_frame
 		await get_tree().process_frame
 	_clear_screen()
 	await get_tree().process_frame
 	await get_tree().process_frame
 	var baseline := _memory_snapshot()
-	for i in range(Levels.LEVELS.size()):
-		start_level(i % Levels.LEVELS.size(), true, true)
+	for i in range(Levels.level_count()):
+		start_level(i % Levels.level_count(), true, true)
 		await get_tree().process_frame
 		await get_tree().process_frame
 	# 한 프레임에 비정상적으로 많은 장식 효과를 요청해도 상한을 넘지 않고 모두 회수되는지 확인한다.

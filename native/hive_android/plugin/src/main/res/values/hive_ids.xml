@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Google의 공식 테스트 App ID. 출시 전에 HIVE/AdMob 콘솔 값으로 교체합니다. -->
+    <string name="admob_app_id" translatable="false">ca-app-pub-3940256099942544~3347511713</string>
+    <!-- Google Play Games 프로젝트 번호. 로그인 콘솔 설정 후 교체합니다. -->
+    <string name="game_services_project_id" translatable="false">233149254808</string>
+</resources>

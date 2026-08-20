@@ -22,6 +22,14 @@ var seal_panel: PanelContainer
 var expression: JellyExpression
 var personality_id := ""
 var personality_state := 0
+# ── 101레벨 이후 신규 기믹 / 보스 상태
+var is_ghost := false            # 다른 색 블록이 통과할 수 있는 유령 젤리
+var is_bomb := false             # 구조 시 인접 장벽을 부수는 폭탄 젤리
+var is_escort := false           # 전담 블록만 구조할 수 있는 호위 대상
+var boss_type := ""              # "king" / "splitter" / "thief"
+var boss_hp := 0
+var boss_panel: PanelContainer
+var boss_label: Label
 
 
 func setup(cid: String, p_shiny: bool, p_frost_layers: int = 0) -> void:
@@ -183,6 +191,85 @@ func set_rescue_sealed(value: bool) -> void:
 	lock.add_theme_color_override("font_color", Color("#f4dcff"))
 	lock.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	seal_panel.add_child(lock)
+
+
+func set_ghost(value: bool) -> void:
+	## 유령 젤리는 반투명하게 보여 다른 색 블록이 지나갈 수 있음을 알린다.
+	is_ghost = value
+	if not value:
+		return
+	sprite.modulate = Color(1, 1, 1, 0.6)
+	if shadow_sprite:
+		shadow_sprite.modulate.a = 0.08
+	_status_badge("👻", Color("#7fa8d8"), Vector2(-42, 10))
+
+
+func set_bomb(value: bool) -> void:
+	is_bomb = value
+	if value:
+		_status_badge("💣", Color("#c05c4e"), Vector2(9, 10))
+
+
+func set_escort(value: bool) -> void:
+	is_escort = value
+	if not value:
+		return
+	_status_badge("🛡", Color("#3f9f78"), Vector2(-42, 10))
+	var halo := create_tween().set_loops()
+	halo.tween_property(sprite, "modulate", Color(1.16, 1.16, 1.04), 0.6).set_trans(Tween.TRANS_SINE)
+	halo.tween_property(sprite, "modulate", Color.WHITE, 0.6).set_trans(Tween.TRANS_SINE)
+
+
+func set_boss(type_id: String, hp: int) -> void:
+	## 보스는 왕관 배지와 남은 타격 수를 항상 보여 준다.
+	boss_type = type_id
+	boss_hp = hp
+	var marks := {"king": "👑", "splitter": "🌀", "thief": "⏳"}
+	var tints := {"king": Color("#d8a12f"), "splitter": Color("#7b5fd0"), "thief": Color("#3f8fbf")}
+	_status_badge(String(marks.get(type_id, "★")), Color(tints.get(type_id, Color("#d8a12f"))), Vector2(-42, -43))
+	sprite.scale = Vector2.ONE * base_scale * 1.06
+	if type_id == "king":
+		boss_panel = PanelContainer.new()
+		boss_panel.position = Vector2(-26, 26)
+		boss_panel.size = Vector2(52, 28)
+		boss_panel.z_index = 7
+		boss_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var style := StyleBoxFlat.new()
+		style.bg_color = Color("#3a2340")
+		style.border_color = Color("#f0c65c")
+		style.set_border_width_all(3)
+		style.set_corner_radius_all(13)
+		boss_panel.add_theme_stylebox_override("panel", style)
+		add_child(boss_panel)
+		boss_label = Label.new()
+		boss_label.text = "♥%d" % boss_hp
+		boss_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		boss_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		boss_label.add_theme_font_size_override("font_size", 17)
+		boss_label.add_theme_color_override("font_color", Color("#ffe9a8"))
+		boss_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		boss_panel.add_child(boss_label)
+	var pulse := create_tween().set_loops()
+	pulse.tween_property(self, "scale", Vector2(1.05, 0.96), 0.5).set_trans(Tween.TRANS_SINE)
+	pulse.tween_property(self, "scale", Vector2(0.97, 1.04), 0.5).set_trans(Tween.TRANS_SINE)
+
+
+func hit_boss() -> bool:
+	## true면 이번 접촉은 체력만 깎고 아직 구조되지 않는다.
+	if boss_type != "king" or boss_hp <= 1:
+		return false
+	boss_hp -= 1
+	if boss_label:
+		boss_label.text = "♥%d" % boss_hp
+	# _process가 매 프레임 sprite.scale을 갱신하므로 흔들림은 회전으로 표현한다.
+	var tw := create_tween()
+	tw.tween_property(sprite, "rotation", 0.18, 0.06)
+	tw.tween_property(sprite, "rotation", -0.18, 0.09)
+	tw.tween_property(sprite, "rotation", 0.0, 0.08)
+	if fx:
+		fx.impact(global_position, Color("#ffd978"), true)
+		fx.float_text(global_position, "왕젤리 ♥%d" % boss_hp, Color("#ffe9a8"), 24)
+	return true
 
 
 func _shiny_sparkle() -> void:

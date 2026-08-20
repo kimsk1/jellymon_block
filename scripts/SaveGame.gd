@@ -20,6 +20,7 @@ const ATTENDANCE_WEEK1_ENERGY := [5, 5, 5, 5, 5, 5, 5]
 const ATTENDANCE_REPEAT_STARDUST := [10, 0, 15, 0, 20, 0, 20]
 const ATTENDANCE_REPEAT_ENERGY := [0, 5, 0, 7, 0, 10, 10]
 const MAX_NICKNAME_LENGTH := 12
+const LEVEL_GATE_SIZE := 100
 
 var stars := {}
 var best_clear_times := {}
@@ -55,6 +56,7 @@ var weekly_key := ""
 var weekly_progress := {}
 var weekly_claimed := false
 var claimed_season_milestones: Array[int] = []
+var unlocked_level_segments: Array[int] = [0]
 var persistence_enabled := true
 
 
@@ -133,6 +135,10 @@ func load_data() -> void:
 					var season_star := int(raw_milestone)
 					if season_star > 0 and not claimed_season_milestones.has(season_star):
 						claimed_season_milestones.append(season_star)
+				for raw_segment in d.get("unlocked_level_segments", [0]):
+					var segment := int(raw_segment)
+					if segment >= 0 and not unlocked_level_segments.has(segment):
+						unlocked_level_segments.append(segment)
 	if energy_updated_at <= 0:
 		energy_updated_at = _now()
 	# 구버전 저장 데이터도 기본 지급 4종만 소유한 상태에서 시작한다.
@@ -158,6 +164,7 @@ func load_data() -> void:
 					rescued_jellies.append(chapter_colors[chapter])
 					break
 	_migrate_resident_records()
+	_migrate_level_segments()
 	refresh_energy()
 	refresh_daily_missions()
 	refresh_weekly_progress()
@@ -203,6 +210,7 @@ func save_data() -> void:
 			"weekly_progress": weekly_progress,
 			"weekly_claimed": weekly_claimed,
 			"claimed_season_milestones": claimed_season_milestones,
+			"unlocked_level_segments": unlocked_level_segments,
 		}))
 
 
@@ -472,6 +480,7 @@ func progression_snapshot() -> Dictionary:
 		"jelly_capture_counts": jelly_capture_counts.duplicate(true),
 		"shiny_discoveries": shiny_discoveries.duplicate(),
 		"booster_inventory": booster_inventory.duplicate(true),
+		"unlocked_level_segments": unlocked_level_segments.duplicate(),
 	}
 
 
@@ -911,4 +920,43 @@ func add_album_memory(kind: String, caption: String, residents: Array = []) -> v
 func is_unlocked(idx: int) -> bool:
 	if idx == 0:
 		return true
-	return get_stars(idx - 1) > 0
+	return get_stars(idx - 1) > 0 and is_level_segment_unlocked(idx / LEVEL_GATE_SIZE)
+
+
+func is_level_segment_unlocked(segment: int) -> bool:
+	return segment <= 0 or unlocked_level_segments.has(segment)
+
+
+func can_unlock_level_segment(segment: int) -> bool:
+	if segment <= 0 or is_level_segment_unlocked(segment):
+		return false
+	return get_stars(segment * LEVEL_GATE_SIZE - 1) > 0
+
+
+func unlock_level_segment(segment: int) -> bool:
+	if not can_unlock_level_segment(segment):
+		return false
+	unlocked_level_segments.append(segment)
+	unlocked_level_segments.sort()
+	save_data()
+	return true
+
+
+func next_unlockable_level_segment(total_levels: int) -> int:
+	var segment_count := int(ceil(float(maxi(0, total_levels)) / float(LEVEL_GATE_SIZE)))
+	for segment in range(1, segment_count):
+		if can_unlock_level_segment(segment):
+			return segment
+	return -1
+
+
+func _migrate_level_segments() -> void:
+	## 이미 101·201… 레벨을 플레이한 구버전 저장은 해당 구간을 잠그지 않는다.
+	var highest_started_segment := 0
+	for raw_index in stars.keys():
+		if int(stars.get(raw_index, 0)) > 0:
+			highest_started_segment = maxi(highest_started_segment, int(String(raw_index)) / LEVEL_GATE_SIZE)
+	for segment in range(1, highest_started_segment + 1):
+		if not unlocked_level_segments.has(segment):
+			unlocked_level_segments.append(segment)
+	unlocked_level_segments.sort()

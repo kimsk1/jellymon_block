@@ -1,4 +1,7 @@
 .godot/
 *.tmp
 build/
+native/hive_android/.gradle/
+native/hive_android/plugin/build/
+native/hive_android/local.properties
 .DS_Store

@@ -94,6 +94,9 @@ func _ready() -> void:
 		grid_center.add_child(grid)
 		for local in range(10):
 			grid.add_child(_level_button(chapter * 10 + local))
+	var unlockable_segment: int = main.save.next_unlockable_level_segment(Levels.level_count())
+	if unlockable_segment > 0:
+		chapters.add_child(_level_segment_gate_card(unlockable_segment))
 
 	var back := Button.new()
 	back.text = "홈으로"
@@ -294,6 +297,47 @@ func show_energy_empty() -> void:
 func _on_back() -> void:
 	if main:
 		main.show_title()
+
+
+func _level_segment_gate_card(segment: int) -> PanelContainer:
+	var first_level := segment * SaveGame.LEVEL_GATE_SIZE + 1
+	var last_level := mini((segment + 1) * SaveGame.LEVEL_GATE_SIZE, Levels.level_count())
+	var card := PanelContainer.new()
+	card.custom_minimum_size = Vector2(G.W - 92, 210)
+	var style := ArtDirection.glass_panel(Color("#f8efff"), 0.96, 28)
+	style.set_border_width_all(5)
+	style.border_color = Color("#9870c5")
+	style.content_margin_left = 28
+	style.content_margin_right = 28
+	style.content_margin_top = 24
+	style.content_margin_bottom = 24
+	card.add_theme_stylebox_override("panel", style)
+	var content := VBoxContainer.new()
+	content.alignment = BoxContainer.ALIGNMENT_CENTER
+	content.add_theme_constant_override("separation", 12)
+	card.add_child(content)
+	var title := Label.new()
+	title.text = "🔒 LEVEL %d~%d" % [first_level, last_level]
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 31)
+	title.add_theme_color_override("font_color", Color("#5d4272"))
+	content.add_child(title)
+	var guide := Label.new()
+	guide.text = "광고를 보고 다음 100레벨을 영구 해금하세요."
+	guide.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	guide.add_theme_font_size_override("font_size", 20)
+	guide.add_theme_color_override("font_color", Color("#786584"))
+	content.add_child(guide)
+	var unlock := Button.new()
+	unlock.text = "바로 열기" if main.save.has_removed_ads() else "광고 보고 다음 구간 열기"
+	unlock.custom_minimum_size = Vector2(390, 70)
+	unlock.add_theme_font_size_override("font_size", 24)
+	ArtDirection.apply_button(unlock, Color("#8e64c8"), 20)
+	unlock.pressed.connect(func():
+		main.request_level_segment_unlock(segment * SaveGame.LEVEL_GATE_SIZE, Callable(main, "show_map"))
+	)
+	content.add_child(unlock)
+	return card
 
 
 func _level_button(i: int) -> Button:

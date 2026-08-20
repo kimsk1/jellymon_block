@@ -20,6 +20,8 @@ var booster_buttons := {}
 var booster_tray: Control
 var tutorial_guide: Control
 var tutorial_help_button: Button
+var objective_card: PanelContainer
+var objective_label: Label
 
 
 func _ready() -> void:
@@ -37,7 +39,8 @@ func _ready() -> void:
 	top.offset_top = 12
 	top.offset_right = -16
 	top.offset_bottom = 142
-	var sb := ArtDirection.panel(Color("#31b7e6"), Color("#116b9f"), 30, 0.42, 5)
+	# 전투 HUD는 밝은 배경 위에서도 실루엣이 무너지지 않는 짙은 왕실 유리 톤을 쓴다.
+	var sb := ArtDirection.panel(Color("#263968"), Color("#68d8f4"), 30, 0.52, 5)
 	sb.content_margin_left = 16
 	sb.content_margin_right = 16
 	sb.content_margin_top = 12
@@ -73,8 +76,8 @@ func _ready() -> void:
 	name_label = Label.new()
 	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	name_label.add_theme_font_size_override("font_size", 22)
-	name_label.add_theme_color_override("font_color", Color("#e9f8ff"))
-	name_label.add_theme_color_override("font_outline_color", Color("#29698f"))
+	name_label.add_theme_color_override("font_color", Color("#dff8ff"))
+	name_label.add_theme_color_override("font_outline_color", Color("#12234e"))
 	name_label.add_theme_constant_override("outline_size", 5)
 	mid.add_child(name_label)
 	timer_caption = Label.new()
@@ -87,7 +90,7 @@ func _ready() -> void:
 	time_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	time_label.add_theme_font_size_override("font_size", 48)
 	time_label.add_theme_color_override("font_color", Color.WHITE)
-	time_label.add_theme_color_override("font_outline_color", Color("#214e74"))
+	time_label.add_theme_color_override("font_outline_color", Color("#111d46"))
 	time_label.add_theme_constant_override("outline_size", 8)
 	mid.add_child(time_label)
 	timer_bar = ProgressBar.new()
@@ -107,8 +110,69 @@ func _ready() -> void:
 	timer_fill.set_corner_radius_all(6)
 	timer_bar.add_theme_stylebox_override("fill", timer_fill)
 	mid.add_child(timer_bar)
+	_build_objective_bar()
 	_build_booster_tray()
 	_build_tutorial_help()
+
+
+func _build_objective_bar() -> void:
+	## 보스/대체 승리 조건이 있는 레벨에서만 보이는 목표 요약 줄.
+	objective_card = PanelContainer.new()
+	objective_card.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
+	objective_card.offset_left = 48
+	objective_card.offset_top = 148
+	objective_card.offset_right = -48
+	objective_card.offset_bottom = 196
+	objective_card.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var style := ArtDirection.panel(Color(0.16, 0.1, 0.3, 0.86), Color("#ffd978"), 20, 0.24, 3)
+	style.content_margin_left = 16
+	style.content_margin_right = 16
+	style.content_margin_top = 5
+	style.content_margin_bottom = 6
+	objective_card.add_theme_stylebox_override("panel", style)
+	objective_card.visible = false
+	root.add_child(objective_card)
+	objective_label = Label.new()
+	objective_label.add_theme_font_size_override("font_size", 21)
+	objective_label.add_theme_color_override("font_color", Color("#fff3cf"))
+	objective_label.add_theme_color_override("font_outline_color", Color(0.1, 0.05, 0.2, 0.9))
+	objective_label.add_theme_constant_override("outline_size", 4)
+	objective_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	objective_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	objective_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	objective_card.add_child(objective_label)
+
+
+func refresh_objectives() -> void:
+	## 보스 종류, 남은 이동 수, 현재 구조 순서를 한 줄로 요약한다.
+	if not objective_card or not game:
+		return
+	var parts: Array[String] = []
+	if not game.boss_data.is_empty() and not game.boss_defeated:
+		var marks := {"king": "👑 왕젤리", "splitter": "🌀 분열 젤리", "thief": "⏳ 시간 도둑"}
+		parts.append(String(marks.get(String(game.boss_data.get("type", "")), "보스")))
+	if game.move_limit > 0:
+		parts.append("이동 %d/%d" % [game.moves_used, game.move_limit])
+	if not game.color_order.is_empty():
+		game._advance_color_order()
+		if game.color_order_index < game.color_order.size():
+			var current := String(game.color_order[game.color_order_index])
+			parts.append("순서 ▶ %s" % String(G.COLOR_NAMES.get(current, current)))
+	if game.escort_catcher >= 0:
+		parts.append("🛡 호위")
+	if parts.is_empty():
+		objective_card.visible = false
+		return
+	objective_card.visible = true
+	objective_label.text = "   ·   ".join(parts)
+	if game.move_limit > 0 and game.moves_used >= int(float(game.move_limit) * 0.8):
+		objective_label.add_theme_color_override("font_color", Color("#ffb3c1"))
+	else:
+		objective_label.add_theme_color_override("font_color", Color("#fff3cf"))
+
+
+func set_move_counter(_used: int, _limit: int) -> void:
+	refresh_objectives()
 
 
 func _build_booster_tray() -> void:
@@ -268,9 +332,13 @@ func show_hint(text: String) -> void:
 	var hint_card := PanelContainer.new()
 	hint_card.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
 	hint_card.offset_left = 54
-	hint_card.offset_top = 150
+	# 목표 요약 줄이 떠 있으면 그 아래로 밀어 겹치지 않게 한다.
+	var hint_top := 206.0 if (objective_card and objective_card.visible) else 150.0
+	hint_card.offset_top = hint_top
 	hint_card.offset_right = -54
-	hint_card.offset_bottom = 216
+	# 복합 관문 안내는 세 줄까지 늘어나므로 줄 수에 맞춰 카드 높이를 잡는다.
+	var line_count: int = maxi(1, text.split("\n").size())
+	hint_card.offset_bottom = hint_top + 44.0 + 30.0 * float(line_count)
 	hint_card.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var hint_style := ArtDirection.panel(Color(0.09, 0.13, 0.27, 0.84), Color(1, 1, 1, 0.48), 22, 0.26, 2)
 	hint_style.content_margin_left = 20
@@ -554,7 +622,8 @@ func _restore_clear_double_button() -> void:
 	clear_double_button.disabled = false
 	clear_double_button.text = "보상 2배 받기" if game.main.save.has_removed_ads() else "광고 보고 보상 2배"
 	if clear_reward_label:
-		clear_reward_label.text = "광고를 불러오지 못했어요. 잠시 후 다시 시도해 주세요."
+		var reason := String(game.main.platform.rewarded_ad_message) if game.main.platform else ""
+		clear_reward_label.text = "광고를 끝까지 시청해야 2배 보상을 받을 수 있어요." if reason.contains("완료되지") else "광고를 불러오지 못했어요. 잠시 후 다시 시도해 주세요."
 
 
 func show_fail(reason: String, stardust_total: int, continue_available: bool, on_continue: Callable, on_retry: Callable, on_map: Callable) -> void:

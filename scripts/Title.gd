@@ -1036,7 +1036,7 @@ func _current_chapter_progress() -> Dictionary:
 	var chapter := clampi(idx / 10, 0, Levels.CHAPTER_NAMES.size() - 1)
 	var start := chapter * 10
 	var cleared := 0
-	for level_idx in range(start, mini(start + 10, Levels.LEVELS.size())):
+	for level_idx in range(start, mini(start + 10, Levels.level_count())):
 		if main.save.get_stars(level_idx) > 0:
 			cleared += 1
 	var reward := FurnitureRewardCatalog.reward_for_level((chapter + 1) * 10)
@@ -1425,10 +1425,18 @@ func _show_home_menu() -> void:
 			main.audio.enabled = sound.button_pressed
 			G.haptics_enabled = haptics.button_pressed
 		)
+	var account_panel := PanelContainer.new()
+	account_panel.custom_minimum_size = Vector2(558, 104)
+	account_panel.add_theme_stylebox_override("panel", _panel_style(Color("#f7efff"), Color("#8b68b8"), 23))
+	content.add_child(account_panel)
+	var account_box := VBoxContainer.new()
+	account_box.alignment = BoxContainer.ALIGNMENT_CENTER
+	account_box.add_theme_constant_override("separation", 2)
+	account_panel.add_child(account_box)
 	var account_row := HBoxContainer.new()
 	account_row.alignment = BoxContainer.ALIGNMENT_CENTER
 	account_row.add_theme_constant_override("separation", 10)
-	content.add_child(account_row)
+	account_box.add_child(account_row)
 	var account_status := Label.new()
 	account_status.text = main.platform.status_text() if main.platform else "플랫폼 연결 대기"
 	account_status.custom_minimum_size = Vector2(320, 48)
@@ -1436,14 +1444,42 @@ func _show_home_menu() -> void:
 	account_status.add_theme_font_size_override("font_size", 17)
 	account_status.add_theme_color_override("font_color", Color("#77647f"))
 	account_row.add_child(account_status)
+	var service_detail := Label.new()
+	service_detail.text = main.platform.service_detail_text() if main.platform else "플랫폼 서비스 준비 중"
+	service_detail.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	service_detail.add_theme_font_size_override("font_size", 14)
+	service_detail.add_theme_color_override("font_color", Color("#765f86"))
 	var login := _button("계정 연결", Color("#5a9bc0"), Vector2(160, 52), 18)
 	login.disabled = main.platform.logged_in if main.platform else true
 	login.pressed.connect(func():
-		if main.platform and main.platform.login():
-			account_status.text = main.platform.status_text()
-			login.disabled = true
+		if not main.platform:
+			return
+		login.disabled = true
+		login.text = "연결 중..."
+		account_status.text = "HIVE 로그인 화면을 준비하고 있어요"
+		var on_login_success := func(_logged_in: bool, _player_id: String):
+			if is_instance_valid(account_status):
+				account_status.text = main.platform.status_text()
+			if is_instance_valid(service_detail):
+				service_detail.text = main.platform.service_detail_text()
+			if is_instance_valid(login):
+				login.text = "연결 완료"
+				login.disabled = true
+		var on_login_failed := func(message: String):
+			if is_instance_valid(account_status):
+				account_status.text = message
+			if is_instance_valid(login):
+				login.text = "다시 연결"
+				login.disabled = false
+			if is_instance_valid(service_detail):
+				service_detail.text = main.platform.service_detail_text()
+		main.platform.login_changed.connect(on_login_success, CONNECT_ONE_SHOT)
+		main.platform.login_failed.connect(on_login_failed, CONNECT_ONE_SHOT)
+		if not main.platform.login():
+			on_login_failed.call("로그인을 시작하지 못했습니다.")
 	)
 	account_row.add_child(login)
+	account_box.add_child(service_detail)
 	var divider := HSeparator.new()
 	divider.custom_minimum_size.y = 5
 	content.add_child(divider)
@@ -1527,10 +1563,10 @@ func _close_home_menu() -> void:
 
 
 func _next_level_index() -> int:
-	for idx in range(Levels.LEVELS.size()):
+	for idx in range(Levels.level_count()):
 		if main.save.get_stars(idx) <= 0:
 			return idx
-	return Levels.LEVELS.size() - 1
+	return Levels.level_count() - 1
 
 
 func _next_resident_text() -> String:
@@ -1552,7 +1588,7 @@ func _growth_goal_text() -> String:
 
 func _build_next_adventure_card() -> void:
 	var idx := _next_level_index()
-	var level: Dictionary = Levels.LEVELS[idx]
+	var level: Dictionary = Levels.get_level(idx)
 	var chapter := clampi(idx / 10, 0, Levels.CHAPTER_NAMES.size() - 1)
 	var card := PanelContainer.new()
 	card.name = "NextAdventureCard"
@@ -2089,7 +2125,11 @@ func _hero_react() -> void:
 	var tw := hero.create_tween()
 	tw.tween_property(hero, "position", start + Vector2(0, -34), 0.16).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	tw.tween_property(hero, "position", start, 0.28).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
-	_show_toast(["말랑!", "오늘도 같이 모험해요!", "방이 정말 포근해요!"][randi() % 3])
+	var hero_half_height := 80.0
+	if hero.texture:
+		hero_half_height = float(hero.texture.get_height()) * absf(hero.scale.y) * 0.5
+	var speech_anchor := start - Vector2(0, hero_half_height + 14.0)
+	_speech_bubble(["말랑!", "오늘도 같이 모험해요!", "방이 정말 포근해요!"][randi() % 3], speech_anchor)
 
 
 func _show_album() -> void:

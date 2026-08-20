@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<properties>
+	<!-- HIVE Console AppID와 Android package name을 반드시 같은 값으로 맞춥니다. -->
+	<appId>com.jellymon.game</appId>
+	<gameLanguage>ko</gameLanguage>
+	<!-- SDK 26부터 서버 환경은 Configuration.setZone()으로 초기화 전에 지정합니다. -->
+	<useLog>true</useLog>
+	<!-- HIVE Console company code: MiniPuzzle (company_index 2162) -->
+	<company>shgame</company>
+	<channel>C2S</channel>
+	<market>GO</market>
+	<httpConnectTimeout>8</httpConnectTimeout>
+	<httpReadTimeout>8</httpReadTimeout>
+	<agreementDetermineBase>device</agreementDetermineBase>
+
+	<providers>
+		<!-- HIVE/Google Console에서 발급한 실제 값으로 교체해야 Google 로그인이 노출됩니다. -->
+		<google
+			playAppId="233149254808"
+			clientId="233149254808-nn9nejgkfubc5djlf1k9nu85ha3enp2e.apps.googleusercontent.com"
+			serverClientId="233149254808-5ftoph127ano8l7dhhg0ehja5grotvuh.apps.googleusercontent.com"
+			reversedClientId="com.googleusercontent.apps.233149254808-nn9nejgkfubc5djlf1k9nu85ha3enp2e" />
+		<googleplaygames
+			playAppId="233149254808"
+			serverClientId="233149254808-5ftoph127ano8l7dhhg0ehja5grotvuh.apps.googleusercontent.com" />
+	</providers>
+</properties>

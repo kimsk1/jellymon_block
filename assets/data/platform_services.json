@@ -1,7 +1,15 @@
 {
-  "version": 1,
+  "version": 2,
   "provider": "hive",
-  "app_id": "SET_IN_HIVE_CONSOLE",
+  "app_id": "com.jellymon.game",
+  "android": {
+    "singleton": "HiveBridge",
+    "package_id": "com.jellymon.game",
+    "hive_sdk_version": "26.4.0",
+    "adiz_version": "3.0.0",
+    "zone": "sandbox",
+    "test_ads": true
+  },
   "features": {
     "login": true,
     "rewarded_ads": true,
