@@ -11,6 +11,7 @@ var focus_style: StyleBoxFlat
 
 
 func _ready() -> void:
+	theme = ArtDirection.ui_theme()
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	z_index = 180
@@ -26,17 +27,17 @@ func _ready() -> void:
 	message_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	message_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	message_label.add_theme_font_size_override("font_size", 24)
-	message_label.add_theme_color_override("font_color", Color("#523866"))
+	message_label.add_theme_color_override("font_color", ArtDirection.ink())
 	message_label.add_theme_color_override("font_outline_color", Color.WHITE)
-	message_label.add_theme_constant_override("outline_size", 3)
+	message_label.add_theme_constant_override("outline_size", 0)
 	var style := StyleBoxFlat.new()
 	style.bg_color = Color("#fff8e9")
-	style.border_color = Color("#8b67b3")
-	style.set_border_width_all(4)
+	style.border_color = ArtDirection.border_color()
+	style.set_border_width_all(1)
 	style.set_corner_radius_all(24)
-	style.shadow_color = Color(0.1, 0.05, 0.18, 0.3)
-	style.shadow_size = 8
-	style.shadow_offset = Vector2(0, 5)
+	style.shadow_color = Color(0.35, 0.22, 0.12, 0.10)
+	style.shadow_size = 3
+	style.shadow_offset = Vector2(0, 2)
 	style.content_margin_left = 18
 	style.content_margin_right = 18
 	message_label.add_theme_stylebox_override("normal", style)
@@ -66,7 +67,7 @@ func _process(delta: float) -> void:
 
 func _draw() -> void:
 	var safe := focus_rect.grow(18.0)
-	var dim := Color(0.08, 0.04, 0.16, 0.46)
+	var dim := ArtDirection.dim_color()
 	draw_rect(Rect2(0, 0, size.x, maxf(0, safe.position.y)), dim)
 	draw_rect(Rect2(0, safe.end.y, size.x, maxf(0, size.y - safe.end.y)), dim)
 	draw_rect(Rect2(0, safe.position.y, maxf(0, safe.position.x), safe.size.y), dim)
@@ -83,7 +84,7 @@ func _draw() -> void:
 	var hand := from_point.lerp(to_point, 0.08 + 0.84 * phase)
 	draw_circle(hand + Vector2(3, 6), 21, Color(0.15, 0.08, 0.23, 0.28))
 	draw_circle(hand, 19, Color("#fff4c9"))
-	draw_arc(hand, 19, 0, TAU, 28, Color("#8b67b3"), 4.0, true)
+	draw_arc(hand, 19, 0, TAU, 28, ArtDirection.border_color(), 4.0, true)
 	var direction := (to_point - from_point).normalized()
 	draw_line(hand, hand + direction * 30.0, Color("#fff4c9"), 13.0, true)
 	draw_circle(to_point, 25 + sin(phase * TAU) * 5, Color(1, 0.9, 0.35, 0.16))

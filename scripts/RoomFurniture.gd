@@ -1,74 +1,35 @@
 extends Node2D
 class_name RoomFurniture
-## 폴리오미노 가구 하나. 선택·회전 상태까지 포함해 코드로 렌더링한다.
+## 실제 가구 형태의 2D 그림. 배치·충돌은 기존 폴리오미노 좌표를 유지한다.
 
+const FurnitureArtLib = preload("res://scripts/FurnitureArt.gd")
 var item: Dictionary
 var cells: Array[Vector2i] = []
 var selected := false
-
+var animation_time := 0.0
+var art: Texture2D
+var rotation_turns := 0
 
 func setup(p_item: Dictionary, placement: Dictionary, p_selected: bool) -> void:
 	item = p_item
 	selected = p_selected
-	cells = RoomData.rotated_cells(String(item.shape), int(placement.get("rotation", 0)))
+	rotation_turns = posmod(int(placement.get("rotation", 0)), 4)
+	cells = RoomData.rotated_cells(String(item.shape), rotation_turns)
 	position = RoomData.ORIGIN + Vector2(int(placement.x), int(placement.y)) * RoomData.CELL
+	art = FurnitureArtLib.texture(String(item.id))
+	set_process(bool(item.get("animated", false)))
 	queue_redraw()
 
+func _process(delta: float) -> void:
+	animation_time += delta
+	queue_redraw()
 
-func _cell_polygon(cell: Vector2i) -> PackedVector2Array:
-	var p := Vector2(cell) * RoomData.CELL
-	return PackedVector2Array([
-		p,
-		p + Vector2(RoomData.CELL, 0),
-		p + Vector2(RoomData.CELL, RoomData.CELL),
-		p + Vector2(0, RoomData.CELL),
-	])
-
-
-func _largest_polygon(polygons: Array[PackedVector2Array]) -> PackedVector2Array:
-	if polygons.is_empty():
-		return PackedVector2Array()
-	var best: PackedVector2Array = polygons[0]
-	var best_area := 0.0
-	for polygon in polygons:
-		var rect := Rect2(polygon[0], Vector2.ZERO)
-		for point in polygon:
-			rect = rect.expand(point)
-		var area := rect.size.x * rect.size.y
-		if area > best_area:
-			best = polygon
-			best_area = area
-	return best
-
-
-func _joined_polygon() -> PackedVector2Array:
-	if cells.is_empty():
-		return PackedVector2Array()
-	var joined := _cell_polygon(cells[0])
-	for i in range(1, cells.size()):
-		var merged: Array[PackedVector2Array] = Geometry2D.merge_polygons(joined, _cell_polygon(cells[i]))
-		joined = _largest_polygon(merged)
-	return joined
-
-
-func _inset(polygon: PackedVector2Array, amount: float) -> PackedVector2Array:
-	return _largest_polygon(Geometry2D.offset_polygon(polygon, -amount, Geometry2D.JOIN_ROUND))
-
-
-func _rounded_inset(polygon: PackedVector2Array, radius: float, final_inset: float) -> PackedVector2Array:
-	## 한 번 안으로 줄인 뒤 둥근 조인으로 다시 넓혀 실제 곡률이 있는 외곽 모서리를 만든다.
-	var core := _largest_polygon(Geometry2D.offset_polygon(polygon, -radius, Geometry2D.JOIN_ROUND))
-	if core.is_empty():
-		return _inset(polygon, final_inset)
-	return _largest_polygon(Geometry2D.offset_polygon(core, radius - final_inset, Geometry2D.JOIN_ROUND))
-
-
-func _shifted(polygon: PackedVector2Array, offset: Vector2) -> PackedVector2Array:
-	var result := PackedVector2Array()
-	for point in polygon:
-		result.append(point + offset)
-	return result
-
+func play_reaction() -> void:
+	if not bool(item.get("animated", false)):
+		return
+	var tween := create_tween()
+	tween.tween_property(self, "scale", Vector2(1.04, 0.98), 0.16).set_trans(Tween.TRANS_BACK)
+	tween.tween_property(self, "scale", Vector2.ONE, 0.24).set_trans(Tween.TRANS_BOUNCE)
 
 func _bounds() -> Rect2:
 	var max_cell := Vector2i.ZERO
@@ -77,276 +38,35 @@ func _bounds() -> Rect2:
 		max_cell.y = maxi(max_cell.y, cell.y + 1)
 	return Rect2(Vector2.ZERO, Vector2(max_cell) * RoomData.CELL)
 
-
 func interaction_point() -> Vector2:
-	## 방 주민이 가구를 사용하러 갈 때 바라보는 대표 지점이다.
 	return position + _bounds().get_center()
 
-
-func _round_box(rect: Rect2, fill: Color, border: Color, radius: float = 16.0, width: int = 3, shadow := true) -> void:
-	var style := StyleBoxFlat.new()
-	style.bg_color = fill
-	style.border_color = border
-	style.set_border_width_all(width)
-	style.set_corner_radius_all(int(radius))
-	style.corner_detail = 10
-	if shadow:
-		style.shadow_color = Color(0.12, 0.07, 0.18, 0.28)
-		style.shadow_size = 5
-		style.shadow_offset = Vector2(0, 5)
-	draw_style_box(style, rect)
-
-
-func _draw_selection(bounds: Rect2) -> void:
-	if not selected:
-		return
-	draw_circle(bounds.get_center(), maxf(bounds.size.x, bounds.size.y) * 0.58, Color(0.35, 0.88, 1.0, 0.13))
-	_round_box(bounds.grow(-2), Color(0.55, 0.9, 1.0, 0.2), Color("#fff5b5"), 20, 5, false)
-
-
-func _draw_cushion(bounds: Rect2, color: Color) -> void:
-	var body := Rect2(bounds.position + Vector2(7, 10), bounds.size - Vector2(14, 18))
-	draw_circle(body.get_center() + Vector2(2, 6), body.size.x * 0.42, Color(0.15, 0.07, 0.18, 0.2))
-	_round_box(body, color.lightened(0.07), color.darkened(0.3), 24, 4)
-	draw_arc(body.get_center(), body.size.x * 0.31, 0.2, PI - 0.2, 22, Color(1, 1, 1, 0.45), 3, true)
-	var font := ThemeDB.fallback_font
-	draw_string(font, body.get_center() + Vector2(-13, 12), "♥", HORIZONTAL_ALIGNMENT_CENTER, 28, 25, Color("#fff8f0"))
-	for corner in [body.position + Vector2(9, 9), Vector2(body.end.x - 9, body.position.y + 9), Vector2(body.position.x + 9, body.end.y - 9), body.end - Vector2(9, 9)]:
-		draw_circle(corner, 2.2, color.darkened(0.18))
-
-
-func _draw_lamp(bounds: Rect2, color: Color) -> void:
-	var center_x := bounds.get_center().x
-	var glow_center := Vector2(center_x, bounds.position.y + minf(42.0, bounds.size.y * 0.3))
-	draw_circle(glow_center, 34, Color(1.0, 0.83, 0.26, 0.13))
-	draw_line(Vector2(center_x, bounds.position.y + 43), Vector2(center_x, bounds.end.y - 24), color.darkened(0.36), 8, true)
-	draw_line(Vector2(center_x - 3, bounds.position.y + 45), Vector2(center_x - 3, bounds.end.y - 27), Color(1, 1, 1, 0.32), 2, true)
-	var shade := PackedVector2Array([
-		Vector2(center_x - 27, bounds.position.y + 40), Vector2(center_x - 18, bounds.position.y + 10),
-		Vector2(center_x + 18, bounds.position.y + 10), Vector2(center_x + 27, bounds.position.y + 40),
-	])
-	draw_colored_polygon(shade, color.lightened(0.08))
-	draw_polyline(PackedVector2Array(shade + PackedVector2Array([shade[0]])), color.darkened(0.28), 4, true)
-	_round_box(Rect2(center_x - 27, bounds.end.y - 28, 54, 21), color, color.darkened(0.32), 11, 4)
-	var font := ThemeDB.fallback_font
-	draw_string(font, Vector2(center_x - 12, bounds.position.y + 36), "★", HORIZONTAL_ALIGNMENT_CENTER, 25, 22, Color.WHITE)
-
-
-func _draw_table(bounds: Rect2, color: Color) -> void:
-	var top := Rect2(bounds.position + Vector2(5, 12), Vector2(bounds.size.x - 10, minf(45, bounds.size.y * 0.62)))
-	draw_line(Vector2(top.position.x + 24, top.end.y - 2), Vector2(top.position.x + 19, bounds.end.y - 5), color.darkened(0.36), 10, true)
-	draw_line(Vector2(top.end.x - 24, top.end.y - 2), Vector2(top.end.x - 19, bounds.end.y - 5), color.darkened(0.36), 10, true)
-	_round_box(top, color.lightened(0.08), color.darkened(0.31), 22, 4)
-	draw_line(top.position + Vector2(18, 10), Vector2(top.end.x - 18, top.position.y + 10), Color(1, 1, 1, 0.42), 4, true)
-	draw_circle(top.get_center() + Vector2(-18, 4), 8, Color("#e7f8ff"))
-	draw_circle(top.get_center() + Vector2(7, -2), 5, Color(1, 1, 1, 0.62))
-	draw_circle(top.get_center() + Vector2(25, 7), 3, Color(1, 1, 1, 0.48))
-
-
-func _draw_shelf(bounds: Rect2, color: Color) -> void:
-	var frame := Rect2(bounds.position + Vector2(4, 8), bounds.size - Vector2(8, 14))
-	_round_box(frame, color.darkened(0.18), color.darkened(0.38), 15, 4)
-	var inner := frame.grow(-8)
-	_round_box(inner, Color("#fff2cf"), color.darkened(0.25), 9, 3, false)
-	var sections := maxi(1, cells.size())
-	var section_w := inner.size.x / float(sections)
-	for i in range(1, sections):
-		draw_line(Vector2(inner.position.x + section_w * i, inner.position.y + 3), Vector2(inner.position.x + section_w * i, inner.end.y - 3), color.darkened(0.22), 4, true)
-	for i in range(sections):
-		var base_x := inner.position.x + section_w * i
-		if i % 3 == 0:
-			draw_rect(Rect2(base_x + 11, inner.end.y - 24, 8, 19), Color("#ff8a75"), true)
-			draw_rect(Rect2(base_x + 21, inner.end.y - 29, 7, 24), Color("#6e9ee8"), true)
-		else:
-			draw_circle(Vector2(base_x + section_w * 0.5, inner.position.y + 21), 10, Color("#69c977"))
-			draw_rect(Rect2(base_x + section_w * 0.5 - 8, inner.position.y + 29, 16, 11), Color("#e59856"), true)
-
-
-func _draw_rug(bounds: Rect2, color: Color) -> void:
-	var rug := bounds.grow(-7)
-	_round_box(rug, Color(color.r, color.g, color.b, 0.78), color.darkened(0.24), 28, 3)
-	draw_arc(rug.get_center(), minf(rug.size.x, rug.size.y) * 0.3, 0, TAU, 30, Color(1, 1, 1, 0.4), 3, true)
-
-
-func _draw_plant(bounds: Rect2, color: Color) -> void:
-	var c := bounds.get_center()
-	draw_circle(c + Vector2(-11, -11), 15, color.lightened(0.1))
-	draw_circle(c + Vector2(10, -15), 17, color)
-	draw_circle(c + Vector2(1, -27), 14, color.lightened(0.2))
-	var pot := PackedVector2Array([c + Vector2(-20, 2), c + Vector2(20, 2), c + Vector2(14, 30), c + Vector2(-14, 30)])
-	draw_colored_polygon(pot, Color("#f39b64"))
-	draw_polyline(PackedVector2Array(pot + PackedVector2Array([pot[0]])), Color("#a65e42"), 4, true)
-
-
-func _draw_soft_furniture(bounds: Rect2, color: Color) -> void:
-	var seat := Rect2(bounds.position + Vector2(7, bounds.size.y * 0.34), Vector2(bounds.size.x - 14, bounds.size.y * 0.52))
-	_round_box(seat, color, color.darkened(0.34), 23, 4)
-	var back := Rect2(bounds.position + Vector2(12, 8), Vector2(bounds.size.x - 24, bounds.size.y * 0.48))
-	_round_box(back, color.lightened(0.08), color.darkened(0.3), 22, 4)
-	draw_line(Vector2(bounds.get_center().x, back.position.y + 8), Vector2(bounds.get_center().x, back.end.y - 7), Color(1, 1, 1, 0.24), 3, true)
-	draw_circle(Vector2(seat.position.x + 10, seat.end.y + 3), 6, color.darkened(0.42))
-	draw_circle(Vector2(seat.end.x - 10, seat.end.y + 3), 6, color.darkened(0.42))
-
-
-func _draw_cabinet(bounds: Rect2, color: Color) -> void:
-	var frame := bounds.grow(-6)
-	_round_box(frame, color.darkened(0.2), color.darkened(0.43), 18, 4)
-	var door := frame.grow(-9)
-	_round_box(door, color.lightened(0.1), color.darkened(0.28), 12, 3, false)
-	draw_line(Vector2(door.get_center().x, door.position.y + 3), Vector2(door.get_center().x, door.end.y - 3), color.darkened(0.25), 3, true)
-	draw_circle(door.get_center() + Vector2(-7, 0), 3.5, Color("#fff1c7"))
-	draw_circle(door.get_center() + Vector2(7, 0), 3.5, Color("#fff1c7"))
-
-
-func _draw_screen(bounds: Rect2, color: Color) -> void:
-	var panels := maxi(2, cells.size())
-	var width := (bounds.size.x - 10.0) / panels
-	for i in range(panels):
-		var panel := Rect2(bounds.position + Vector2(5 + width * i, 7), Vector2(width - 3, bounds.size.y - 16))
-		_round_box(panel, color.lightened(0.12 if i % 2 == 0 else 0.03), color.darkened(0.32), 12, 3)
-		draw_line(panel.position + Vector2(9, 11), Vector2(panel.end.x - 9, panel.position.y + 11), Color(1, 1, 1, 0.38), 3, true)
-
-
-func _draw_counter(bounds: Rect2, color: Color) -> void:
-	var base := Rect2(bounds.position + Vector2(8, 24), bounds.size - Vector2(16, 32))
-	_round_box(base, color, color.darkened(0.38), 15, 4)
-	var top := Rect2(bounds.position + Vector2(2, 12), Vector2(bounds.size.x - 4, 24))
-	_round_box(top, color.lightened(0.18), color.darkened(0.32), 12, 4)
-	for i in range(1, maxi(2, cells.size())):
-		var x := base.position.x + base.size.x * i / float(maxi(2, cells.size()))
-		draw_line(Vector2(x, base.position.y + 8), Vector2(x, base.end.y - 8), color.darkened(0.2), 3, true)
-
-
-func _draw_slide(bounds: Rect2, color: Color) -> void:
-	var left := bounds.position.x + 16
-	var top_y := bounds.position.y + 15
-	var bottom := bounds.end - Vector2(15, 16)
-	draw_line(Vector2(left, top_y), Vector2(left, bounds.end.y - 12), color.darkened(0.36), 8, true)
-	for y in range(int(top_y + 15), int(bounds.end.y - 12), 18):
-		draw_line(Vector2(left - 9, y), Vector2(left + 9, y), Color("#fff0c9"), 4, true)
-	var chute := PackedVector2Array([Vector2(left + 7, top_y), Vector2(left + 30, top_y), bottom, bottom + Vector2(-24, 0)])
-	draw_colored_polygon(chute, color)
-	draw_polyline(PackedVector2Array(chute + PackedVector2Array([chute[0]])), color.darkened(0.34), 5, true)
-	draw_line(Vector2(left + 18, top_y + 7), bottom - Vector2(10, 7), Color(1, 1, 1, 0.35), 3, true)
-
-
-func _draw_tea_set(bounds: Rect2, color: Color) -> void:
-	_draw_table(bounds, color)
-	var c := bounds.get_center() + Vector2(0, -7)
-	draw_circle(c, 17, Color("#fff4df"))
-	draw_arc(c, 17, 0, TAU, 20, color.darkened(0.25), 3, true)
-	draw_circle(c + Vector2(0, -18), 5, color)
-	draw_arc(c + Vector2(19, 0), 10, -PI * 0.5, PI * 0.5, 12, color.darkened(0.25), 4, true)
-	for dx in [-34, 34]:
-		_round_box(Rect2(c + Vector2(dx - 10, 9), Vector2(20, 14)), color.lightened(0.15), color.darkened(0.25), 7, 2, false)
-
-
-func _draw_piano(bounds: Rect2, color: Color) -> void:
-	var body := bounds.grow(-7)
-	_round_box(body, color.darkened(0.08), color.darkened(0.42), 18, 4)
-	var keys := Rect2(body.position + Vector2(12, body.size.y * 0.5), Vector2(body.size.x - 24, body.size.y * 0.3))
-	_round_box(keys, Color("#fffaf0"), color.darkened(0.35), 7, 2, false)
-	var key_count := maxi(5, int(keys.size.x / 22.0))
-	for i in range(1, key_count):
-		var x := keys.position.x + keys.size.x * i / key_count
-		draw_line(Vector2(x, keys.position.y), Vector2(x, keys.end.y), Color("#7a6683"), 2)
-	draw_string(ThemeDB.fallback_font, body.get_center() + Vector2(-14, -10), "♪", HORIZONTAL_ALIGNMENT_CENTER, 28, 25, Color("#fff1b7"))
-
-
-func _draw_fountain(bounds: Rect2, color: Color) -> void:
-	var c := bounds.get_center()
-	draw_circle(c + Vector2(0, 14), minf(bounds.size.x, bounds.size.y) * 0.36, color.darkened(0.18))
-	draw_circle(c + Vector2(0, 10), minf(bounds.size.x, bounds.size.y) * 0.28, Color("#bff3ff"))
-	draw_line(c + Vector2(0, 8), c - Vector2(0, 31), color.darkened(0.28), 7, true)
-	for dx in [-20, 0, 20]:
-		draw_arc(c + Vector2(dx * 0.25, -6), 19 + abs(dx) * 0.25, PI + 0.35, TAU - 0.35, 14, Color("#e8fbff"), 4, true)
-
-
-func _draw_garden(bounds: Rect2, color: Color) -> void:
-	var planter := Rect2(bounds.position + Vector2(5, bounds.size.y * 0.58), Vector2(bounds.size.x - 10, bounds.size.y * 0.3))
-	_round_box(planter, Color("#d99058"), Color("#985535"), 13, 4)
-	var count := maxi(3, cells.size() + 1)
-	for i in range(count):
-		var x := bounds.position.x + bounds.size.x * (i + 1) / float(count + 1)
-		var y := planter.position.y
-		draw_line(Vector2(x, y + 8), Vector2(x, y - 21), Color("#3d9b58"), 4, true)
-		draw_circle(Vector2(x - 7, y - 21), 9, color.lightened(0.06))
-		draw_circle(Vector2(x + 7, y - 25), 9, color)
-
-
-func _draw_stage(bounds: Rect2, color: Color) -> void:
-	var frame := bounds.grow(-5)
-	_round_box(frame, color.darkened(0.28), color.darkened(0.48), 20, 4)
-	var opening := frame.grow(-11)
-	_round_box(opening, Color("#4b315f"), color.darkened(0.42), 14, 2, false)
-	var curtain_left := PackedVector2Array([opening.position, opening.position + Vector2(opening.size.x * 0.3, 0), opening.position + Vector2(opening.size.x * 0.18, opening.size.y), Vector2(opening.position.x, opening.end.y)])
-	draw_colored_polygon(curtain_left, color)
-	var curtain_right := PackedVector2Array([Vector2(opening.end.x - opening.size.x * 0.3, opening.position.y), Vector2(opening.end.x, opening.position.y), opening.end, Vector2(opening.end.x - opening.size.x * 0.18, opening.end.y)])
-	draw_colored_polygon(curtain_right, color)
-	draw_string(ThemeDB.fallback_font, opening.get_center() + Vector2(-16, 13), "★", HORIZONTAL_ALIGNMENT_CENTER, 32, 29, Color("#ffe47c"))
-
-
-func _draw_castle(bounds: Rect2, color: Color) -> void:
-	var base := Rect2(bounds.position + Vector2(8, bounds.size.y * 0.32), Vector2(bounds.size.x - 16, bounds.size.y * 0.58))
-	_round_box(base, color, color.darkened(0.38), 12, 4)
-	var tower_w := minf(48, bounds.size.x * 0.24)
-	for x in [base.position.x, base.end.x - tower_w]:
-		var tower := Rect2(x, bounds.position.y + 10, tower_w, base.end.y - bounds.position.y - 10)
-		_round_box(tower, color.lightened(0.08), color.darkened(0.38), 10, 4)
-	var door := Rect2(base.get_center() + Vector2(-17, 4), Vector2(34, base.size.y * 0.48))
-	_round_box(door, Color("#5b3d73"), color.darkened(0.45), 16, 3, false)
-	for x in range(int(base.position.x + 12), int(base.end.x - 8), 30):
-		draw_rect(Rect2(x, base.position.y - 9, 16, 16), color.lightened(0.08), true)
-
-
-func _draw_keepsake(bounds: Rect2, color: Color, symbol: String) -> void:
-	var frame := bounds.grow(-8)
-	_round_box(frame, Color("#fff0d5"), color.darkened(0.38), 17, 5)
-	var inner := frame.grow(-9)
-	_round_box(inner, color.lightened(0.12), color.darkened(0.24), 11, 2, false)
-	var font_size := int(clampf(minf(inner.size.x, inner.size.y) * 0.42, 22, 58))
-	draw_string(ThemeDB.fallback_font, inner.get_center() + Vector2(-font_size * 0.32, font_size * 0.32), symbol, HORIZONTAL_ALIGNMENT_CENTER, font_size, font_size, Color.WHITE)
-
-
-func _draw_candy_furniture(_bounds_rect: Rect2, color: Color) -> void:
-	var joined := _joined_polygon()
-	var outer := _rounded_inset(joined, 17.0, 3.0)
-	var body := _rounded_inset(joined, 19.0, 9.0)
-	if outer.is_empty() or body.is_empty():
-		return
-	draw_colored_polygon(_shifted(outer, Vector2(5, 8)), Color(0.1, 0.05, 0.18, 0.28))
-	draw_colored_polygon(outer, color.darkened(0.34))
-	draw_colored_polygon(body, color.lightened(0.04))
-	# 손잡이·쿠션 단추를 추가해 단순 퍼즐 블록보다 실제 수납 가구처럼 보이게 한다.
-	for cell in cells:
-		var center := Vector2(cell) * RoomData.CELL + Vector2.ONE * RoomData.CELL * 0.5
-		draw_circle(center, 5, Color(1, 1, 1, 0.78))
-		draw_arc(center, 13, PI * 0.12, PI * 0.88, 12, Color(1, 1, 1, 0.22), 2, true)
-
+func art_bounds() -> Rect2:
+	var bounds := _bounds().grow(-4)
+	if art == null:
+		return bounds
+	# 회전은 점유 칸을 바꾼다. 정면 가구 그림을 눕히거나 늘이지 않는다.
+	var factor := minf(bounds.size.x / art.get_width(), bounds.size.y / art.get_height())
+	var dimensions := art.get_size() * factor
+	return Rect2(Vector2(bounds.get_center().x - dimensions.x * 0.5, bounds.end.y - dimensions.y), dimensions)
 
 func _draw() -> void:
-	var source := Color(String(item.color))
-	var color := Color.from_hsv(source.h, minf(1.0, source.s * 1.38 + 0.06), maxf(0.72, source.v * 0.91), 1.0)
-	var bounds := _bounds()
-	var id := String(item.id)
-	match id:
-		"cushion_r": _draw_cushion(bounds, color)
-		"lamp_y": _draw_lamp(bounds, color)
-		"table_b": _draw_table(bounds, color)
-		"shelf_g", "book_g", "ach_15": _draw_shelf(bounds, color)
-		"rug_r": _draw_rug(bounds, color)
-		"plant_g": _draw_plant(bounds, color)
-		"garden_g": _draw_garden(bounds, color)
-		"sofa_p", "bench_o", "bed_r", "ach_3x25": _draw_soft_furniture(bounds, color)
-		"cabinet_b": _draw_cabinet(bounds, color)
-		"screen_p", "ach_ch3": _draw_screen(bounds, color)
-		"counter_y": _draw_counter(bounds, color)
-		"slide_b": _draw_slide(bounds, color)
-		"tea_o": _draw_tea_set(bounds, color)
-		"piano_p": _draw_piano(bounds, color)
-		"fountain_b": _draw_fountain(bounds, color)
-		"stage_y": _draw_stage(bounds, color)
-		"castle_p", "ach_25", "ach_clear": _draw_castle(bounds, color)
-		"ach_first", "ach_five", "ach_ch1", "ach_3x10", "ach_perfect": _draw_keepsake(bounds, color, String(item.mark))
-		_: _draw_candy_furniture(bounds, color)
-	_draw_selection(bounds)
+	if art:
+		var rect := art_bounds()
+		# 180도 방향은 좌우 반전으로 표현하며 높이·종횡비를 보존한다.
+		if rotation_turns >= 2:
+			rect.position.x += rect.size.x
+			rect.size.x = -rect.size.x
+		draw_texture_rect(art, rect, false)
+		if bool(item.get("animated", false)):
+			var center := art_bounds().get_center()
+			for i in range(3):
+				var angle := animation_time * 0.6 + TAU * float(i) / 3.0
+				var point := center + Vector2(cos(angle), sin(angle)) * minf(_bounds().size.x, _bounds().size.y) * 0.33
+				draw_circle(point, 1.6, Color(1.0, 0.9, 0.65, 0.35 + sin(animation_time * 2.0) * 0.15))
+	if selected:
+		# 선택 시 실제 점유 셀만 표시해 L/T형 가구의 빈 칸도 구분할 수 있다.
+		for cell in cells:
+			var rect := Rect2(Vector2(cell) * RoomData.CELL, Vector2.ONE * RoomData.CELL).grow(-2)
+			draw_rect(rect, Color(0.49, 0.82, 0.76, 0.12), true)
+			draw_rect(rect, Color("#fff0b0"), false, 2.0)

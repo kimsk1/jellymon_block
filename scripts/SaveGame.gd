@@ -9,6 +9,11 @@ const LiveProgressionCatalogLib = preload("res://scripts/LiveProgressionCatalog.
 const CharacterCatalogLib = preload("res://scripts/CharacterCatalog.gd")
 const GameBalanceCatalogLib = preload("res://scripts/GameBalanceCatalog.gd")
 const MetaProgressionCatalogLib = preload("res://scripts/MetaProgressionCatalog.gd")
+const ShopCatalogLib = preload("res://scripts/ShopCatalog.gd")
+const RetentionCatalogLib = preload("res://scripts/RetentionCatalog.gd")
+
+signal data_saved
+var cloud_baseline := ""
 
 const PATH := "user://jellymon_save.json"
 const MAX_ENERGY := 5
@@ -21,11 +26,25 @@ const ATTENDANCE_REPEAT_STARDUST := [10, 0, 15, 0, 20, 0, 20]
 const ATTENDANCE_REPEAT_ENERGY := [0, 5, 0, 7, 0, 10, 10]
 const MAX_NICKNAME_LENGTH := 12
 const LEVEL_GATE_SIZE := 100
+const HOME_FEATURE_LEVELS := {
+	"attendance": 3,
+	"decorate": 4,
+	"album": 5,
+	"missions": 6,
+	"shop": 10,
+	"lifestyle": 15,
+}
 
 var stars := {}
 var best_clear_times := {}
+var best_clear_at := {}
+var three_star_first_at_ms := {}
+var hive_record_owner := ""
 var stardust := 0
 var room_placements: Array = []
+var room_theme_id := RoomDataLib.DEFAULT_ROOM_THEME
+# Tests can isolate persistence without touching the player save.
+var storage_path := PATH
 var owned_furniture: Array[String] = []
 var claimed_furniture_reward_levels: Array[int] = []
 var room_grid_version := ROOM_GRID_VERSION
@@ -36,6 +55,9 @@ var album_memories: Array = []
 var attendance_claimed_days := 0
 var attendance_last_claim_date := ""
 var ads_removed := false
+var claimed_shop_items: Array[String] = []
+var vip_reward_skip_date := ""
+var vip_daily_support_date := ""
 var nickname := ""
 var seen_scenarios: Array[String] = []
 var completed_tutorials: Array[String] = []
@@ -44,32 +66,72 @@ var energy_updated_at := 0
 var daily_mission_date := ""
 var daily_mission_progress := {}
 var daily_mission_claimed := false
+var daily_challenge_date := ""
 var jelly_capture_counts := {}
 var shiny_discoveries: Array[String] = []
 var claimed_dex_milestones: Array[int] = []
 var sound_enabled := true
 var haptics_enabled := true
 var notifications_enabled := true
+var language := "system"
 var claimed_mail_ids: Array[String] = []
 var booster_inventory := {"time": 2, "compass": 2, "ice": 1, "space": 1, "rescue": 1}
 var weekly_key := ""
 var weekly_progress := {}
 var weekly_claimed := false
+var weekly_expedition_step := 0
+var weekly_expedition_claimed := false
 var claimed_season_milestones: Array[int] = []
 var unlocked_level_segments: Array[int] = [0]
 var persistence_enabled := true
+var resident_request_date := ""
+var resident_requests: Array = []
+var season_key := ""
+var season_xp := 0
+var season_premium := false
+var claimed_season_free: Array[int] = []
+var claimed_season_premium: Array[int] = []
+var restoration_points := 0
+var town_levels := {}
+var weekly_activity_best := 0.0
+var consecutive_failures := 0
+var beta_feedback_submitted := false
+
+
+func cleared_level_count() -> int:
+	var count := 0
+	for value in stars.values():
+		if int(value) > 0:
+			count += 1
+	return count
+
+
+func home_feature_unlocked(feature_id: String) -> bool:
+	var required_level := int(HOME_FEATURE_LEVELS.get(feature_id, 1))
+	if required_level <= 1:
+		return true
+	return get_stars(required_level - 2) > 0
+
+
+func home_feature_unlock_level(feature_id: String) -> int:
+	return int(HOME_FEATURE_LEVELS.get(feature_id, 1))
 
 
 func load_data() -> void:
-	if FileAccess.file_exists(PATH):
-		var f := FileAccess.open(PATH, FileAccess.READ)
+	if FileAccess.file_exists(storage_path):
+		var f := FileAccess.open(storage_path, FileAccess.READ)
 		if f:
 			var d = JSON.parse_string(f.get_as_text())
 			if typeof(d) == TYPE_DICTIONARY:
 				stars = d.get("stars", {})
 				best_clear_times = d.get("best_clear_times", {})
+				best_clear_at = d.get("best_clear_at", {})
+				three_star_first_at_ms = d.get("three_star_first_at_ms", {})
+				hive_record_owner = String(d.get("hive_record_owner", ""))
+				cloud_baseline = String(d.get("cloud_baseline", ""))
 				stardust = maxi(0, int(d.get("stardust", 0)))
 				room_placements = d.get("room_placements", [])
+				room_theme_id = String(RoomDataLib.room_theme(String(d.get("room_theme_id", RoomDataLib.DEFAULT_ROOM_THEME))).id)
 				for raw_id in d.get("owned_furniture", []):
 					var furniture_id := String(raw_id)
 					if not furniture_id.is_empty() and not owned_furniture.has(furniture_id):
@@ -83,6 +145,12 @@ func load_data() -> void:
 				attendance_claimed_days = maxi(0, int(d.get("attendance_claimed_days", 0)))
 				attendance_last_claim_date = String(d.get("attendance_last_claim_date", ""))
 				ads_removed = bool(d.get("ads_removed", false))
+				for raw_shop_id in d.get("claimed_shop_items", []):
+					var shop_id := String(raw_shop_id)
+					if not shop_id.is_empty() and not claimed_shop_items.has(shop_id):
+						claimed_shop_items.append(shop_id)
+				vip_reward_skip_date = String(d.get("vip_reward_skip_date", ""))
+				vip_daily_support_date = String(d.get("vip_daily_support_date", ""))
 				nickname = String(d.get("nickname", ""))
 				for scenario_id in d.get("seen_scenarios", []):
 					var value := String(scenario_id)
@@ -108,6 +176,7 @@ func load_data() -> void:
 				daily_mission_date = String(d.get("daily_mission_date", ""))
 				daily_mission_progress = d.get("daily_mission_progress", {})
 				daily_mission_claimed = bool(d.get("daily_mission_claimed", false))
+				daily_challenge_date = String(d.get("daily_challenge_date", ""))
 				jelly_capture_counts = d.get("jelly_capture_counts", {})
 				for raw_color in d.get("shiny_discoveries", []):
 					var shiny_color := String(raw_color)
@@ -120,6 +189,7 @@ func load_data() -> void:
 				sound_enabled = bool(d.get("sound_enabled", true))
 				haptics_enabled = bool(d.get("haptics_enabled", true))
 				notifications_enabled = bool(d.get("notifications_enabled", true))
+				language = String(d.get("language", "system"))
 				for raw_mail_id in d.get("claimed_mail_ids", []):
 					var mail_id := String(raw_mail_id)
 					if not mail_id.is_empty() and not claimed_mail_ids.has(mail_id):
@@ -131,6 +201,8 @@ func load_data() -> void:
 				weekly_key = String(d.get("weekly_key", ""))
 				weekly_progress = d.get("weekly_progress", {})
 				weekly_claimed = bool(d.get("weekly_claimed", false))
+				weekly_expedition_step = clampi(int(d.get("weekly_expedition_step", 0)), 0, 5)
+				weekly_expedition_claimed = bool(d.get("weekly_expedition_claimed", false))
 				for raw_milestone in d.get("claimed_season_milestones", []):
 					var season_star := int(raw_milestone)
 					if season_star > 0 and not claimed_season_milestones.has(season_star):
@@ -139,17 +211,28 @@ func load_data() -> void:
 					var segment := int(raw_segment)
 					if segment >= 0 and not unlocked_level_segments.has(segment):
 						unlocked_level_segments.append(segment)
+				resident_request_date = String(d.get("resident_request_date", ""))
+				resident_requests = d.get("resident_requests", []).duplicate(true)
+				season_key = String(d.get("season_key", ""))
+				season_xp = maxi(0, int(d.get("season_xp", 0)))
+				season_premium = bool(d.get("season_premium", false))
+				for value in d.get("claimed_season_free", []): claimed_season_free.append(int(value))
+				for value in d.get("claimed_season_premium", []): claimed_season_premium.append(int(value))
+				restoration_points = maxi(0, int(d.get("restoration_points", 0)))
+				town_levels = d.get("town_levels", {}).duplicate(true)
+				weekly_activity_best = maxf(0.0, float(d.get("weekly_activity_best", 0.0)))
+				consecutive_failures = maxi(0, int(d.get("consecutive_failures", 0)))
+				beta_feedback_submitted = bool(d.get("beta_feedback_submitted", false))
 	if energy_updated_at <= 0:
 		energy_updated_at = _now()
 	# 구버전 저장 데이터도 기본 지급 4종만 소유한 상태에서 시작한다.
 	for starter_id in RoomDataLib.STARTER_ITEM_IDS:
 		if not owned_furniture.has(starter_id):
 			owned_furniture.append(starter_id)
+	_sync_shop_entitlement_rewards()
 	_sync_furniture_milestone_rewards()
-	if room_placements.is_empty():
-		room_placements = RoomDataLib.default_placements()
-		room_grid_version = ROOM_GRID_VERSION
-	elif room_grid_version < ROOM_GRID_VERSION:
+	# 빈 배열도 유효한 사용자 배치다. 신규 방은 비워 두고 시작 가구는 보관함에 지급한다.
+	if room_grid_version < ROOM_GRID_VERSION:
 		# 6×5 구형 방의 화면상 위치를 유지한 채 새 왼쪽 열만 추가한다.
 		for placement in room_placements:
 			placement["x"] = int(placement.get("x", 0)) + 1
@@ -168,50 +251,98 @@ func load_data() -> void:
 	refresh_energy()
 	refresh_daily_missions()
 	refresh_weekly_progress()
+	refresh_resident_requests()
+	refresh_season()
 
+
+func to_dictionary() -> Dictionary:
+	return {
+		"stars": stars,
+		"best_clear_times": best_clear_times,
+		"best_clear_at": best_clear_at,
+		"three_star_first_at_ms": three_star_first_at_ms,
+		"hive_record_owner": hive_record_owner,
+		"stardust": stardust,
+		"room_placements": room_placements,
+		"room_theme_id": room_theme_id,
+		"owned_furniture": owned_furniture,
+		"claimed_furniture_reward_levels": claimed_furniture_reward_levels,
+		"room_grid_version": room_grid_version,
+		"rescued_jellies": rescued_jellies,
+		"resident_records": resident_records,
+		"resident_relationships": resident_relationships,
+		"album_memories": album_memories,
+		"attendance_claimed_days": attendance_claimed_days,
+		"attendance_last_claim_date": attendance_last_claim_date,
+		"ads_removed": ads_removed,
+		"claimed_shop_items": claimed_shop_items,
+		"vip_reward_skip_date": vip_reward_skip_date,
+		"vip_daily_support_date": vip_daily_support_date,
+		"nickname": nickname,
+		"seen_scenarios": seen_scenarios,
+		"completed_tutorials": completed_tutorials,
+		"energy": energy,
+		"energy_updated_at": energy_updated_at,
+		"daily_mission_date": daily_mission_date,
+		"daily_mission_progress": daily_mission_progress,
+		"daily_mission_claimed": daily_mission_claimed,
+		"daily_challenge_date": daily_challenge_date,
+		"jelly_capture_counts": jelly_capture_counts,
+		"shiny_discoveries": shiny_discoveries,
+		"claimed_dex_milestones": claimed_dex_milestones,
+		"sound_enabled": sound_enabled,
+		"haptics_enabled": haptics_enabled,
+		"notifications_enabled": notifications_enabled,
+		"language": language,
+		"claimed_mail_ids": claimed_mail_ids,
+		"booster_inventory": booster_inventory,
+		"weekly_key": weekly_key,
+		"weekly_progress": weekly_progress,
+		"weekly_claimed": weekly_claimed,
+		"weekly_expedition_step": weekly_expedition_step,
+		"weekly_expedition_claimed": weekly_expedition_claimed,
+		"claimed_season_milestones": claimed_season_milestones,
+		"unlocked_level_segments": unlocked_level_segments,
+		"resident_request_date": resident_request_date,
+		"resident_requests": resident_requests,
+		"season_key": season_key,
+		"season_xp": season_xp,
+		"season_premium": season_premium,
+		"claimed_season_free": claimed_season_free,
+		"claimed_season_premium": claimed_season_premium,
+		"restoration_points": restoration_points,
+		"town_levels": town_levels,
+		"weekly_activity_best": weekly_activity_best,
+		"consecutive_failures": consecutive_failures,
+		"beta_feedback_submitted": beta_feedback_submitted,
+		}
+
+func cloud_data() -> Dictionary:
+	var data := to_dictionary()
+	data.erase("hive_record_owner")
+	return data
+
+func apply_cloud_data(data: Dictionary) -> void:
+	for key in cloud_data():
+		var current = get(key)
+		if current is Array:
+			current.assign(data[key])
+		else:
+			set(key, data[key].duplicate(true) if data[key] is Dictionary else data[key])
 
 func save_data() -> void:
-	if not persistence_enabled:
-		return
-	var f := FileAccess.open(PATH, FileAccess.WRITE)
-	if f:
-		f.store_string(JSON.stringify({
-			"stars": stars,
-			"best_clear_times": best_clear_times,
-			"stardust": stardust,
-			"room_placements": room_placements,
-			"owned_furniture": owned_furniture,
-			"claimed_furniture_reward_levels": claimed_furniture_reward_levels,
-			"room_grid_version": room_grid_version,
-			"rescued_jellies": rescued_jellies,
-			"resident_records": resident_records,
-			"resident_relationships": resident_relationships,
-			"album_memories": album_memories,
-			"attendance_claimed_days": attendance_claimed_days,
-			"attendance_last_claim_date": attendance_last_claim_date,
-			"ads_removed": ads_removed,
-			"nickname": nickname,
-			"seen_scenarios": seen_scenarios,
-			"completed_tutorials": completed_tutorials,
-			"energy": energy,
-			"energy_updated_at": energy_updated_at,
-			"daily_mission_date": daily_mission_date,
-			"daily_mission_progress": daily_mission_progress,
-			"daily_mission_claimed": daily_mission_claimed,
-			"jelly_capture_counts": jelly_capture_counts,
-			"shiny_discoveries": shiny_discoveries,
-			"claimed_dex_milestones": claimed_dex_milestones,
-			"sound_enabled": sound_enabled,
-			"haptics_enabled": haptics_enabled,
-			"notifications_enabled": notifications_enabled,
-			"claimed_mail_ids": claimed_mail_ids,
-			"booster_inventory": booster_inventory,
-			"weekly_key": weekly_key,
-			"weekly_progress": weekly_progress,
-			"weekly_claimed": weekly_claimed,
-			"claimed_season_milestones": claimed_season_milestones,
-			"unlocked_level_segments": unlocked_level_segments,
-		}))
+	if not persistence_enabled: return
+	var data := to_dictionary()
+	data["cloud_baseline"] = cloud_baseline
+	var f := FileAccess.open(storage_path + ".tmp", FileAccess.WRITE)
+	if not f: return
+	f.store_string(JSON.stringify(data))
+	f.flush()
+	var error := f.get_error()
+	f.close()
+	if error != OK: return
+	if DirAccess.rename_absolute(storage_path + ".tmp", storage_path) == OK:
+		data_saved.emit()
 
 
 func _now() -> int:
@@ -286,13 +417,50 @@ func get_best_clear_time(idx: int) -> float:
 
 func record_clear_time(idx: int, elapsed_seconds: float) -> bool:
 	## 비정상 값은 버리고, 레벨별 가장 빠른 실제 플레이 시간만 영구 저장한다.
+	if idx < 0 or not is_finite(elapsed_seconds) or elapsed_seconds <= 0.0:
+		return false
 	var elapsed := snappedf(maxf(0.01, elapsed_seconds), 0.01)
 	var previous := get_best_clear_time(idx)
 	if previous > 0.0 and elapsed >= previous:
 		return false
 	best_clear_times[str(idx)] = elapsed
+	best_clear_at[str(idx)] = int(Time.get_unix_time_from_system())
 	save_data()
 	return true
+
+
+func adventure_record() -> Dictionary:
+	var highest := -1
+	for key in stars:
+		if int(stars[key]) > 0:
+			highest = maxi(highest, int(String(key)))
+	return {
+		"schema_version": 1,
+		"highest_cleared_level": highest + 1,
+		"best_clear_ms": roundi(get_best_clear_time(highest) * 1000.0) if highest >= 0 else 0,
+		"best_cleared_at_unix": int(best_clear_at.get(str(highest), 0)) if highest >= 0 else 0,
+	}
+
+
+func record_three_star_clear(idx: int, achieved_stars: int) -> bool:
+	# 이미 3성인 구버전 기록도 실제 재클리어 때만 달성 시각을 새로 확보한다.
+	if idx < 0 or achieved_stars != 3 or three_star_first_at_ms.has(str(idx)):
+		return false
+	three_star_first_at_ms[str(idx)] = int(Time.get_unix_time_from_system() * 1000.0)
+	save_data()
+	return true
+
+
+func three_star_ranking_record() -> Dictionary:
+	var highest := -1
+	for key in three_star_first_at_ms:
+		if get_stars(int(String(key))) == 3 and int(three_star_first_at_ms[key]) > 0:
+			highest = maxi(highest, int(String(key)))
+	if highest < 0:
+		return {}
+	return {"level": highest + 1, "stars": 3,
+		"achieved_at_ms": int(three_star_first_at_ms[str(highest)]),
+		"nickname": get_nickname()}
 
 
 func award_stars(idx: int, n: int, reward_cap: int = -1) -> int:
@@ -391,6 +559,22 @@ func has_claimed_daily_mission_chest() -> bool:
 	return daily_mission_claimed
 
 
+func has_completed_daily_challenge() -> bool:
+	return daily_challenge_date == Time.get_date_string_from_system()
+
+
+func complete_daily_challenge() -> Dictionary:
+	if has_completed_daily_challenge():
+		return {}
+	var reward: Dictionary = LiveProgressionCatalogLib.daily_challenge().get("reward", {}).duplicate(true)
+	daily_challenge_date = Time.get_date_string_from_system()
+	_apply_activity_reward(reward)
+	record_retention_action("daily")
+	add_season_xp(15)
+	save_data()
+	return reward
+
+
 func record_jelly_capture(color_id: String, shiny: bool = false) -> void:
 	if not G.COLORS.has(color_id):
 		return
@@ -401,6 +585,7 @@ func record_jelly_capture(color_id: String, shiny: bool = false) -> void:
 	# 포획 수는 5마리 단위와 신규 발견 시점에 저장한다.
 	if count == 1 or count % 5 == 0 or shiny:
 		save_data()
+	record_retention_action("capture", 1)
 
 
 func get_jelly_capture_count(color_id: String) -> int:
@@ -443,6 +628,11 @@ func set_preferences(sound: bool, haptics: bool, notifications: bool) -> void:
 	save_data()
 
 
+func set_language(value: String) -> void:
+	language = value if Localization.option_codes().has(value) else Localization.SYSTEM_LANGUAGE
+	save_data()
+
+
 func claim_mail(mail: Dictionary) -> bool:
 	var id := String(mail.get("id", ""))
 	if id.is_empty() or claimed_mail_ids.has(id):
@@ -471,6 +661,7 @@ func progression_snapshot() -> Dictionary:
 		"energy_updated_at": energy_updated_at,
 		"owned_furniture": owned_furniture.duplicate(),
 		"room_placements": room_placements.duplicate(true),
+		"room_theme_id": get_room_theme(),
 		"rescued_jellies": rescued_jellies.duplicate(),
 		"resident_records": resident_records.duplicate(true),
 		"resident_relationships": resident_relationships.duplicate(true),
@@ -481,6 +672,20 @@ func progression_snapshot() -> Dictionary:
 		"shiny_discoveries": shiny_discoveries.duplicate(),
 		"booster_inventory": booster_inventory.duplicate(true),
 		"unlocked_level_segments": unlocked_level_segments.duplicate(),
+		"claimed_shop_items": claimed_shop_items.duplicate(),
+		"ads_removed": ads_removed,
+		"vip_daily_support_date": vip_daily_support_date,
+		"daily_challenge_date": daily_challenge_date,
+		"weekly_key": weekly_key,
+		"weekly_expedition_step": weekly_expedition_step,
+		"weekly_expedition_claimed": weekly_expedition_claimed,
+		"resident_requests": resident_requests.duplicate(true),
+		"season_key": season_key,
+		"season_xp": season_xp,
+		"season_premium": season_premium,
+		"restoration_points": restoration_points,
+		"town_levels": town_levels.duplicate(true),
+		"weekly_activity_best": weekly_activity_best,
 	}
 
 
@@ -511,7 +716,45 @@ func refresh_weekly_progress() -> void:
 	weekly_key = current
 	weekly_progress = {}
 	weekly_claimed = false
+	weekly_expedition_step = 0
+	weekly_expedition_claimed = false
+	weekly_activity_best = 0.0
 	save_data()
+
+
+func get_weekly_expedition_step() -> int:
+	refresh_weekly_progress()
+	return clampi(weekly_expedition_step, 0, 5)
+
+
+func complete_weekly_expedition_step(expected_step: int) -> Dictionary:
+	refresh_weekly_progress()
+	if weekly_expedition_claimed or expected_step != weekly_expedition_step or expected_step < 0 or expected_step >= 5:
+		return {}
+	var config := LiveProgressionCatalogLib.weekly_expedition()
+	var reward: Dictionary = config.get("step_reward", {}).duplicate(true)
+	weekly_expedition_step += 1
+	if weekly_expedition_step >= 5:
+		weekly_expedition_claimed = true
+		var final_reward: Dictionary = config.get("final_reward", {})
+		reward["stardust"] = int(reward.get("stardust", 0)) + int(final_reward.get("stardust", 0))
+		var combined_boosters: Dictionary = reward.get("boosters", {}).duplicate(true)
+		for booster_id in final_reward.get("boosters", {}):
+			combined_boosters[booster_id] = int(combined_boosters.get(booster_id, 0)) + int(final_reward.boosters[booster_id])
+		reward["boosters"] = combined_boosters
+	_apply_activity_reward(reward)
+	record_retention_action("expedition")
+	add_season_xp(35 if weekly_expedition_step >= 5 else 10)
+	save_data()
+	return reward
+
+
+func _apply_activity_reward(reward: Dictionary) -> void:
+	stardust += maxi(0, int(reward.get("stardust", 0)))
+	energy += maxi(0, int(reward.get("energy", 0)))
+	for booster_id in reward.get("boosters", {}):
+		if booster_inventory.has(booster_id):
+			booster_inventory[booster_id] = get_booster_count(String(booster_id)) + maxi(0, int(reward.boosters[booster_id]))
 
 
 func record_weekly_action(action_id: String, amount: int = 1) -> void:
@@ -706,20 +949,96 @@ func apply_verified_shop_item(item: Dictionary) -> bool:
 			if ads_removed:
 				return false
 			ads_removed = true
+			claimed_shop_items.append(String(item.get("id", "remove_ads")))
+			_grant_shop_furniture(item)
 		"energy":
 			var amount := maxi(0, int(item.get("amount", 0)))
 			if amount <= 0:
 				return false
 			energy += amount
 			energy_updated_at = _now()
+		"bundle":
+			var item_id := String(item.get("id", ""))
+			if item_id.is_empty() or claimed_shop_items.has(item_id):
+				return false
+			stardust += maxi(0, int(item.get("stardust", 0)))
+			energy += maxi(0, int(item.get("energy", 0)))
+			if energy >= MAX_ENERGY:
+				energy_updated_at = _now()
+			for booster_id in item.get("boosters", {}):
+				if booster_inventory.has(booster_id):
+					booster_inventory[booster_id] = get_booster_count(String(booster_id)) + maxi(0, int(item.boosters[booster_id]))
+			_grant_shop_furniture(item)
+			claimed_shop_items.append(item_id)
+		"season_pass":
+			refresh_season()
+			if season_premium:
+				return false
+			season_premium = true
+			_grant_shop_furniture(item)
 		_:
 			return false
 	save_data()
 	return true
 
 
+func _grant_shop_furniture(item: Dictionary) -> bool:
+	var changed := false
+	for raw_furniture_id in item.get("furniture_ids", []):
+		var furniture_id := String(raw_furniture_id)
+		if not furniture_id.is_empty() and not RoomDataLib.item_by_id(furniture_id).is_empty() and not owned_furniture.has(furniture_id):
+			owned_furniture.append(furniture_id)
+			changed = true
+	return changed
+
+
+func _sync_shop_entitlement_rewards() -> void:
+	## 상품 구성 개선 전에 구매한 계정에도 신규 한정 가구를 소급 지급한다.
+	var changed := false
+	for item in ShopCatalogLib.load_items():
+		var item_id := String(item.get("id", ""))
+		if not has_purchased_shop_item(item_id):
+			continue
+		changed = _grant_shop_furniture(item) or changed
+	if changed:
+		save_data()
+
+
 func has_removed_ads() -> bool:
 	return ads_removed
+
+
+func has_purchased_shop_item(item_id: String) -> bool:
+	return (item_id == "remove_ads" and ads_removed) or claimed_shop_items.has(item_id)
+
+
+func can_skip_rewarded_ad(placement: String) -> bool:
+	if not ads_removed:
+		return false
+	return placement == "clear_reward_double" and vip_reward_skip_date != Time.get_date_string_from_system()
+
+
+func consume_rewarded_ad_skip(placement: String) -> bool:
+	if not can_skip_rewarded_ad(placement):
+		return false
+	if placement == "clear_reward_double":
+		vip_reward_skip_date = Time.get_date_string_from_system()
+		save_data()
+	return true
+
+
+func can_claim_vip_daily_support() -> bool:
+	return ads_removed and vip_daily_support_date != Time.get_date_string_from_system()
+
+
+func claim_vip_daily_support() -> Dictionary:
+	if not can_claim_vip_daily_support():
+		return {}
+	vip_daily_support_date = Time.get_date_string_from_system()
+	stardust += 8
+	booster_inventory["time"] = get_booster_count("time") + 1
+	save_data()
+	return {"stardust":8,"boosters":{"time":1}}
 
 
 func has_furniture(id: String) -> bool:
@@ -770,17 +1089,15 @@ func _sync_furniture_milestone_rewards() -> void:
 		if get_stars(level_number - 1) <= 0 or claimed_furniture_reward_levels.has(level_number):
 			continue
 		claimed_furniture_reward_levels.append(level_number)
+		changed = true
 		var id := String(reward.furniture_id)
 		if not owned_furniture.has(id) and not RoomDataLib.item_by_id(id).is_empty():
 			owned_furniture.append(id)
-		changed = true
 	if changed:
 		save_data()
 
 
 func get_room_placements() -> Array:
-	if room_placements.is_empty():
-		room_placements = RoomDataLib.default_placements()
 	# 과거 별/업적 자동 해금 시 배치했던 미보유 가구는 충돌 판정에서도 제외한다.
 	var owned_placements: Array = []
 	for placement in room_placements:
@@ -790,6 +1107,26 @@ func get_room_placements() -> Array:
 		room_placements = owned_placements
 		save_data()
 	return room_placements.duplicate(true)
+
+
+func get_room_theme() -> String:
+	return room_theme_id if is_room_theme_unlocked(room_theme_id) else RoomDataLib.DEFAULT_ROOM_THEME
+
+
+func is_room_theme_unlocked(id: String) -> bool:
+	var info := RoomDataLib.room_theme(id)
+	if String(info.id) != id:
+		return false
+	var required_level := int(info.unlock_level)
+	return required_level == 0 or get_stars(required_level - 1) > 0
+
+
+func set_room_theme(id: String) -> bool:
+	if not is_room_theme_unlocked(id):
+		return false
+	room_theme_id = id
+	save_data()
+	return true
 
 
 func set_room_placements(value: Array) -> void:
@@ -917,36 +1254,234 @@ func add_album_memory(kind: String, caption: String, residents: Array = []) -> v
 	save_data()
 
 
-func is_unlocked(idx: int) -> bool:
-	if idx == 0:
-		return true
-	return get_stars(idx - 1) > 0 and is_level_segment_unlocked(idx / LEVEL_GATE_SIZE)
+func refresh_resident_requests() -> void:
+	var today := Time.get_date_string_from_system()
+	if resident_request_date == today:
+		return
+	resident_request_date = today
+	resident_requests = []
+	var templates := RetentionCatalogLib.requests()
+	var residents := get_resident_records()
+	if residents.is_empty() or templates.is_empty():
+		return
+	var date := Time.get_date_dict_from_system()
+	var seed := int(date.year) * 372 + int(date.month) * 31 + int(date.day)
+	var request_slots := 3 if season_premium else 2
+	for slot in range(mini(request_slots, residents.size())):
+		var resident: Dictionary = residents[posmod(seed + slot * 3, residents.size())]
+		var request: Dictionary = templates[posmod(seed + slot * 2, templates.size())].duplicate(true)
+		request["id"] = "%s_%s" % [today, String(resident.id)]
+		request["resident_id"] = String(resident.id)
+		request["resident_name"] = String(resident.name)
+		request["color"] = String(resident.color)
+		request["progress"] = 0
+		request["claimed"] = false
+		resident_requests.append(request)
+	save_data()
 
 
-func is_level_segment_unlocked(segment: int) -> bool:
-	return segment <= 0 or unlocked_level_segments.has(segment)
+func record_retention_action(action: String, amount: int = 1) -> void:
+	refresh_resident_requests()
+	var changed := false
+	for request in resident_requests:
+		if String(request.get("action", "")) == action and not bool(request.get("claimed", false)):
+			request["progress"] = mini(int(request.get("target", 1)), int(request.get("progress", 0)) + amount)
+			changed = true
+	if changed:
+		save_data()
 
 
-func can_unlock_level_segment(segment: int) -> bool:
-	if segment <= 0 or is_level_segment_unlocked(segment):
+func claim_resident_request(request_id: String) -> Dictionary:
+	refresh_resident_requests()
+	for request in resident_requests:
+		if String(request.get("id", "")) != request_id or bool(request.get("claimed", false)) or int(request.get("progress", 0)) < int(request.get("target", 1)):
+			continue
+		request["claimed"] = true
+		var bond := add_resident_affection(String(request.resident_id), int(request.get("affection", 2)))
+		add_season_xp(int(request.get("season_xp", 8)))
+		var line := RetentionCatalogLib.request_line(String(request.color))
+		add_album_memory("resident_request", line, [String(request.resident_id)])
+		var result: Dictionary = request.duplicate(true)
+		result["line"] = line
+		result["bond"] = bond
+		return result
+	return {}
+
+
+func refresh_season() -> void:
+	var current := str(int(Time.get_unix_time_from_system()) / (28 * 24 * 60 * 60))
+	if season_key == current:
+		return
+	season_key = current
+	season_xp = 0
+	season_premium = false
+	claimed_season_free.clear()
+	claimed_season_premium.clear()
+	save_data()
+
+
+func add_season_xp(amount: int) -> void:
+	refresh_season()
+	season_xp += maxi(0, amount)
+	save_data()
+
+
+func season_level() -> int:
+	refresh_season()
+	var config := RetentionCatalogLib.season()
+	return clampi(season_xp / maxi(1, int(config.get("xp_per_level", 20))) + 1, 1, int(config.get("levels", 20)))
+
+
+func claim_retention_season_reward(level: int, premium: bool) -> Dictionary:
+	refresh_season()
+	var claimed: Array[int] = claimed_season_premium if premium else claimed_season_free
+	if level > season_level() or claimed.has(level) or (premium and not season_premium):
+		return {}
+	var table: Dictionary = RetentionCatalogLib.season().get("premium_rewards" if premium else "free_rewards", {})
+	var reward: Dictionary = table.get(str(level), {}).duplicate(true)
+	if reward.is_empty():
+		return {}
+	claimed.append(level)
+	stardust += int(reward.get("stardust", 0))
+	var booster := String(reward.get("booster", ""))
+	if booster_inventory.has(booster):
+		booster_inventory[booster] = get_booster_count(booster) + int(reward.get("amount", 1))
+	var furniture := String(reward.get("furniture", ""))
+	if not furniture.is_empty() and not owned_furniture.has(furniture):
+		owned_furniture.append(furniture)
+	save_data()
+	return reward
+
+
+func grant_restoration_point(level_number: int) -> void:
+	if level_number >= 301:
+		restoration_points += 1
+		save_data()
+
+
+func upgrade_town(district_id: String) -> Dictionary:
+	for district in RetentionCatalogLib.towns():
+		if String(district.id) != district_id:
+			continue
+		var level := int(town_levels.get(district_id, 0))
+		var costs: Array = district.costs
+		if level >= costs.size() or get_stars(int(district.unlock_level) - 2) <= 0:
+			return {}
+		var cost := int(costs[level])
+		if restoration_points < cost:
+			return {}
+		restoration_points -= cost
+		town_levels[district_id] = level + 1
+		stardust += int(district.reward)
+		save_data()
+		return {"name":district.name,"level":level + 1,"reward":int(district.reward)}
+	return {}
+
+
+func record_level_failure() -> void:
+	consecutive_failures += 1
+	save_data()
+
+
+func record_level_success() -> void:
+	consecutive_failures = 0
+	record_retention_action("clear")
+	add_season_xp(1)
+
+
+func mark_beta_feedback_submitted() -> void:
+	beta_feedback_submitted = true
+	save_data()
+
+
+func recommended_shop_item_id() -> String:
+	if not has_purchased_shop_item("starter_rescue_pack") and RoomDataLib.clear_count(self) < 30:
+		return "starter_rescue_pack"
+	if not has_removed_ads() and RoomDataLib.clear_count(self) >= 100:
+		return "remove_ads"
+	if consecutive_failures >= 3 and not has_purchased_shop_item("chapter_rescue_pack"):
+		return "chapter_rescue_pack"
+	if not has_purchased_shop_item("hideout_decor_pack") and room_placements.size() >= 6:
+		return "hideout_decor_pack"
+	return "season_heart_star_pass" if not season_premium else ""
+
+
+func room_share_text() -> String:
+	return "젤리몬 아지트 · %s · 별 %d · 가구 %d개 · 마을 복구 %d단계" % [get_nickname() if has_nickname() else "구조 대원", RoomDataLib.total_stars(self), room_placements.size(), town_total_level()]
+
+
+func town_total_level() -> int:
+	var total := 0
+	for value in town_levels.values(): total += int(value)
+	return total
+
+
+func adventure_support() -> Dictionary:
+	## 친밀도와 마을 복구가 장식용 숫자에 머물지 않고 실제 원정에 영향을 준다.
+	var time_bonus := 0.0
+	var shiny_bonus := 0.0
+	var free_hint := false
+	var supporters: Array[String] = []
+	for record in get_resident_records():
+		var bond_level := get_resident_bond_level(record)
+		if bond_level >= 3:
+			time_bonus += 1.0
+			supporters.append(String(record.get("name", "주민")))
+		if bond_level >= 5:
+			shiny_bonus += 0.003
+		if bond_level >= 7:
+			free_hint = true
+	var town_level := town_total_level()
+	return {
+		"time_bonus": minf(6.0, time_bonus),
+		"shiny_bonus": minf(0.018, shiny_bonus),
+		"stardust_bonus": mini(5, town_level / 3),
+		"free_hint": free_hint,
+		"supporters": supporters.slice(0, 3),
+	}
+
+
+func room_share_code() -> String:
+	var payload := {"name":get_nickname() if has_nickname() else "구조 대원","stars":RoomDataLib.total_stars(self),"town":town_total_level(),"furniture":room_placements.map(func(value): return String(value.get("id", "")))}
+	return "JELLY1:" + Marshalls.raw_to_base64(JSON.stringify(payload).to_utf8_buffer())
+
+
+func parse_room_share_code(code: String) -> Dictionary:
+	if not code.begins_with("JELLY1:"): return {}
+	var parsed = JSON.parse_string(Marshalls.base64_to_raw(code.trim_prefix("JELLY1:")).get_string_from_utf8())
+	return parsed if parsed is Dictionary else {}
+
+
+func record_weekly_activity_time(seconds: float) -> bool:
+	if seconds <= 0.0 or (weekly_activity_best > 0.0 and seconds >= weekly_activity_best):
 		return false
-	return get_stars(segment * LEVEL_GATE_SIZE - 1) > 0
-
-
-func unlock_level_segment(segment: int) -> bool:
-	if not can_unlock_level_segment(segment):
-		return false
-	unlocked_level_segments.append(segment)
-	unlocked_level_segments.sort()
+	weekly_activity_best = seconds
 	save_data()
 	return true
 
 
+func is_unlocked(idx: int) -> bool:
+	if idx == 0:
+		return true
+	return get_stars(idx - 1) > 0
+
+
+func is_level_segment_unlocked(segment: int) -> bool:
+	## 캠페인 진행은 실력과 이전 레벨 클리어만으로 열린다. 광고·결제 관문은 없다.
+	return segment >= 0
+
+
+func can_unlock_level_segment(segment: int) -> bool:
+	return false
+
+
+func unlock_level_segment(segment: int) -> bool:
+	return segment >= 0
+
+
 func next_unlockable_level_segment(total_levels: int) -> int:
-	var segment_count := int(ceil(float(maxi(0, total_levels)) / float(LEVEL_GATE_SIZE)))
-	for segment in range(1, segment_count):
-		if can_unlock_level_segment(segment):
-			return segment
+	@warning_ignore("unused_parameter")
+	var ignored_total := total_levels
 	return -1
 
 

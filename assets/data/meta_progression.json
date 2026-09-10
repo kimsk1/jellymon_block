@@ -7,7 +7,13 @@
     {"stage": 4, "stars": 90, "name": "구조대 젤리", "badge": "♛"},
     {"stage": 5, "stars": 150, "name": "마을 수호자", "badge": "♛"},
     {"stage": 6, "stars": 225, "name": "별빛 대장", "badge": "✦"},
-    {"stage": 7, "stars": 300, "name": "전설의 젤리몬", "badge": "★"}
+    {"stage": 7, "stars": 300, "name": "전설의 젤리몬", "badge": "★"},
+    {"stage": 8, "stars": 390, "name": "유령숲 길잡이", "badge": "☾"},
+    {"stage": 9, "stars": 480, "name": "시럽 사막 대장", "badge": "✦"},
+    {"stage": 10, "stars": 570, "name": "바람길 수호자", "badge": "♛"},
+    {"stage": 11, "stars": 660, "name": "차원의 구조대장", "badge": "◇"},
+    {"stage": 12, "stars": 780, "name": "마음별 지휘관", "badge": "✧"},
+    {"stage": 13, "stars": 900, "name": "영원한 젤리 영웅", "badge": "★"}
   ],
   "resident_bond": [
     {"level": 1, "affection": 0, "title": "새 친구"},

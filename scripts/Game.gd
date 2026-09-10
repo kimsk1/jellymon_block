@@ -11,6 +11,11 @@ const GameBalanceCatalogLib = preload("res://scripts/GameBalanceCatalog.gd")
 var main = null
 var audio: AudioMgr
 var level_idx := 0
+var debug_catcher_shift := 0
+var _debug_reservation_cache := {}
+var _debug_terrain_cache := {}
+var _debug_continuation_cache := {}
+var _debug_relaxed_continuation := false
 var energy_reserved := false
 var continued_after_fail := false
 var L: Dictionary
@@ -74,6 +79,7 @@ var elapsed_play_time := 0.0
 var goals := {}             # color -> 남은 젤리 수
 var score := 0
 var state := "play"
+var state_before_pause := "play"
 var shake_amt := 0.0
 var active_absorptions := 0
 var tutorial_id := ""
@@ -81,6 +87,8 @@ var tutorial_active := false
 var tutorial_timer_paused := false
 var tutorial_wrong_color_shown := false
 var tutorial_replay := false
+var adventure_support: Dictionary = {}
+var shiny_chance := 0.02
 var screen_offset := Vector2.ZERO
 var premium_bg: Sprite2D
 var board_outer_style: StyleBoxFlat
@@ -100,6 +108,23 @@ func _ready() -> void:
 	_apply_responsive_layout()
 	get_viewport().size_changed.connect(_apply_responsive_layout)
 	L = Levels.get_level(level_idx)
+	if main.active_activity.is_empty():
+		adventure_support = main.save.adventure_support()
+		L = L.duplicate(true)
+		var support_time := float(adventure_support.get("time_bonus", 0.0))
+		if support_time > 0.0:
+			L["time"] = float(L.get("time", 60.0)) + support_time
+		shiny_chance += float(adventure_support.get("shiny_bonus", 0.0))
+	if not main.active_activity.is_empty():
+		L = L.duplicate(true)
+		var modifier_id := String(main.active_activity.get("modifier", {}).get("id", ""))
+		if modifier_id == "fast_timer":
+			L["time"] = maxf(20.0, float(L.get("time", 60.0)) * 0.85)
+		elif modifier_id == "limited_moves" and not L.has("move_limit"):
+			var jelly_count := 0
+			for grid_row in L.get("grid", []):
+				for color_id in G.COLORS: jelly_count += String(grid_row).count(String(color_id))
+			L["move_limit"] = maxi(12, int(jelly_count * 2.6))
 	audio = main.audio
 	_build_board_styles()
 	_add_premium_background()
@@ -150,14 +175,52 @@ func _ready() -> void:
 	hud.setup(goals, L, level_idx)
 	hud.set_time(time_left, total_time)
 	hud.refresh_objectives()
+	if not adventure_support.is_empty() and main.analytics:
+		main.analytics.track("adventure_support", {"time_bonus":float(adventure_support.get("time_bonus", 0.0)),"shiny_bonus":float(adventure_support.get("shiny_bonus", 0.0)),"stardust_bonus":int(adventure_support.get("stardust_bonus", 0))})
 	tutorial_id = String(L.get("tutorial", ""))
 	hud.set_tutorial_help_visible(not tutorial_id.is_empty())
 	if _tutorial_ui_enabled() and not tutorial_id.is_empty() and not main.save.has_completed_tutorial(tutorial_id):
 		call_deferred("_begin_tutorial", false)
 	else:
-		hud.show_hint(L.get("hint", ""))
+		var support_line := _adventure_support_line()
+		hud.show_hint(String(L.get("hint", "")) + ("\n" + support_line if not support_line.is_empty() else ""))
+		if not L.get("signature", {}).is_empty() and main.save.get_stars(level_idx) <= 0:
+			tutorial_timer_paused = true
+			call_deferred("_show_signature_intro")
 		if _tutorial_ui_enabled():
 			call_deferred("_start_late_tutorial_if_needed")
+		if bool(adventure_support.get("free_hint", false)) and L.get("signature", {}).is_empty():
+			call_deferred("_show_bond_hint")
+
+
+func _show_signature_intro() -> void:
+	if not is_instance_valid(hud) or L.get("signature", {}).is_empty():
+		tutorial_timer_paused = false
+		return
+	if main.analytics:
+		main.analytics.track("signature_moment", {"level":level_idx + 1,"phase":"start"})
+	hud.show_signature_intro(L.signature, func():
+		tutorial_timer_paused = false
+		if bool(adventure_support.get("free_hint", false)):
+			_show_bond_hint()
+	)
+
+
+func _adventure_support_line() -> String:
+	if adventure_support.is_empty():
+		return ""
+	var parts: Array[String] = []
+	if float(adventure_support.get("time_bonus", 0.0)) > 0.0:
+		parts.append("주민 응원 +%d초" % int(adventure_support.time_bonus))
+	if int(adventure_support.get("stardust_bonus", 0)) > 0:
+		parts.append("복구 마을 첫 클리어 +%d 별가루" % int(adventure_support.stardust_bonus))
+	return "✦ " + " · ".join(parts) if not parts.is_empty() else ""
+
+
+func _show_bond_hint() -> void:
+	await _delay(1.0)
+	if state == "play" and is_instance_valid(hud) and _show_movement_hint():
+		fx.float_text(Vector2(G.W * 0.5, 190), "단짝 주민이 첫 움직임을 알려줬어요!", Color("#fff2a0"), 22)
 
 
 func _add_premium_background() -> void:
@@ -167,6 +230,20 @@ func _add_premium_background() -> void:
 	premium_bg.modulate = ArtDirection.chapter_tint(level_idx).lerp(Color.WHITE, 0.7)
 	premium_bg.z_index = -100
 	add_child(premium_bg)
+	# 배경 원화와 게임 오브젝트 사이에 따뜻한 중앙광과 차가운 상단 림을 둔다.
+	# 정적인 일러스트 위에서도 보드가 같은 공간 안의 무대처럼 느껴진다.
+	var soft: Texture2D = load("res://assets/fx/soft.png")
+	for spec in [
+		[Vector2(G.W * 0.5, G.H * 0.53), Vector2(22, 28), Color(1.0, 0.72, 0.34, 0.11)],
+		[Vector2(G.W * 0.5, 95), Vector2(18, 8), Color(0.32, 0.83, 1.0, 0.1)],
+	]:
+		var glow := Sprite2D.new()
+		glow.texture = soft
+		glow.position = spec[0]
+		glow.scale = spec[1]
+		glow.modulate = spec[2]
+		glow.z_index = -90
+		add_child(glow)
 	_layout_premium_background()
 
 
@@ -234,7 +311,7 @@ func cell_pos(c: Vector2i) -> Vector2:
 func _spawn_jelly(cid: String, cell: Vector2i) -> void:
 	var j := Jelly.new()
 	j.fx = fx
-	j.setup(cid, randf() < 0.02, int(frozen_at.get(cell, 0)))
+	j.setup(cid, randf() < shiny_chance, int(frozen_at.get(cell, 0)))
 	# 51레벨부터 성격 기믹을 점진적으로 섞는다. 레벨당 수를 제한해
 	# 기존 색/경로 퍼즐의 해답을 망가뜨리지 않고 읽을 수 있는 밀도로 유지한다.
 	var personality_limit := clampi(1 + (level_idx - 50) / 18, 1, 3) if level_idx >= 50 else 0
@@ -490,7 +567,7 @@ func _show_tutorial_wrong_color(c: Catcher, directions: Array) -> void:
 		fx.float_text(target, "색이 달라요!", Color("#ffe7a6"), 25)
 		hud.show_tutorial_step("이 젤리몬은 색이 달라요. 같은 문양의 블록을 사용하세요!", c.center_px(), target, _guide_focus(c.center_px(), target))
 		_track_tutorial_error("wrong_color")
-		get_tree().create_timer(2.0).timeout.connect(func():
+		_delay(2.0).connect(func():
 			if tutorial_active and is_instance_valid(hud):
 				hud.clear_tutorial_step()
 		)
@@ -570,7 +647,7 @@ func _start_late_tutorial_if_needed() -> void:
 	tutorial_active = true
 	hud.show_tutorial_step(text, target + Vector2(-95, 70), target, Rect2(target - Vector2(54, 54), Vector2(108, 108)))
 	_track_tutorial("tutorial_step_start", "first_sighting")
-	await get_tree().create_timer(4.2).timeout
+	await _delay(4.2)
 	if not is_instance_valid(hud) or tutorial_id != late_id:
 		return
 	main.save.mark_tutorial_completed(late_id)
@@ -582,6 +659,10 @@ func _start_late_tutorial_if_needed() -> void:
 # ────────────────────────── 입력 ──────────────────────────
 
 func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_ESCAPE:
+		set_paused(state != "paused")
+		get_viewport().set_input_as_handled()
+		return
 	# PC 디버그 빌드 전용: C를 누르면 1성 클리어로 저장하고 즉시 다음 레벨을 연다.
 	if event is InputEventKey and event.pressed and not event.echo and OS.is_debug_build() and not OS.has_feature("mobile"):
 		if event.keycode == KEY_C or event.physical_keycode == KEY_C:
@@ -606,6 +687,7 @@ func _unhandled_input(event: InputEvent) -> void:
 				grabbed = c
 				active_touch_index = event.index
 				c.set_grabbed(true)
+				_set_color_focus(c.color_id)
 				fx.grab_pulse(c.center_px(), G.COLORS[c.color_id])
 				drag_px = local_position
 				grab_offset = (origin + Vector2(c.origin_cell) * G.CELL) - local_position
@@ -661,8 +743,24 @@ func _release() -> void:
 	if grabbed:
 		grabbed.set_grabbed(false)
 		grabbed = null
+	_set_color_focus("")
 	active_touch_index = -1
 	queue_redraw()
+
+
+func _set_color_focus(color_id: String) -> void:
+	# 오브젝트가 많은 후반에는 잡은 블록과 같은 색 목표를 선명하게 남기고,
+	# 다른 색 장애물은 실루엣만 보이도록 낮춰 경로를 빠르게 읽게 한다.
+	if level_idx < 100:
+		return
+	for jelly in jellies:
+		if not is_instance_valid(jelly):
+			continue
+		jelly.self_modulate = Color.WHITE if color_id.is_empty() else (Color(1.08, 1.08, 1.08, 1.0) if jelly.color_id == color_id else Color(0.68, 0.72, 0.82, 0.42))
+	for catcher in catchers:
+		if not is_instance_valid(catcher):
+			continue
+		catcher.self_modulate = Color.WHITE if color_id.is_empty() else (Color.WHITE if catcher == grabbed else Color(0.74, 0.78, 0.88, 0.58))
 
 
 # ────────────────────────── 이동 (격자 슬라이드) ──────────────────────────
@@ -712,7 +810,9 @@ func _process_drag() -> void:
 			_show_tutorial_wrong_color(grabbed, dirs)
 
 
-func _can_place(c: Catcher, org: Vector2i, direction: Vector2i = Vector2i.ZERO) -> bool:
+func _can_place(c: Catcher, org: Vector2i, direction: Vector2i = Vector2i.ZERO, occupancy: Dictionary = {}) -> bool:
+	if occupancy.is_empty():
+		occupancy = catcher_at
 	for off in c.cells:
 		var cl: Vector2i = org + off
 		if cl.x < 0 or cl.y < 0 or cl.x >= cols or cl.y >= rows:
@@ -723,7 +823,7 @@ func _can_place(c: Catcher, org: Vector2i, direction: Vector2i = Vector2i.ZERO) 
 			return false
 		if seal_gates.has(cl):
 			return false
-		var oc = catcher_at.get(cl)
+		var oc = occupancy.get(cl)
 		if oc != null and oc != c:
 			return false            # 캐처끼리 통과 불가
 		var j = jelly_at.get(cl)
@@ -748,7 +848,7 @@ func _one_way_allows(c: Catcher, org: Vector2i, direction: Vector2i) -> bool:
 		return true
 	var previous := {}
 	for off in c.cells:
-		previous[c.origin_cell + off] = true
+		previous[org - direction + off] = true
 	for off in c.cells:
 		var cl: Vector2i = org + off
 		if previous.has(cl):
@@ -902,12 +1002,17 @@ func _reveal_nearby_fog() -> void:
 func _check_move_limit_failure() -> void:
 	if state != "play" or move_limit <= 0 or moves_used < move_limit:
 		return
+	# 마지막 이동의 도착/흡수 판정까지 기다린다. 이동 등록은 슬라이드보다 먼저다.
+	while state == "play" and catchers.any(func(c): return c.arrival_pending):
+		await get_tree().process_frame
+	if state != "play":
+		return
 	# 마지막 이동으로 클리어됐다면 실패시키지 않는다.
 	if jellies.is_empty() and catchers.is_empty():
 		return
 	# 마지막 포획 연출이 끝나는 중이면 결과가 확정될 때까지 기다린다.
 	if active_absorptions > 0:
-		await get_tree().create_timer(0.65).timeout
+		await _delay(0.65)
 		if state != "play":
 			return
 		if jellies.is_empty() and catchers.is_empty():
@@ -934,12 +1039,36 @@ func _personality_destination(cell: Vector2i, forbidden: Dictionary) -> Vector2i
 
 
 func _move_personality_jelly(j: Jelly, from: Vector2i, to: Vector2i, text: String) -> void:
+	_move_jelly_rules(from, to)
 	jelly_at.erase(from)
 	jelly_at[to] = j
 	j.cell = to
 	j.personality_state = 1
 	j.show_personality_feedback(text)
 	j.create_tween().tween_property(j, "position", cell_pos(to), 0.24).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+
+func _move_jelly_rules(from: Vector2i, to: Vector2i) -> void:
+	# 성격으로 자리를 바꿔도 번호/열쇠/호위 등은 바닥이 아닌 젤리를 따라간다.
+	for rules in [frozen_at, chain_at, sealed_at, key_unlock_at, ghost_at, bomb_at]:
+		var had_from: bool = rules.has(from)
+		var had_to: bool = rules.has(to)
+		var from_value = rules.get(from)
+		var to_value = rules.get(to)
+		rules.erase(from)
+		rules.erase(to)
+		if had_from:
+			rules[to] = from_value
+		if had_to:
+			rules[from] = to_value
+	if escort_cell == from:
+		escort_cell = to
+	elif escort_cell == to:
+		escort_cell = from
+	if boss_cell == from:
+		boss_cell = to
+	elif boss_cell == to:
+		boss_cell = from
 
 
 func _trigger_moving_personality(c: Catcher, org: Vector2i) -> bool:
@@ -958,6 +1087,7 @@ func _trigger_moving_personality(c: Catcher, org: Vector2i) -> bool:
 				var other_cell: Vector2i = cell + dir
 				var other = jelly_at.get(other_cell)
 				if other != null and not footprint.has(other_cell) and not other.absorbing:
+					_move_jelly_rules(cell, other_cell)
 					jelly_at[cell] = other
 					jelly_at[other_cell] = j
 					j.cell = other_cell
@@ -991,6 +1121,33 @@ func _physics_process(delta: float) -> void:
 		position = screen_offset + Vector2(randf_range(-1, 1), randf_range(-1, 1)) * shake_amt
 		if shake_amt <= 0.0:
 			position = screen_offset
+
+
+func set_paused(value: bool) -> void:
+	if value:
+		if state != "play":
+			return
+		state_before_pause = state
+		state = "paused"
+		_release()
+		if is_instance_valid(hud):
+			hud.show_pause()
+		if main and main.music:
+			main.music.set_game_paused(true)
+	else:
+		if state != "paused":
+			return
+		state = state_before_pause
+		if is_instance_valid(hud):
+			hud.hide_pause()
+		if main and main.music:
+			main.music.set_game_paused(false)
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_APPLICATION_PAUSED or what == NOTIFICATION_WM_WINDOW_FOCUS_OUT:
+		if state == "play":
+			set_paused(true)
 
 
 func _resolve_catcher_arrivals() -> void:
@@ -1211,6 +1368,7 @@ func _absorb(j: Jelly, c: Catcher, cl: Vector2i) -> void:
 	if chain_at.has(cl):
 		var link: Dictionary = chain_at[cl]
 		chain_progress[int(link.chain)] += 1
+		chain_at.erase(cl)
 	if key_unlock_at.has(cl):
 		for catcher_index in key_unlock_at[cl]:
 			locked_catcher_indices.erase(int(catcher_index))
@@ -1221,13 +1379,15 @@ func _absorb(j: Jelly, c: Catcher, cl: Vector2i) -> void:
 					break
 		audio.play("pop_big", 1.32)
 		G.haptic(30)
+	for rules in [frozen_at, sealed_at, key_unlock_at, ghost_at]:
+		rules.erase(cl)
 	var local_trap_pos := (Vector2(cl - c.origin_cell) + Vector2(0.5, 0.5)) * G.CELL
 	j.trap_in(c, local_trap_pos)
 	fx.swirl(jp, col)
 	fx.ring(jp, col, 0.48)
 	audio.play("pop", 1.18, -7.0)
 	# 블록과 함께 이동하며 0.5초간 갇혀 있다가 현재 블록 안의 위치에서 터진다.
-	await get_tree().create_timer(0.5).timeout
+	await _delay(0.5)
 	var burst_pos := jp
 	if is_instance_valid(j):
 		burst_pos = to_local(j.global_position)
@@ -1397,6 +1557,13 @@ func _clear_level() -> void:
 		stars_n = 3
 	elif pct >= float(L.stars[1]):
 		stars_n = 2
+	# 이어하기는 제한시간을 한 번 더 제공하므로, 남은 시간과 관계없이 1성으로 완료한다.
+	if continued_after_fail:
+		stars_n = 1
+	if not main.active_activity.is_empty() and String(main.active_activity.get("modifier", {}).get("id", "")) == "perfect_rescue" and stars_n < 2:
+		state = "play"
+		_fail("완벽 구조는 2성 이상으로 완료해야 해요!")
+		return
 	audio.play("clear")
 	G.haptic(60)
 	var i := 0
@@ -1405,22 +1572,32 @@ func _clear_level() -> void:
 			c.cheer(0.08 * i)
 			i += 1
 	fx.confetti()
-	# 이어하기로 시간을 초기화한 판은 별 기록은 정상 반영하되 신규 별가루
-	# 보상을 최대 1개로 제한한다. 이미 받은 단계는 기존처럼 다시 지급하지 않는다.
+	# 이어하기 완료는 1성만 기록하며 신규 별가루도 최대 1개로 제한한다.
+	# 이미 1성 이상을 받은 레벨은 기존처럼 중복 지급하지 않는다.
 	var reward_cap := 1 if continued_after_fail else -1
 	var stardust_reward: int = main.on_level_finished(level_idx, stars_n, true, energy_reserved, reward_cap, elapsed_play_time)
 	if main.analytics:
 		main.analytics.track("level_clear", {"level": level_idx + 1, "stars": stars_n, "elapsed_seconds": snappedf(elapsed_play_time, 0.01), "stardust_reward": stardust_reward, "continued": continued_after_fail})
+		if not L.get("signature", {}).is_empty():
+			main.analytics.track("signature_moment", {"level":level_idx + 1,"phase":"clear"})
 	energy_reserved = false
-	await get_tree().create_timer(1.3).timeout
+	await _delay(1.3)
 	var has_next := level_idx + 1 < Levels.level_count()
+	if not main.active_activity.is_empty():
+		has_next = String(main.active_activity.get("kind", "")) == "weekly_expedition" and main.save.get_weekly_expedition_step() < 5
 	var show_clear_result := func():
 		if not is_instance_valid(hud):
 			return
 		hud.show_result(stars_n, score, stardust_reward, main.save.get_stardust(), elapsed_play_time, main.save.get_best_clear_time(level_idx), has_next,
-			func(): main.start_level(level_idx + 1),
-			func(): main.show_map(),
-			func(): main.start_level(level_idx))
+			func():
+				if main.active_activity.is_empty(): main.start_level(level_idx + 1)
+				else: main.advance_active_activity(),
+			func():
+				if main.active_activity.is_empty(): main.show_map()
+				else: main.show_title(),
+			func():
+				if main.active_activity.is_empty(): main.start_level(level_idx)
+				else: main.retry_active_activity())
 	if main.play_chapter_end_if_needed(level_idx, show_clear_result):
 		return
 	show_clear_result.call()
@@ -1436,7 +1613,7 @@ func _debug_clear_one_star_and_next() -> void:
 	audio.play("clear", 1.15)
 	G.haptic(25)
 	var next_level := level_idx + 1
-	await get_tree().create_timer(0.12).timeout
+	await _delay(0.12)
 	if next_level < Levels.level_count():
 		main.start_level(next_level, true, true)
 	else:
@@ -1448,6 +1625,7 @@ func _fail(reason: String = "시간이 다 됐어요!") -> void:
 	_release()
 	audio.play("fail")
 	G.haptic(25)
+	main.save.record_level_failure()
 	if main.analytics:
 		var reason_id := "move_limit" if reason.begins_with("이동") else "time_out"
 		main.analytics.track("level_fail", {"level": level_idx + 1, "reason": reason_id, "elapsed_seconds": snappedf(elapsed_play_time, 0.01), "continued": continued_after_fail})
@@ -1457,11 +1635,15 @@ func _fail(reason: String = "시간이 다 됐어요!") -> void:
 	for c in catchers:
 		if is_instance_valid(c):
 			c.sad()
-	await get_tree().create_timer(0.9).timeout
+	await _delay(0.9)
 	hud.show_fail(reason, main.save.get_stardust(), not continued_after_fail,
 		_continue_with_stardust,
-		func(): main.start_level(level_idx),
-		func(): main.show_map())
+		func():
+			if main.active_activity.is_empty(): main.start_level(level_idx)
+			else: main.retry_active_activity(),
+		func():
+			if main.active_activity.is_empty(): main.show_map()
+			else: main.show_title())
 
 
 func _continue_with_stardust() -> bool:
@@ -1496,6 +1678,9 @@ func _continue_with_stardust() -> bool:
 
 func use_booster(booster_id: String) -> void:
 	if state != "play" or main.save.get_booster_count(booster_id) <= 0:
+		return
+	if not main.active_activity.is_empty() and String(main.active_activity.get("modifier", {}).get("id", "")) == "no_boosters":
+		fx.float_text(Vector2(G.W * 0.5, G.H - 150), "맨손 구조에서는 부스터를 사용할 수 없어요", Color("#fff0dc"), 22)
 		return
 	var applied := false
 	match booster_id:
@@ -1848,89 +2033,290 @@ func _find_catcher_for(cid: String, cell: Vector2i = Vector2i(-1, -1)) -> Catche
 	return null
 
 
-func debug_capture_one() -> void:
-	## 젤리 하나 위로 같은 색 캐처를 순간이동시켜 흡수 파이프라인 실행
-	if jellies.is_empty():
-		return
-	if not rescue_switch_active and not switch_at.is_empty() and not catchers.is_empty():
-		var switch_cell: Vector2i = switch_at.keys()[0]
-		var switch_catcher: Catcher = catchers[0]
-		for off in switch_catcher.cells:
-			catcher_at.erase(switch_catcher.origin_cell + off)
-		switch_catcher.origin_cell = switch_cell - switch_catcher.cells[0]
-		for off in switch_catcher.cells:
-			catcher_at[switch_catcher.origin_cell + off] = switch_catcher
-		switch_catcher.position = origin + Vector2(switch_catcher.origin_cell) * G.CELL
-		switch_catcher.slide_target = switch_catcher.position
-		_check_rescue_switch(switch_catcher)
-	var j = null
-	# 열쇠 → 현재 체인 번호 → 일반 젤리 순서로 골라 신규 기믹도 자동 검증한다.
-	for candidate in jellies:
-		if key_unlock_at.has(candidate.cell) and _find_catcher_for(candidate.color_id, candidate.cell) != null:
-			j = candidate
-			break
-	if j == null:
-		for candidate in jellies:
-			var chained := chain_at.has(candidate.cell)
-			if chained and _special_jelly_ready(candidate.cell, _find_catcher_for(candidate.color_id, candidate.cell)) and _find_catcher_for(candidate.color_id, candidate.cell) != null:
-				j = candidate
-				break
-	if j == null:
-		for candidate in jellies:
-			var picked := _find_catcher_for(candidate.color_id, candidate.cell)
-			if picked != null and _special_jelly_ready(candidate.cell, picked):
-				j = candidate
-				break
-	if j == null:
-		return
-	var c := _find_catcher_for(j.color_id, j.cell)
-	if c == null:
-		return
-	for off in c.cells:
-		catcher_at.erase(c.origin_cell + off)
-	c.origin_cell = j.cell - c.cells[0]
-	for off in c.cells:
-		catcher_at[c.origin_cell + off] = c
-	c.position = origin + Vector2(c.origin_cell) * G.CELL
-	c.slide_target = c.position
-	_absorb_footprint(c)
+func _debug_terrain_reach(c: Catcher) -> Dictionary:
+	if _debug_terrain_cache.has(c.spec_index):
+		return _debug_terrain_cache[c.spec_index]
+	var queue: Array[Vector2i] = [c.origin_cell]
+	var seen := {c.origin_cell: true}
+	var cells := {}
+	var head := 0
+	while head < queue.size():
+		var from := queue[head]
+		head += 1
+		for off in c.cells:
+			cells[from + off] = true
+		for direction: Vector2i in [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]:
+			var target := from + direction
+			if seen.has(target) or not _one_way_allows(c, target, direction):
+				continue
+			var fits := true
+			for off in c.cells:
+				var cell: Vector2i = target + off
+				if cell.x < 0 or cell.y < 0 or cell.x >= cols or cell.y >= rows or walls.has(cell) or voids.has(cell):
+					fits = false
+					break
+			if fits:
+				seen[target] = true
+				queue.append(target)
+	_debug_terrain_cache[c.spec_index] = cells
+	return cells
 
 
-func debug_drive() -> void:
-	var elapsed := 0.0
-	while state == "play" and jellies.size() > 0 and elapsed < 30.0:
-		debug_capture_one()
-		await get_tree().create_timer(0.2).timeout
-		elapsed += 0.2
-	# 배출구 레벨은 모든 FULL 블록이 실제 출구 판정을 거쳐 나가야 클리어된다.
-	while state == "play" and not catchers.is_empty() and elapsed < 36.0:
-		var full: Catcher = null
+func _debug_reserved_cells(c: Catcher) -> Dictionary:
+	# 좁은 모서리처럼 특정 블록만 담을 수 있는 젤리에 마지막 수용량을 남긴다.
+	if _debug_reservation_cache.has(c.spec_index):
+		return _debug_reservation_cache[c.spec_index]
+	var reserved := {}
+	for j in jellies:
+		if j.color_id != c.color_id:
+			continue
+		var capable: Array = []
 		for candidate in catchers:
-			if candidate.completed and _has_rescue_exit(candidate):
-				full = candidate
-				break
-		if full == null:
+			if candidate.completed or candidate.color_id != j.color_id:
+				continue
+			if j.cell == escort_cell and candidate.spec_index != escort_catcher:
+				continue
+			if _debug_terrain_reach(candidate).has(j.cell):
+				capable.append(candidate)
+		if capable.size() == 1 and capable[0] == c:
+			reserved[j.cell] = true
+	_debug_reservation_cache[c.spec_index] = reserved
+	return reserved
+
+
+func _debug_preserves_capacity(c: Catcher, target: Vector2i, positions: Array = []) -> bool:
+	if c.completed:
+		return true
+	var reserved := _debug_reserved_cells(c)
+	var unreserved := 0
+	for off in c.cells:
+		var j = jelly_at.get(target + off)
+		if j != null and not j.absorbing and j.color_id == c.color_id and not reserved.has(j.cell):
+			unreserved += 1
+	if unreserved > c.remaining_capacity - reserved.size():
+		return false
+	return _debug_can_finish_catcher(c, target, positions)
+
+
+func _debug_can_finish_catcher(c: Catcher, target: Vector2i, positions: Array) -> bool:
+	if _debug_relaxed_continuation:
+		return true
+	# 마지막 수용량을 쓰기 전, 남은 블록으로 후속 구조가 가능한지 확인한다.
+	# 복합 규칙의 실제 판정은 여전히 _try_step/도착 처리에서 수행한다.
+	if not rescue_exits.is_empty() or not portal_at.is_empty() or not color_order.is_empty() or escort_catcher >= 0 or String(boss_data.get("type", "")) == "splitter":
+		return true
+	var captured := {}
+	for off in c.cells:
+		var cell: Vector2i = target + off
+		var j = jelly_at.get(cell)
+		if j == null or j.absorbing or j.color_id != c.color_id:
+			continue
+		if j.frost_layers > 0 or j.boss_hp > 1 or (not j.personality_id.is_empty() and j.personality_state == 0):
+			return true
+		if sealed_at.has(cell) and not rescue_switch_active:
+			continue
+		if chain_at.has(cell):
+			var link: Dictionary = chain_at[cell]
+			if chain_progress[int(link.chain)] != int(link.index):
+				continue
+		captured[cell] = true
+	if captured.size() < c.remaining_capacity:
+		return true
+	var cache_key := "%d:%s:%s" % [c.spec_index, target, positions]
+	if _debug_continuation_cache.has(cache_key):
+		return _debug_continuation_cache[cache_key]
+	# 다중 블록 탐색의 모든 후보마다 전체 풀이를 반복하면 화면이 멎는다.
+	# 보조 휴리스틱에만 예산을 두며 실제 충돌/수용량 검사는 계속 적용한다.
+	if _debug_continuation_cache.size() >= 64:
+		return true
+	var board: Array = []
+	for y in range(rows):
+		var row := ""
+		for x in range(cols):
+			var cell := Vector2i(x, y)
+			var j = jelly_at.get(cell)
+			row += "_" if voids.has(cell) else "#" if walls.has(cell) else String(j.color_id) if j != null and not captured.has(cell) else "."
+		board.append(row)
+	var specs: Array = []
+	for i in range(catchers.size()):
+		var candidate: Catcher = catchers[i]
+		var capacity: int = candidate.remaining_capacity - (mini(captured.size(), c.remaining_capacity) if candidate == c else 0)
+		if capacity <= 0 or candidate.completed:
+			continue
+		var cell: Vector2i = target if candidate == c else positions[i] if not positions.is_empty() else candidate.origin_cell
+		specs.append({"cell": [cell.x, cell.y], "color": candidate.color_id, "shape": candidate.shape_id, "capacity": capacity})
+	var snapshot := {"grid": board, "catchers": specs, "one_ways": L.get("one_ways", []), "ghosts": []}
+	for cell in ghost_at:
+		if not captured.has(cell): snapshot.ghosts.append([cell.x, cell.y])
+	var possible := bool(Levels._greedy_solve(snapshot).ok)
+	_debug_continuation_cache[cache_key] = possible
+	return possible
+
+
+func _debug_goal(c: Catcher, org: Vector2i, priority_only: bool) -> bool:
+	var reserved := _debug_reserved_cells(c)
+	for off in c.cells:
+		var cell: Vector2i = org + off
+		if not rescue_switch_active and switch_at.has(cell):
+			return true
+		if c.completed:
+			for gate in rescue_exits:
+				if gate.cell == cell and gate.color == c.color_id and (gate.catcher < 0 or gate.catcher == c.spec_index):
+					return true
+			continue
+		var j = jelly_at.get(cell)
+		if j == null or j.absorbing or j.color_id != c.color_id or _order_blocks_color(j.color_id):
+			continue
+		if c.remaining_capacity <= reserved.size() and not reserved.has(cell):
+			continue
+		if sealed_at.has(cell) and not rescue_switch_active:
+			continue
+		if cell == escort_cell and c.spec_index != escort_catcher:
+			continue
+		if chain_at.has(cell):
+			var link: Dictionary = chain_at[cell]
+			if chain_progress[int(link.chain)] != int(link.index):
+				continue
+		if not priority_only or key_unlock_at.has(cell) or chain_at.has(cell):
+			return true
+	return false
+
+
+func _debug_path(c: Catcher, priority_only: bool) -> Array[Vector2i]:
+	# 현재 보드를 읽기만 한다. 탐색 중에도 캐처 위치/점유표를 변경하지 않는다.
+	var queue: Array[Vector2i] = [c.origin_cell]
+	var paths := {c.origin_cell: []}
+	var head := 0
+	while head < queue.size():
+		var from := queue[head]
+		head += 1
+		for direction: Vector2i in [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]:
+			var target := from + direction
+			if not _can_place(c, target, direction) or not _debug_preserves_capacity(c, target):
+				continue
+			var route: Array[Vector2i] = []
+			route.assign(paths[from])
+			route.append(direction)
+			# 얼음/왕젤리는 한 칸 나갔다 돌아와 다시 접촉할 수 있어야 한다.
+			if _debug_goal(c, target, priority_only):
+				return route
+			if not paths.has(target):
+				paths[target] = route
+				queue.append(target)
+	return []
+
+
+func _debug_unblocking_route() -> Array:
+	# 구조할 수 있는 목표가 없으면 다른 블록을 비켜 주는 합법적인 이동도 탐색한다.
+	var initial: Array[Vector2i] = []
+	for c in catchers:
+		initial.append(c.origin_cell)
+	var queue: Array = [{"positions": initial, "route": []}]
+	var seen := {str(initial): true}
+	var head := 0
+	while head < queue.size() and head < 10000:
+		var entry: Dictionary = queue[head]
+		head += 1
+		var occupancy := {}
+		for i in range(catchers.size()):
+			for off in catchers[i].cells:
+				occupancy[entry.positions[i] + off] = catchers[i]
+		for i in range(catchers.size()):
+			var c: Catcher = catchers[i]
+			if c.key_locked or c.movement_locked:
+				continue
+			for direction: Vector2i in [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]:
+				var target: Vector2i = entry.positions[i] + direction
+				if not _can_place(c, target, direction, occupancy) or not _debug_preserves_capacity(c, target, entry.positions):
+					continue
+				var route: Array = entry.route.duplicate()
+				route.append({"catcher": c, "direction": direction})
+				if _debug_goal(c, target, false):
+					return route
+				var positions: Array = entry.positions.duplicate()
+				positions[i] = target
+				var key := str(positions)
+				if not seen.has(key):
+					seen[key] = true
+					queue.append({"positions": positions, "route": route})
+	return []
+
+
+func debug_capture_one(relaxed_continuation: bool = false) -> bool:
+	# 실제 입력과 동일한 이동, 슬라이드, 도착, 흡수 파이프라인을 사용한다.
+	_debug_relaxed_continuation = relaxed_continuation
+	_debug_reservation_cache.clear()
+	_debug_terrain_cache.clear()
+	_debug_continuation_cache.clear()
+	var candidates := catchers.duplicate()
+	var count: int = L.catchers.size()
+	candidates.sort_custom(func(a, b): return posmod(a.spec_index - debug_catcher_shift, count) < posmod(b.spec_index - debug_catcher_shift, count))
+	for priority_only in [true, false]:
+		for c: Catcher in candidates:
+			if not is_instance_valid(c) or c.key_locked or c.movement_locked or c.arrival_pending:
+				continue
+			var route := _debug_path(c, priority_only)
+			if route.is_empty():
+				continue
+			for direction in route:
+				if state != "play" or not is_instance_valid(c) or not catchers.has(c):
+					return true
+				var before := c.origin_cell
+				if not _try_step(c, direction):
+					# 성격 젤리가 회피했다면 갱신된 보드에서 다음 경로를 찾는다.
+					return true
+				while is_instance_valid(c) and c.arrival_pending and state == "play":
+					await get_tree().process_frame
+				if not is_instance_valid(c) or not catchers.has(c) or c.origin_cell != before + direction or active_absorptions > 0:
+					return true
+			return true
+	var unblocking := _debug_unblocking_route()
+	for step in unblocking:
+		var c: Catcher = step.catcher
+		if not is_instance_valid(c) or state != "play" or not _try_step(c, step.direction):
+			return true
+		while is_instance_valid(c) and c.arrival_pending and state == "play":
+			await get_tree().process_frame
+		if active_absorptions > 0 or state != "play":
+			return true
+	if unblocking.is_empty() and not relaxed_continuation:
+		# 탐욕적 후속 탐색 실패는 불가능의 증명이 아니다. 실제 이동 규칙과
+		# 수용량 예약은 유지하고, 후속 탐색 휴리스틱만 완화해 다시 찾는다.
+		return await debug_capture_one(true)
+	return not unblocking.is_empty()
+
+
+func debug_drive() -> bool:
+	debug_catcher_shift = int(Levels._greedy_solve(L).get("shift", 0))
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("--autoplay-shift="):
+			debug_catcher_shift = int(arg.get_slice("=", 1))
+	var attempts := 0
+	while state == "play" and attempts < 2000:
+		if active_absorptions > 0:
+			await get_tree().process_frame
+			continue
+		attempts += 1
+		if OS.get_cmdline_user_args().has("--trace-autoplay"):
+			print("[autoplay trace] level=", level_idx + 1, " attempt=", attempts, " moves=", total_moves, " left=", jellies.size())
+		if not await debug_capture_one():
+			for c in catchers:
+				print("[autoplay] catcher=", c.spec_index, " cell=", c.origin_cell, " color=", c.color_id, " capacity=", c.remaining_capacity, " locked=", c.key_locked)
+			for j in jellies:
+				print("[autoplay] jelly=", j.cell, " color=", j.color_id, " personality=", j.personality_id)
+			push_error("[autoplay] route search exhausted: level=%d moves=%d left=%d (not proof of an unsolvable level)" % [level_idx + 1, total_moves, jellies.size()])
 			break
-		var matching_exit: Dictionary = {}
-		for exit in rescue_exits:
-			if exit.color == full.color_id and (exit.catcher < 0 or exit.catcher == full.spec_index):
-				matching_exit = exit
-				break
-		if matching_exit.is_empty():
-			break
-		for off in full.cells:
-			catcher_at.erase(full.origin_cell + off)
-		full.origin_cell = matching_exit.cell - full.cells[0]
-		for off in full.cells:
-			catcher_at[full.origin_cell + off] = full
-		full.position = origin + Vector2(full.origin_cell) * G.CELL
-		full.slide_target = full.position
-		_try_rescue_exit(full)
-		await get_tree().create_timer(0.2).timeout
-		elapsed += 0.2
-	# 마지막 포획은 0.5초 연출 뒤에야 블록을 정리하므로 판정 전에 기다린다.
-	var settle := 0.0
-	while state == "play" and settle < 2.0 and (active_absorptions > 0 or not catchers.is_empty()):
-		await get_tree().create_timer(0.2).timeout
-		settle += 0.2
-	print("[smoke] level=", level_idx, " state=", state, " score=", score, " left=", jellies.size(), " catchers=", catchers.size())
+		await get_tree().process_frame
+	print("[smoke] level=", level_idx, " state=", state, " moves=", total_moves, " limit=", move_limit, " left=", jellies.size(), " catchers=", catchers.size())
+	return state == "clear"
+
+
+func _delay(seconds: float) -> Signal:
+	# 화면이 사라지면 대기 중인 코루틴/콜백도 함께 해제된다.
+	var timer := Timer.new()
+	timer.one_shot = true
+	timer.process_mode = Node.PROCESS_MODE_ALWAYS
+	timer.timeout.connect(timer.queue_free)
+	add_child(timer)
+	timer.start(seconds)
+	return timer.timeout

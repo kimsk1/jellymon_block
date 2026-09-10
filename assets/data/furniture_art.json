@@ -1,0 +1,455 @@
+{
+  "version": 1,
+  "items": {
+    "cushion_r": {
+      "atlas": "res://assets/furniture/everyday_1.png",
+      "region": [
+        54,
+        147,
+        305,
+        233
+      ]
+    },
+    "lamp_y": {
+      "atlas": "res://assets/furniture/everyday_1.png",
+      "region": [
+        518,
+        20,
+        137,
+        370
+      ]
+    },
+    "table_b": {
+      "atlas": "res://assets/furniture/everyday_1.png",
+      "region": [
+        817,
+        172,
+        341,
+        170
+      ]
+    },
+    "shelf_g": {
+      "atlas": "res://assets/furniture/everyday_1.png",
+      "region": [
+        1205,
+        151,
+        348,
+        190
+      ]
+    },
+    "sofa_p": {
+      "atlas": "res://assets/furniture/everyday_1.png",
+      "region": [
+        1591,
+        130,
+        378,
+        228
+      ]
+    },
+    "bench_o": {
+      "atlas": "res://assets/furniture/everyday_1.png",
+      "region": [
+        26,
+        481,
+        360,
+        244
+      ]
+    },
+    "rug_r": {
+      "atlas": "res://assets/furniture/everyday_1.png",
+      "region": [
+        418,
+        514,
+        371,
+        175
+      ]
+    },
+    "cabinet_b": {
+      "atlas": "res://assets/furniture/everyday_1.png",
+      "region": [
+        874,
+        421,
+        229,
+        324
+      ]
+    },
+    "plant_g": {
+      "atlas": "res://assets/furniture/everyday_1.png",
+      "region": [
+        1230,
+        442,
+        287,
+        303
+      ]
+    },
+    "screen_p": {
+      "atlas": "res://assets/furniture/everyday_1.png",
+      "region": [
+        1623,
+        419,
+        315,
+        322
+      ]
+    },
+    "counter_y": {
+      "atlas": "res://assets/furniture/everyday_2.png",
+      "region": [
+        34,
+        139,
+        368,
+        227
+      ]
+    },
+    "slide_b": {
+      "atlas": "res://assets/furniture/everyday_2.png",
+      "region": [
+        441,
+        73,
+        325,
+        305
+      ]
+    },
+    "bed_r": {
+      "atlas": "res://assets/furniture/everyday_2.png",
+      "region": [
+        807,
+        151,
+        403,
+        214
+      ]
+    },
+    "book_g": {
+      "atlas": "res://assets/furniture/everyday_2.png",
+      "region": [
+        1273,
+        28,
+        260,
+        342
+      ]
+    },
+    "tea_o": {
+      "atlas": "res://assets/furniture/everyday_2.png",
+      "region": [
+        1610,
+        145,
+        341,
+        215
+      ]
+    },
+    "piano_p": {
+      "atlas": "res://assets/furniture/everyday_2.png",
+      "region": [
+        56,
+        449,
+        324,
+        287
+      ]
+    },
+    "fountain_b": {
+      "atlas": "res://assets/furniture/everyday_2.png",
+      "region": [
+        446,
+        429,
+        305,
+        307
+      ]
+    },
+    "garden_g": {
+      "atlas": "res://assets/furniture/everyday_2.png",
+      "region": [
+        798,
+        485,
+        396,
+        229
+      ]
+    },
+    "stage_y": {
+      "atlas": "res://assets/furniture/everyday_2.png",
+      "region": [
+        1231,
+        418,
+        345,
+        321
+      ]
+    },
+    "castle_p": {
+      "atlas": "res://assets/furniture/everyday_2.png",
+      "region": [
+        1625,
+        419,
+        316,
+        317
+      ]
+    },
+    "ach_first": {
+      "atlas": "res://assets/furniture/keepsakes.png",
+      "region": [
+        69,
+        103,
+        234,
+        261
+      ]
+    },
+    "ach_five": {
+      "atlas": "res://assets/furniture/keepsakes.png",
+      "region": [
+        388,
+        151,
+        450,
+        177
+      ]
+    },
+    "ach_ch1": {
+      "atlas": "res://assets/furniture/keepsakes.png",
+      "region": [
+        917,
+        13,
+        223,
+        359
+      ]
+    },
+    "ach_15": {
+      "atlas": "res://assets/furniture/keepsakes.png",
+      "region": [
+        1180,
+        129,
+        442,
+        230
+      ]
+    },
+    "ach_25": {
+      "atlas": "res://assets/furniture/keepsakes.png",
+      "region": [
+        1748,
+        29,
+        155,
+        338
+      ]
+    },
+    "ach_ch3": {
+      "atlas": "res://assets/furniture/keepsakes.png",
+      "region": [
+        55,
+        413,
+        280,
+        311
+      ]
+    },
+    "ach_3x10": {
+      "atlas": "res://assets/furniture/keepsakes.png",
+      "region": [
+        478,
+        405,
+        230,
+        327
+      ]
+    },
+    "ach_3x25": {
+      "atlas": "res://assets/furniture/keepsakes.png",
+      "region": [
+        757,
+        413,
+        450,
+        323
+      ]
+    },
+    "ach_clear": {
+      "atlas": "res://assets/furniture/keepsakes.png",
+      "region": [
+        1256,
+        406,
+        298,
+        321
+      ]
+    },
+    "ach_perfect": {
+      "atlas": "res://assets/furniture/keepsakes.png",
+      "region": [
+        1599,
+        434,
+        357,
+        297
+      ]
+    },
+    "journey_lantern": {
+      "atlas": "res://assets/furniture/journey.png",
+      "region": [
+        140,
+        5,
+        112,
+        372
+      ]
+    },
+    "journey_compass": {
+      "atlas": "res://assets/furniture/journey.png",
+      "region": [
+        447,
+        65,
+        255,
+        288
+      ]
+    },
+    "journey_radio": {
+      "atlas": "res://assets/furniture/journey.png",
+      "region": [
+        815,
+        128,
+        354,
+        220
+      ]
+    },
+    "journey_picnic": {
+      "atlas": "res://assets/furniture/journey.png",
+      "region": [
+        1227,
+        93,
+        359,
+        273
+      ]
+    },
+    "journey_chime": {
+      "atlas": "res://assets/furniture/journey.png",
+      "region": [
+        1709,
+        6,
+        190,
+        370
+      ]
+    },
+    "journey_portal": {
+      "atlas": "res://assets/furniture/journey.png",
+      "region": [
+        62,
+        382,
+        262,
+        365
+      ]
+    },
+    "journey_cloud": {
+      "atlas": "res://assets/furniture/journey.png",
+      "region": [
+        410,
+        482,
+        342,
+        244
+      ]
+    },
+    "journey_scope": {
+      "atlas": "res://assets/furniture/journey.png",
+      "region": [
+        862,
+        387,
+        258,
+        362
+      ]
+    },
+    "journey_banner": {
+      "atlas": "res://assets/furniture/journey.png",
+      "region": [
+        1307,
+        384,
+        188,
+        372
+      ]
+    },
+    "journey_throne": {
+      "atlas": "res://assets/furniture/journey.png",
+      "region": [
+        1653,
+        382,
+        283,
+        370
+      ]
+    },
+    "vip_nameplate": {
+      "atlas": "res://assets/furniture/special.png",
+      "region": [
+        22,
+        185,
+        381,
+        142
+      ]
+    },
+    "premium_star_lounge": {
+      "atlas": "res://assets/furniture/special.png",
+      "region": [
+        429,
+        113,
+        401,
+        243
+      ]
+    },
+    "premium_aurora_lamp": {
+      "atlas": "res://assets/furniture/special.png",
+      "region": [
+        914,
+        14,
+        157,
+        356
+      ]
+    },
+    "premium_music_box": {
+      "atlas": "res://assets/furniture/special.png",
+      "region": [
+        1270,
+        106,
+        277,
+        259
+      ]
+    },
+    "premium_memory_projector": {
+      "atlas": "res://assets/furniture/special.png",
+      "region": [
+        1646,
+        79,
+        314,
+        285
+      ]
+    },
+    "season_welcome_sign": {
+      "atlas": "res://assets/furniture/special.png",
+      "region": [
+        37,
+        432,
+        349,
+        297
+      ]
+    },
+    "season_picnic_mat": {
+      "atlas": "res://assets/furniture/special.png",
+      "region": [
+        420,
+        478,
+        378,
+        230
+      ]
+    },
+    "season_balloon_arch": {
+      "atlas": "res://assets/furniture/special.png",
+      "region": [
+        818,
+        408,
+        360,
+        322
+      ]
+    },
+    "season_star_table": {
+      "atlas": "res://assets/furniture/special.png",
+      "region": [
+        1207,
+        522,
+        362,
+        191
+      ]
+    },
+    "season_memory_tree": {
+      "atlas": "res://assets/furniture/special.png",
+      "region": [
+        1628,
+        388,
+        310,
+        363
+      ]
+    }
+  }
+}

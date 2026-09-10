@@ -1,0 +1,3 @@
+{$RANKING_DOMAIN} {
+    reverse_proxy ranking:8787
+}

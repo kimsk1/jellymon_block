@@ -18,14 +18,17 @@ func set_mood(value: String) -> void:
 
 
 func _draw() -> void:
+	# v6 원화의 얼굴을 다시 그리지 않고, 퍼즐 상태만 바깥 오라로 전달한다.
+	# 덕분에 표정이 이중으로 겹치지 않고 고해상도 캐릭터 원화가 그대로 보인다.
 	match mood:
 		"wild":
-			draw_line(Vector2(-18, -13), Vector2(-6, -9), Color("#45233f"), 3.2, true)
-			draw_line(Vector2(18, -13), Vector2(6, -9), Color("#45233f"), 3.2, true)
+			for angle in [-2.45, -0.7]:
+				draw_arc(Vector2.ZERO, 38, angle, angle + 0.42, 9, Color(accent, 0.62), 2.6, true)
 		"panic":
-			draw_arc(Vector2.ZERO, 32, -PI * 0.85, -PI * 0.15, 16, Color(1, 1, 1, 0.82), 3, true)
+			draw_arc(Vector2.ZERO, 39, -PI * 0.88, -PI * 0.12, 18, Color(1, 1, 1, 0.86), 3, true)
 			draw_string(ThemeDB.fallback_font, Vector2(21, -20), "!", HORIZONTAL_ALIGNMENT_LEFT, -1, 25, Color("#fff1a6"))
 		"purified":
-			var heart := PackedVector2Array([Vector2(0, 9), Vector2(-13, -4), Vector2(-10, -13), Vector2(0, -8), Vector2(10, -13), Vector2(13, -4)])
-			draw_colored_polygon(heart, Color("#fff4f7"))
-			draw_arc(Vector2.ZERO, 34, 0, TAU, 24, Color(accent, 0.55), 3, true)
+			draw_arc(Vector2.ZERO, 38, 0, TAU, 32, Color(accent, 0.7), 3.5, true)
+			for angle in [-PI * 0.5, 0.15, PI * 0.8]:
+				var p := Vector2.RIGHT.rotated(angle) * 42.0
+				draw_circle(p, 3.2, Color("#fff8cf"))

@@ -1,0 +1,127 @@
+{
+  "schema_version": 1,
+  "title": "마음별 원정대",
+  "sequences": [
+    {
+      "level": 101, "phase": "start", "title": "유령숲의 편지", "background_asset": "res://assets/story/chapter_03_start.png",
+      "lines": [
+        {"speaker":"narrator", "type":"narration", "text":"평화로워진 아지트에 빛이 바랜 구조 편지가 도착했습니다. 편지는 지도에 없는 유령숲에서 보내온 것이었습니다."},
+        {"speaker":"bubble", "type":"dialogue", "text":"무서운 숲이어도 누군가 우리를 기다리고 있어. 등불을 들고 같이 가자!"},
+        {"speaker":"mallow", "type":"dialogue", "text":"이번에는 우리가 새로운 친구의 길잡이가 되는 거야."},
+        {"speaker":"narrator", "type":"system", "text":"새 원정 목표: 150레벨에 도달해 유령숲의 구조 신호를 밝혀 주세요."}
+      ]
+    },
+    {
+      "level": 150, "phase": "end", "title": "다시 켜진 등불", "background_asset": "res://assets/story/chapter_03_end.png",
+      "lines": [
+        {"speaker":"narrator", "type":"narration", "text":"마지막 유령 젤리몬이 마음 블록에 안기자 숲의 등불이 하나씩 되살아났습니다."},
+        {"speaker":"bubble", "type":"dialogue", "text":"유령처럼 보였던 건 사라지고 싶어서가 아니라, 발견되길 기다렸기 때문이었구나."},
+        {"speaker":"player", "type":"dialogue", "text":"아지트의 불빛은 언제나 너희가 돌아올 길을 비춰 줄 거야."}
+      ]
+    },
+    {
+      "level": 151, "phase": "start", "title": "시럽 사막의 흔적", "background_asset": "res://assets/story/chapter_05_start.png",
+      "lines": [
+        {"speaker":"narrator", "type":"narration", "text":"유령숲 너머에서는 검은 시럽이 굳어 만든 사막이 바람에 길을 바꾸고 있었습니다."},
+        {"speaker":"popo", "type":"dialogue", "text":"이 시럽에는 왕의 것과 다른 외로운 마음이 섞여 있어. 근원을 찾아야 해!"},
+        {"speaker":"starbean", "type":"dialogue", "text":"별빛 나침반이라면 움직이는 길에서도 방향을 잃지 않을 거야."},
+        {"speaker":"narrator", "type":"system", "text":"새 원정 목표: 200레벨까지 시럽의 흔적을 따라가세요."}
+      ]
+    },
+    {
+      "level": 200, "phase": "end", "title": "마음이 만든 오아시스", "background_asset": "res://assets/story/chapter_05_end.png",
+      "lines": [
+        {"speaker":"narrator", "type":"narration", "text":"구조된 젤리몬의 웃음이 모이자 굳은 시럽 사이에서 맑은 오아시스가 솟아났습니다."},
+        {"speaker":"popo", "type":"dialogue", "text":"검은 시럽은 다시 생길 수 있어도, 이제 함께 정화할 친구들이 있잖아."},
+        {"speaker":"mallow", "type":"dialogue", "text":"다음 구조 신호는 하늘의 바람길에서 오고 있어!"}
+      ]
+    },
+    {
+      "level": 201, "phase": "start", "title": "하늘을 잇는 바람길", "background_asset": "res://assets/story/chapter_02_start.png",
+      "lines": [
+        {"speaker":"narrator", "type":"narration", "text":"원정대는 흩어진 섬들을 연결하는 바람길에 도착했습니다. 잘못 탄 바람은 출발점으로 모두를 되돌려 보냈습니다."},
+        {"speaker":"starbean", "type":"dialogue", "text":"서두르지 말고 바람의 순서를 읽자. 별은 항상 같은 자리에서 길을 알려 줘."},
+        {"speaker":"player", "type":"dialogue", "text":"누구도 하늘에 홀로 남지 않게 모든 길을 연결하자."},
+        {"speaker":"narrator", "type":"system", "text":"새 원정 목표: 250레벨까지 바람길의 구조 거점을 복구하세요."}
+      ]
+    },
+    {
+      "level": 250, "phase": "end", "title": "별빛 구조망", "background_asset": "res://assets/story/chapter_02_end.png",
+      "lines": [
+        {"speaker":"narrator", "type":"narration", "text":"모든 섬의 신호등이 켜지며 밤하늘에 거대한 젤리몬 별자리가 완성되었습니다."},
+        {"speaker":"starbean", "type":"dialogue", "text":"이제 어느 섬에서 신호를 보내도 우리가 찾을 수 있어!"},
+        {"speaker":"bubble", "type":"dialogue", "text":"그런데 별자리 한가운데서 처음 보는 포털이 열리고 있어."}
+      ]
+    },
+    {
+      "level": 251, "phase": "start", "title": "마음별의 문", "background_asset": "res://assets/story/chapter_04_start.png",
+      "lines": [
+        {"speaker":"narrator", "type":"narration", "text":"포털 너머에는 구조된 마음들이 별이 되어 머무는 마음별이 있었습니다. 하지만 균열이 별빛을 삼키고 있었습니다."},
+        {"speaker":"mallow", "type":"dialogue", "text":"우리가 구조했던 모든 마음이 여기에서 빛나고 있었어. 이번에는 이 별을 구하자!"},
+        {"speaker":"player", "type":"dialogue", "text":"원정대 전원, 마지막 구조 작전을 시작한다."},
+        {"speaker":"narrator", "type":"system", "text":"최종 원정 목표: 300레벨을 완주하고 마음별의 균열을 닫으세요."}
+      ]
+    },
+    {
+      "level": 300, "phase": "end", "title": "영원한 구조대", "background_asset": "res://assets/story/chapter_04_end.png",
+      "lines": [
+        {"speaker":"narrator", "type":"narration", "text":"마지막 마음 블록이 제자리를 찾자 균열은 찬란한 왕관 모양의 별빛으로 변했습니다."},
+        {"speaker":"mallow", "type":"dialogue", "text":"처음엔 나 하나뿐이었는데, 이제 어디든 함께 갈 친구들이 이렇게 많아졌어."},
+        {"speaker":"player", "type":"dialogue", "text":"구조는 끝이 아니라 함께 살아가는 시작이야. 다음 신호도 함께 찾자."},
+        {"speaker":"narrator", "type":"system", "text":"마음별 원정 1부 완료! 영원한 젤리 영웅 성장 단계와 기념 가구가 열렸습니다."}
+      ]
+    },
+    {
+      "level": 301, "phase": "start", "title": "복구 마을에서 온 신호", "background_asset": "res://assets/story/chapter_01_start.png",
+      "lines": [
+        {"speaker":"narrator", "type":"narration", "text":"마음별에서 돌아온 원정대를 기다린 것은 새로운 구조 신호였습니다. 이번에는 먼 곳이 아니라 우리가 지나온 마을들에서 보내온 신호였습니다."},
+        {"speaker":"mallow", "type":"dialogue", "text":"구조한 친구들이 살아갈 마을도 함께 고쳐야 진짜 구조가 완성되는 거구나."},
+        {"speaker":"player", "type":"dialogue", "text":"각 지역에 구조 거점을 세우고, 주민들의 힘을 다음 원정과 연결하자."},
+        {"speaker":"narrator", "type":"system", "text":"마스터 원정 시작: 500레벨까지 복구 재료를 모아 다섯 지역의 구조 거점을 완성하세요."}
+      ]
+    },
+    {
+      "level": 500, "phase": "end", "title": "다섯 개의 구조 거점", "background_asset": "res://assets/story/chapter_01_end.png",
+      "lines": [
+        {"speaker":"narrator", "type":"narration", "text":"마지막 복구 종이 울리자 다섯 지역의 길이 하나의 별빛 구조망으로 이어졌습니다."},
+        {"speaker":"bubble", "type":"dialogue", "text":"이제 어디에서 길을 잃어도 가장 가까운 거점이 빛을 보내 줄 거야!"},
+        {"speaker":"narrator", "type":"system", "text":"마스터 원정 1단계 완료! 포털과 붕괴 지형이 있는 차원 여행로가 열렸습니다."}
+      ]
+    },
+    {
+      "level": 501, "phase": "start", "title": "차원 여행로", "background_asset": "res://assets/story/chapter_03_start.png",
+      "lines": [
+        {"speaker":"narrator", "type":"narration", "text":"구조망 바깥에서 공간이 접히며 서로 다른 지역의 길이 한 칸 사이로 맞닿기 시작했습니다."},
+        {"speaker":"starbean", "type":"dialogue", "text":"포털은 지름길이지만 돌아올 길도 함께 계산해야 해. 발밑의 균열을 잘 보자."},
+        {"speaker":"player", "type":"dialogue", "text":"새 규칙은 하나씩 기록하고, 구조대 모두가 이해한 뒤 다음 구간으로 간다."},
+        {"speaker":"narrator", "type":"system", "text":"차원 원정 목표: 750레벨까지 포털·붕괴·안개 지형의 구조 표식을 모으세요."}
+      ]
+    },
+    {
+      "level": 750, "phase": "end", "title": "안개 너머의 지도", "background_asset": "res://assets/story/chapter_03_end.png",
+      "lines": [
+        {"speaker":"narrator", "type":"narration", "text":"안개 속 마지막 표식이 빛나자 보이지 않던 길들이 거대한 별자리 지도 위에 나타났습니다."},
+        {"speaker":"popo", "type":"dialogue", "text":"우리가 지나온 선택 하나하나가 지도였어. 이제 마지막 시간도시로 갈 수 있어!"},
+        {"speaker":"narrator", "type":"system", "text":"차원 원정 완료! 751레벨부터 바람과 시간 균열이 결합된 전설 원정이 시작됩니다."}
+      ]
+    },
+    {
+      "level": 751, "phase": "start", "title": "마지막 천 개의 마음", "background_asset": "res://assets/story/chapter_04_start.png",
+      "lines": [
+        {"speaker":"narrator", "type":"narration", "text":"시간도시의 시계가 거꾸로 흐르며 구조되기 전의 외로운 마음들을 다시 불러내고 있었습니다."},
+        {"speaker":"mallow", "type":"dialogue", "text":"처음 만났던 날로 돌아가도 난 다시 네 손을 잡을 거야."},
+        {"speaker":"player", "type":"dialogue", "text":"천 번째 마음까지, 서두르지 않고 모두의 이름을 기억하며 구조한다."},
+        {"speaker":"narrator", "type":"system", "text":"전설 원정 목표: 1000레벨을 완주하고 시간 균열의 중심을 닫으세요."}
+      ]
+    },
+    {
+      "level": 1000, "phase": "end", "title": "천 개의 마음, 하나의 아지트", "background_asset": "res://assets/story/chapter_04_end.png",
+      "lines": [
+        {"speaker":"narrator", "type":"narration", "text":"천 번째 젤리몬이 구조되자 모든 시간선의 아지트 창문에 동시에 따뜻한 불이 켜졌습니다."},
+        {"speaker":"mallow", "type":"dialogue", "text":"구조한 마음은 숫자가 아니야. 함께 웃었던 천 번의 기억이야."},
+        {"speaker":"player", "type":"dialogue", "text":"원정은 끝났지만 아지트의 하루는 계속된다. 모두 집으로 돌아가자."},
+        {"speaker":"narrator", "type":"system", "text":"젤리 구조 원정 완주! 전설의 구조대 기념 배지와 최종 아지트 장식이 열렸습니다."}
+      ]
+    }
+  ]
+}

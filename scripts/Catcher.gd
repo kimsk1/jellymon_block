@@ -62,7 +62,7 @@ func setup(cid: String, shape: String, amount: int = 1) -> void:
 	badge_panel = PanelContainer.new()
 	badge_style = StyleBoxFlat.new()
 	badge_style.bg_color = Color("#fff7d6")
-	badge_style.border_color = G.COLORS[cid].darkened(0.28)
+	badge_style.border_color = Color("#796d66") if cid == "O" else G.COLORS[cid].darkened(0.28)
 	badge_style.set_border_width_all(4)
 	badge_style.set_corner_radius_all(20)
 	badge_style.shadow_color = Color(0.04, 0.05, 0.14, 0.42)
@@ -341,7 +341,7 @@ class ShapeVisual extends Node2D:
 		var cell_size := G.CELL
 		var inner := Color("#172246")
 		var inner_light := edge_color.darkened(0.48).lerp(Color("#34477b"), 0.55)
-		var rim_dark := edge_color.darkened(0.4)
+		var rim_dark := Color("#796d66") if edge_color == G.COLORS["O"] else edge_color.darkened(0.4)
 		var shine := edge_color.lightened(0.42)
 		var shadow_col := Color(0.04, 0.05, 0.14, 0.38)
 		var joined := _joined_polygon()

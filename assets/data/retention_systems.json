@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "resident_requests": [
+    {"action":"clear", "target":2, "title":"함께 구조 연습", "description":"모험을 2번 성공해요", "affection":2, "season_xp":8},
+    {"action":"capture", "target":18, "title":"새 친구 맞이", "description":"젤리몬 18마리를 구조해요", "affection":2, "season_xp":8},
+    {"action":"daily", "target":1, "title":"오늘의 특별 작전", "description":"오늘의 특별 구조를 완료해요", "affection":3, "season_xp":10},
+    {"action":"expedition", "target":1, "title":"원정대 응원", "description":"주간 원정 한 단계를 완료해요", "affection":3, "season_xp":10},
+    {"action":"decorate", "target":1, "title":"아지트 새단장", "description":"가구를 하나 배치해요", "affection":2, "season_xp":8}
+  ],
+  "request_lines": {
+    "R":"같이 힘을 모으니까 오늘도 마음이 따뜻해!",
+    "Y":"새로운 걸 해낼 때마다 별빛이 더 반짝여!",
+    "B":"내 부탁을 기억해 줘서 정말 고마워요.",
+    "G":"우리의 하루가 천천히 좋은 추억으로 자라고 있어요.",
+    "P":"성공! 다음엔 더 재미있는 부탁을 준비할게!",
+    "O":"수고했어! 아지트에서 맛있는 간식 파티야!"
+  },
+  "season": {
+    "id":"heart_star_s1", "title":"마음별 피크닉 시즌", "duration_days":28, "xp_per_level":20, "levels":20,
+    "premium_product_id":"season_heart_star_pass",
+    "free_rewards":{"5":{"stardust":30},"10":{"booster":"time","amount":2},"15":{"stardust":60},"20":{"furniture":"season_picnic_mat"}},
+    "premium_rewards":{"1":{"stardust":40},"5":{"furniture":"season_balloon_arch"},"10":{"booster":"space","amount":3},"15":{"furniture":"season_star_table"},"20":{"furniture":"season_memory_tree"}}
+  },
+  "challenge_modifiers": [
+    {"id":"no_boosters","name":"맨손 구조","description":"부스터 없이 클리어"},
+    {"id":"fast_timer","name":"긴급 출동","description":"제한 시간이 15% 짧아요"},
+    {"id":"limited_moves","name":"정밀 구조","description":"제한 이동 안에 클리어"},
+    {"id":"perfect_rescue","name":"완벽 구조","description":"2성 이상으로 클리어"}
+  ],
+  "town_districts": [
+    {"id":"plaza","name":"젤리 광장","unlock_level":301,"costs":[5,10,15],"reward":40,"perk":"복구 3단계마다 첫 클리어 별가루 +1"},
+    {"id":"garden","name":"별빛 정원","unlock_level":401,"costs":[8,14,20],"reward":55,"perk":"주민 응원과 마을 보너스 강화"},
+    {"id":"beach","name":"소다 해변","unlock_level":501,"costs":[10,18,25],"reward":70,"perk":"첫 클리어 별가루 보너스 강화"},
+    {"id":"forest","name":"유령숲","unlock_level":651,"costs":[12,22,30],"reward":90,"perk":"첫 클리어 별가루 보너스 강화"},
+    {"id":"observatory","name":"마음별 관측소","unlock_level":801,"costs":[15,25,35],"reward":120,"perk":"마을 지원 최대 단계 완성"}
+  ]
+}

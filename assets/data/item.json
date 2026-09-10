@@ -39,14 +39,76 @@
     {
       "id": "remove_ads",
       "type": "remove_ads",
-      "name": "광고 제거",
+      "name": "VIP 구조대 패스",
       "amount": 0,
       "price_krw": 3000,
       "display_price": "₩3,000",
       "consumable": false,
       "android_product_id": "jellymon.remove_ads",
       "ios_product_id": "jellymon.remove_ads",
-      "description": "한 번 구매하면 광고 없이 쾌적하게 즐겨요."
+      "furniture_ids": ["vip_nameplate"],
+      "profile_badge": "VIP",
+      "exclusive": true,
+      "description": "매일 별가루 8 + 시간 젤리 1 · 선택형 보상 광고 일 1회 즉시 완료 · VIP 배지와 주민이 반응하는 빛나는 명패. 캠페인은 누구나 광고 없이 진행해요."
+    },
+    {
+      "id": "starter_rescue_pack",
+      "type": "bundle",
+      "name": "새내기 구조대 팩",
+      "price_krw": 1500,
+      "display_price": "₩1,500",
+      "consumable": false,
+      "android_product_id": "jellymon.pack.starter",
+      "ios_product_id": "jellymon.pack.starter",
+      "stardust": 120,
+      "energy": 10,
+      "boosters": {"time": 3, "compass": 3, "ice": 1},
+      "furniture_ids": ["sofa_p"],
+      "description": "별가루 120 · 하트 10 · 부스터 7개 · 포도 소파를 한 번에 받아요."
+    },
+    {
+      "id": "chapter_rescue_pack",
+      "type": "bundle",
+      "name": "챕터 돌파 팩",
+      "price_krw": 3000,
+      "display_price": "₩3,000",
+      "consumable": false,
+      "android_product_id": "jellymon.pack.chapter",
+      "ios_product_id": "jellymon.pack.chapter",
+      "stardust": 220,
+      "energy": 15,
+      "boosters": {"time": 5, "compass": 5, "ice": 3, "space": 2, "rescue": 2},
+      "furniture_ids": ["bench_o", "cabinet_b"],
+      "description": "별가루 220 · 하트 15 · 부스터 17개 · 챕터 가구 2종을 받아요."
+    },
+    {
+      "id": "hideout_decor_pack",
+      "type": "bundle",
+      "name": "말랑 아지트 꾸미기 팩",
+      "price_krw": 4500,
+      "display_price": "₩4,500",
+      "consumable": false,
+      "android_product_id": "jellymon.pack.hideout",
+      "ios_product_id": "jellymon.pack.hideout",
+      "stardust": 150,
+      "energy": 5,
+      "boosters": {"time": 2, "compass": 2, "space": 2},
+      "furniture_ids": ["premium_star_lounge", "premium_aurora_lamp", "premium_music_box", "premium_memory_projector"],
+      "exclusive": true,
+      "description": "상점에서 따로 살 수 없는 움직이는 한정 가구 4종 · 별가루 150 · 하트 5 · 부스터 6개를 받아요."
+    },
+    {
+      "id": "season_heart_star_pass",
+      "type": "season_pass",
+      "name": "마음별 피크닉 프리미엄",
+      "price_krw": 6500,
+      "display_price": "₩6,500",
+      "consumable": true,
+      "android_product_id": "jellymon.season.heartstar.s1",
+      "ios_product_id": "jellymon.season.heartstar.s1",
+      "furniture_ids": ["season_welcome_sign"],
+      "exclusive": true,
+      "description": "28일 프리미엄 보상 트랙 · 시즌 한정 가구와 주민 전용 반응 · 매일 주민 부탁 1개 추가. 시즌마다 다시 선택할 수 있어요."
     }
   ]
 }

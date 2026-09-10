@@ -19,6 +19,10 @@ run/main_scene="res://scenes/Main.tscn"
 config/features=PackedStringArray("4.7")
 config/icon="res://assets/icon-jellymon-v4.png"
 
+[autoload]
+
+Localization="*res://scripts/Localization.gd"
+
 [display]
 
 window/size/viewport_width=720
@@ -26,7 +30,6 @@ window/size/viewport_height=1280
 window/size/window_width_override=414
 window/size/window_height_override=736
 window/stretch/mode="canvas_items"
-window/stretch/aspect="expand"
 window/handheld/orientation=1
 
 [editor_plugins]

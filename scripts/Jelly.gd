@@ -49,7 +49,8 @@ func setup(cid: String, p_shiny: bool, p_frost_layers: int = 0) -> void:
 		art_offset = (image_center - art_center) * base_scale
 	shadow_sprite = Sprite2D.new()
 	shadow_sprite.texture = load("res://assets/fx/soft.png")
-	shadow_sprite.modulate = Color(0.11, 0.12, 0.25, 0.24)
+	# v6 원화에도 접지광이 있으므로 별도 그림자는 넓고 옅게 깔아 이중 테두리를 피한다.
+	shadow_sprite.modulate = Color(0.06, 0.08, 0.2, 0.15)
 	shadow_sprite.position = Vector2(0, G.CELL * 0.31)
 	shadow_base_scale = Vector2(
 		(G.CELL * 0.58) / float(shadow_sprite.texture.get_width()),
@@ -305,11 +306,16 @@ func _process(_delta: float) -> void:
 			)
 			sprite.rotation = trapped_wave * 0.035
 		return
-	var s := sin(Time.get_ticks_msec() / 1000.0 * 2.2 + phase)
-	sprite.scale = Vector2(base_scale * (1.0 + 0.035 * s), base_scale * (1.0 - 0.035 * s))
-	sprite.position = art_offset + Vector2(0, s * 1.2)
+	var now := Time.get_ticks_msec() / 1000.0
+	var s := sin(now * 2.2 + phase)
+	var float_wave := sin(now * 1.15 + phase * 0.73)
+	# 작은 화면에서도 살아 있는 캐릭터로 느껴지는 호흡·부유·무게 이동의 합성 모션.
+	sprite.scale = Vector2(base_scale * (1.0 + 0.038 * s), base_scale * (1.0 - 0.032 * s))
+	sprite.position = art_offset + Vector2(float_wave * 0.65, s * 1.45 - absf(float_wave) * 0.55)
+	if boss_type.is_empty():
+		sprite.rotation = float_wave * 0.016
 	shadow_sprite.scale = Vector2(shadow_base_scale.x * (1.0 + s * 0.08), shadow_base_scale.y)
-	shadow_sprite.modulate.a = 0.22 - s * 0.025
+	shadow_sprite.modulate.a = 0.14 - s * 0.018
 
 
 func absorb_anim(to: Vector2) -> void:

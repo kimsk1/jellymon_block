@@ -15,6 +15,7 @@ var typing_speed := 32.0
 var last_advance_msec := -1000
 var auto_advance_token := 0
 var auto_advance_due_msec := -1
+var auto_advance_timer: Timer
 
 const ADVANCE_DEBOUNCE_MS := 120
 const AUTO_ADVANCE_DELAY_SEC := 2.5
@@ -22,6 +23,7 @@ const AUTO_ADVANCE_DELAY_SEC := 2.5
 var background: TextureRect
 var shade: ColorRect
 var header_panel: PanelContainer
+var heading_margin: MarginContainer
 var skip_button: Button
 var dialogue_panel: PanelContainer
 var speaker_label: Label
@@ -32,6 +34,11 @@ var continue_label: Label
 
 
 func _ready() -> void:
+	theme = ArtDirection.ui_theme()
+	auto_advance_timer = Timer.new()
+	auto_advance_timer.one_shot = true
+	auto_advance_timer.timeout.connect(_on_auto_advance_timeout)
+	add_child(auto_advance_timer)
 	position = G.safe_offset(get_viewport_rect().size)
 	size = Vector2(G.W, G.H)
 	get_viewport().size_changed.connect(_apply_responsive_layout)
@@ -88,7 +95,9 @@ func _layout_story_ui() -> void:
 	# 상단 카드는 카메라 홀 아래, 본문 카드는 하단에서 넉넉히 띄워 배경과 균형을 맞춘다.
 	var header_y := maxf(22.0, insets.x + 12.0)
 	header_panel.position = Vector2(22, header_y)
-	skip_button.position = Vector2(548, header_y + 21)
+	skip_button.size.x = maxf(130.0, skip_button.get_combined_minimum_size().x)
+	skip_button.position = Vector2(G.W - 44.0 - skip_button.size.x, header_y + 21)
+	heading_margin.add_theme_constant_override("margin_right", int(skip_button.size.x + 20.0))
 	var panel_height := 360.0
 	var bottom_air := maxf(150.0, insets.y + 92.0)
 	var panel_min_y := minf(header_y + 390.0, 790.0)
@@ -100,19 +109,20 @@ func _layout_story_ui() -> void:
 	progress_label.position = Vector2(532, panel_y + 34)
 	dialogue_label.position = Vector2(60, panel_y + 82)
 	dialogue_label.size = Vector2(600, 212)
-	continue_label.position = Vector2(380, panel_y + panel_height - 50)
+	continue_label.position = Vector2(60, panel_y + panel_height - 50)
+	continue_label.size = Vector2(600, 34)
 
 
 func _panel_style(color: Color, border: Color, radius: int) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
-	style.bg_color = color
-	style.border_color = border
-	style.set_border_width_all(4)
+	style.bg_color = ArtDirection.panel_color()
+	style.border_color = ArtDirection.border_color()
+	style.set_border_width_all(1)
 	style.set_corner_radius_all(radius)
 	style.corner_detail = 12
-	style.shadow_color = Color(0.08, 0.03, 0.15, 0.42)
-	style.shadow_size = 12
-	style.shadow_offset = Vector2(0, 8)
+	style.shadow_color = Color(0.35, 0.22, 0.12, 0.10)
+	style.shadow_size = 3
+	style.shadow_offset = Vector2(0, 2)
 	style.content_margin_left = 22
 	style.content_margin_right = 22
 	style.content_margin_top = 14
@@ -139,35 +149,44 @@ func _build_ui() -> void:
 
 	header_panel = PanelContainer.new()
 	header_panel.position = Vector2(22, 22)
-	header_panel.size = Vector2(676, 112)
+	header_panel.size = Vector2(676, 132)
 	header_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	header_panel.add_theme_stylebox_override("panel", _panel_style(Color(0.18, 0.09, 0.28, 0.86), Color(1, 1, 1, 0.74), 26))
 	add_child(header_panel)
+	heading_margin = MarginContainer.new()
+	heading_margin.add_theme_constant_override("margin_right", 148)
+	header_panel.add_child(heading_margin)
 	var heading := VBoxContainer.new()
 	heading.alignment = BoxContainer.ALIGNMENT_CENTER
-	header_panel.add_child(heading)
+	heading_margin.add_child(heading)
 	var title := Label.new()
-	title.text = String(sequence.get("title", "젤리몬 이야기"))
+	title.text = tr(String(sequence.get("title", "젤리몬 이야기")), &"story")
+	if sequence.has("chapter"):
+		title.text = "CHAPTER %d  %s" % [int(sequence.chapter), title.text]
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.add_theme_font_size_override("font_size", 34)
-	title.add_theme_color_override("font_color", Color.WHITE)
+	title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	title.add_theme_font_size_override("font_size", 28)
+	title.add_theme_color_override("font_color", ArtDirection.ink())
 	title.add_theme_color_override("font_outline_color", Color("#4d3266"))
-	title.add_theme_constant_override("outline_size", 4)
+	title.add_theme_constant_override("outline_size", 0)
 	heading.add_child(title)
 	var subtitle := Label.new()
-	subtitle.text = String(sequence.get("subtitle", ""))
+	subtitle.text = tr(String(sequence.get("subtitle", "")), &"story")
+	if sequence.has("journey_level"):
+		subtitle.text = tr("마음별 원정대 · LEVEL %d", &"story") % int(sequence.journey_level)
 	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	subtitle.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	subtitle.add_theme_font_size_override("font_size", 19)
-	subtitle.add_theme_color_override("font_color", Color("#f5d9ff"))
+	subtitle.add_theme_color_override("font_color", ArtDirection.ink())
 	subtitle.visible = not subtitle.text.is_empty()
 	heading.add_child(subtitle)
 
 	skip_button = Button.new()
-	skip_button.text = "건너뛰기  »"
+	skip_button.text = tr("건너뛰기 »")
 	skip_button.position = Vector2(548, 43)
 	skip_button.size = Vector2(130, 64)
 	skip_button.add_theme_font_size_override("font_size", 18)
-	skip_button.add_theme_color_override("font_color", Color.WHITE)
+	skip_button.add_theme_color_override("font_color", ArtDirection.ink())
 	skip_button.add_theme_stylebox_override("normal", _panel_style(Color(0.25, 0.14, 0.34, 0.76), Color(1, 1, 1, 0.42), 18))
 	skip_button.add_theme_stylebox_override("hover", skip_button.get_theme_stylebox("normal").duplicate())
 	skip_button.add_theme_stylebox_override("pressed", skip_button.get_theme_stylebox("normal").duplicate())
@@ -195,7 +214,7 @@ func _build_ui() -> void:
 	speaker_label.position = Vector2(60, 872)
 	speaker_label.size = Vector2(420, 48)
 	speaker_label.add_theme_font_size_override("font_size", 27)
-	speaker_label.add_theme_color_override("font_color", Color("#65417d"))
+	speaker_label.add_theme_color_override("font_color", ArtDirection.ink())
 	speaker_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(speaker_label)
 
@@ -204,7 +223,7 @@ func _build_ui() -> void:
 	progress_label.size = Vector2(110, 36)
 	progress_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	progress_label.add_theme_font_size_override("font_size", 17)
-	progress_label.add_theme_color_override("font_color", Color("#9a83a2"))
+	progress_label.add_theme_color_override("font_color", ArtDirection.ink())
 	progress_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(progress_label)
 
@@ -214,18 +233,18 @@ func _build_ui() -> void:
 	dialogue_label.fit_content = false
 	dialogue_label.scroll_active = false
 	dialogue_label.add_theme_font_size_override("normal_font_size", 28)
-	dialogue_label.add_theme_color_override("default_color", Color("#422c50"))
+	dialogue_label.add_theme_color_override("default_color", ArtDirection.ink())
 	dialogue_label.add_theme_constant_override("line_separation", 8)
 	dialogue_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(dialogue_label)
 
 	continue_label = Label.new()
-	continue_label.text = "▼  화면을 탭해 계속"
+	continue_label.text = tr("▼ 화면을 탭해 계속")
 	continue_label.position = Vector2(400, 1170)
 	continue_label.size = Vector2(250, 34)
 	continue_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	continue_label.add_theme_font_size_override("font_size", 17)
-	continue_label.add_theme_color_override("font_color", Color("#8b6f96"))
+	continue_label.add_theme_color_override("font_color", ArtDirection.ink())
 	continue_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(continue_label)
 	_layout_story_ui()
@@ -241,7 +260,7 @@ func _process(delta: float) -> void:
 		continue_label.modulate.a = 0.7 + sin(Time.get_ticks_msec() * 0.006) * 0.25
 		if auto_advance_due_msec > 0:
 			var remaining := maxf(0.0, float(auto_advance_due_msec - Time.get_ticks_msec()) / 1000.0)
-			continue_label.text = "▼  %.1f초 후 다음 · 탭해서 계속" % remaining
+			continue_label.text = tr("▼ %.1f초 후 다음 · 탭해서 계속", &"story") % remaining
 
 
 func _on_gui_input(event: InputEvent) -> void:
@@ -274,6 +293,7 @@ func _advance() -> void:
 
 func _show_line(index: int) -> void:
 	# 이전 문장에 예약된 자동 진행 콜백을 무효화한다.
+	auto_advance_timer.stop()
 	auto_advance_token += 1
 	auto_advance_due_msec = -1
 	line_index = index
@@ -306,10 +326,12 @@ func _complete_current_line() -> void:
 
 func _schedule_auto_advance() -> void:
 	## 타이핑 완료 시점(탭으로 즉시 완성한 경우 포함)부터 정확히 2.5초를 센다.
-	var token := auto_advance_token
 	auto_advance_due_msec = Time.get_ticks_msec() + int(AUTO_ADVANCE_DELAY_SEC * 1000.0)
-	await get_tree().create_timer(AUTO_ADVANCE_DELAY_SEC).timeout
-	if token != auto_advance_token or typing or sequence.is_empty():
+	auto_advance_timer.start(AUTO_ADVANCE_DELAY_SEC)
+
+
+func _on_auto_advance_timeout() -> void:
+	if typing or sequence.is_empty():
 		return
 	auto_advance_due_msec = -1
 	_advance()
@@ -337,8 +359,8 @@ func debug_start_auto_advance_test() -> void:
 func _replace_variables(value: String) -> String:
 	var nickname: String = main.save.get_nickname()
 	if nickname.is_empty():
-		nickname = "구출 대원"
-	return value.replace("{player_name}", nickname)
+		nickname = tr("구출 대원", &"story")
+	return tr(value, &"story").replace("{player_name}", nickname)
 
 
 func _update_portrait(speaker_id: String, side: String) -> void:
@@ -361,6 +383,7 @@ func _finish() -> void:
 	if sequence.is_empty():
 		return
 	auto_advance_token += 1
+	auto_advance_timer.stop()
 	auto_advance_due_msec = -1
 	var sequence_id := String(sequence.get("sequence_id", ""))
 	sequence = {}

@@ -18,10 +18,10 @@
 		<google
 			playAppId="233149254808"
 			clientId="233149254808-nn9nejgkfubc5djlf1k9nu85ha3enp2e.apps.googleusercontent.com"
-			serverClientId="233149254808-5ftoph127ano8l7dhhg0ehja5grotvuh.apps.googleusercontent.com"
+			serverClientId="233149254808-nn9nejgkfubc5djlf1k9nu85ha3enp2e.apps.googleusercontent.com"
 			reversedClientId="com.googleusercontent.apps.233149254808-nn9nejgkfubc5djlf1k9nu85ha3enp2e" />
 		<googleplaygames
 			playAppId="233149254808"
-			serverClientId="233149254808-5ftoph127ano8l7dhhg0ehja5grotvuh.apps.googleusercontent.com" />
+			serverClientId="233149254808-nn9nejgkfubc5djlf1k9nu85ha3enp2e.apps.googleusercontent.com" />
 	</providers>
 </properties>

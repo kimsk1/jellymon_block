@@ -1,5 +1,5 @@
 class_name FurnitureRewardCatalog
-## 10레벨 단위 가구 보상. 라이브 데이터 수정이 쉽도록 JSON만 원본으로 사용한다.
+## 캠페인 마일스톤 가구 보상. 라이브 데이터 수정이 쉽도록 JSON만 원본으로 사용한다.
 
 const PATH := "res://assets/data/furniture_rewards.json"
 
@@ -43,14 +43,14 @@ static func reward_item_ids() -> Array[String]:
 static func validate() -> PackedStringArray:
 	var errors := PackedStringArray()
 	var rewards := load_rewards()
-	if rewards.size() != 10:
-		errors.append("10단위 가구 보상이 10종이 아님")
+	if rewards.size() < 20:
+		errors.append("101~300 장기 가구 보상 트랙이 부족함")
 	var levels := {}
 	var ids := {}
 	for reward in rewards:
 		var level := int(reward.level)
 		var id := String(reward.furniture_id)
-		if level < 10 or level > 100 or level % 10 != 0 or levels.has(level):
+		if level < 10 or level > 300 or levels.has(level):
 			errors.append("가구 보상 레벨 오류/중복: %d" % level)
 		levels[level] = true
 		if id.is_empty() or ids.has(id) or RoomData.item_by_id(id).is_empty():
@@ -59,4 +59,7 @@ static func validate() -> PackedStringArray:
 	for level in range(10, 101, 10):
 		if not levels.has(level):
 			errors.append("가구 보상 레벨 누락: %d" % level)
+	for level in [110, 150, 200, 250, 300]:
+		if not levels.has(level):
+			errors.append("장기 가구 핵심 마일스톤 누락: %d" % level)
 	return errors

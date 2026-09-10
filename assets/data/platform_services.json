@@ -16,5 +16,10 @@
     "leaderboard": true,
     "cloud_save": true
   },
-  "leaderboard_id": "jellymon_total_stars"
+  "leaderboard_id": "163",
+  "ranking": {
+    "api_base_url": "https://engrailed-sadye-curatively.ngrok-free.dev",
+    "board": "three_star_adventure",
+    "limit": 100
+  }
 }

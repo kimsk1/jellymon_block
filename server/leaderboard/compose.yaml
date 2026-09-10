@@ -1,0 +1,34 @@
+services:
+  ranking:
+    build: .
+    restart: unless-stopped
+    environment:
+      HIVE_APP_ID: ${HIVE_APP_ID:?Set HIVE_APP_ID in .env}
+      HIVE_LEADERBOARD_ID: ${HIVE_LEADERBOARD_ID:-163}
+      HIVE_CERTIFICATION_KEY: ${HIVE_CERTIFICATION_KEY:?Set HIVE_CERTIFICATION_KEY in .env}
+      HIVE_ZONE: ${HIVE_ZONE:-sandbox}
+      RANKING_DB_PATH: /data/ranking.sqlite3
+    ports:
+      - "127.0.0.1:8787:8787"
+    volumes:
+      - ranking_data:/data
+  https:
+    image: caddy:2
+    profiles: [https]
+    restart: unless-stopped
+    environment:
+      RANKING_DOMAIN: ${RANKING_DOMAIN:-localhost}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      ranking:
+        condition: service_healthy
+volumes:
+  ranking_data:
+  caddy_data:
+  caddy_config:

@@ -10,6 +10,16 @@
     {"level": 70, "furniture_id": "ach_3x10", "title": "금별 트로피"},
     {"level": 80, "furniture_id": "ach_3x25", "title": "왕관 소파"},
     {"level": 90, "furniture_id": "ach_clear", "title": "구출 기념문"},
-    {"level": 100, "furniture_id": "ach_perfect", "title": "별의 성좌"}
+    {"level": 100, "furniture_id": "ach_perfect", "title": "별의 성좌"},
+    {"level": 110, "furniture_id": "journey_lantern", "title": "유령숲 등불"},
+    {"level": 130, "furniture_id": "journey_compass", "title": "시럽 나침반"},
+    {"level": 150, "furniture_id": "journey_radio", "title": "구조대 무전기"},
+    {"level": 170, "furniture_id": "journey_picnic", "title": "말랑 피크닉"},
+    {"level": 200, "furniture_id": "journey_chime", "title": "바람별 모빌"},
+    {"level": 210, "furniture_id": "journey_portal", "title": "작은 포털문"},
+    {"level": 230, "furniture_id": "journey_cloud", "title": "구름 영사기"},
+    {"level": 250, "furniture_id": "journey_scope", "title": "별빛 관측대"},
+    {"level": 275, "furniture_id": "journey_banner", "title": "원정대 깃발"},
+    {"level": 300, "furniture_id": "journey_throne", "title": "마음별 지휘석"}
   ]
 }

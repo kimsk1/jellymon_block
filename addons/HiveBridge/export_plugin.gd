@@ -31,6 +31,8 @@ class HiveAndroidExportPlugin extends EditorExportPlugin:
 		# 앱 export에서는 BOM 대신 동일 버전을 각 artifact에 명시한다.
 		return PackedStringArray([
 			"com.com2us.android.hive:hive-sdk:%s" % HIVE_VERSION,
+			"com.com2us.android.hive:hive-hercules:%s" % HIVE_VERSION,
+			"com.com2us.android.hive:hive-datastore:%s" % HIVE_VERSION,
 			"com.com2us.android.hive:hive-authv4-provider-google-credential-signin:%s" % HIVE_VERSION,
 			"com.com2us.android.hive:hive-authv4-provider-google-playgames:%s" % HIVE_VERSION,
 			"com.android.installreferrer:installreferrer:2.2",

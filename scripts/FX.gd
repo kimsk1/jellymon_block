@@ -6,6 +6,7 @@ var soft_tex: Texture2D
 var ring_tex: Texture2D
 var star_tex: Texture2D
 var lock_tex: Texture2D
+var additive_material: CanvasItemMaterial
 const MAX_TRANSIENT_NODES := 180
 
 
@@ -14,6 +15,8 @@ func _ready() -> void:
 	ring_tex = load("res://assets/fx/ring.png")
 	star_tex = load("res://assets/fx/star.png")
 	lock_tex = load("res://assets/fx/lock.png")
+	additive_material = CanvasItemMaterial.new()
+	additive_material.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
 
 
 func _auto_free(node: Node, sec: float) -> void:
@@ -50,6 +53,7 @@ func burst(pos: Vector2, col: Color, big: bool = false) -> void:
 	p.scale_amount_max = 0.85 if big else 0.65
 	p.texture = soft_tex
 	p.color = col
+	p.material = additive_material
 	p.hue_variation_min = -0.03
 	p.hue_variation_max = 0.03
 	add_child(p)
@@ -78,6 +82,7 @@ func swirl(pos: Vector2, col: Color) -> void:
 	p.scale_amount_max = 0.5
 	p.texture = soft_tex
 	p.color = Color(col.r, col.g, col.b, 0.85)
+	p.material = additive_material
 	add_child(p)
 	p.emitting = true
 	_auto_free(p, 0.9)
@@ -102,6 +107,7 @@ func sparkle(pos: Vector2, amount: int = 6) -> void:
 	p.scale_amount_max = 0.6
 	p.texture = star_tex
 	p.color = Color(1.0, 0.95, 0.55)
+	p.material = additive_material
 	add_child(p)
 	p.emitting = true
 	_auto_free(p, 1.0)
@@ -115,6 +121,7 @@ func ring(pos: Vector2, col: Color, size: float = 1.0) -> void:
 	s.texture = ring_tex
 	s.position = pos
 	s.modulate = Color(col.r, col.g, col.b, 0.9)
+	s.material = additive_material
 	s.scale = Vector2.ONE * 0.22 * size
 	add_child(s)
 	var tw := s.create_tween()
@@ -133,6 +140,7 @@ func grab_pulse(pos: Vector2, col: Color) -> void:
 	glow.texture = soft_tex
 	glow.position = pos
 	glow.modulate = Color(col.r, col.g, col.b, 0.42)
+	glow.material = additive_material
 	glow.scale = Vector2.ONE * 1.1
 	glow.z_index = 24
 	add_child(glow)
@@ -160,6 +168,7 @@ func move_streak(from: Vector2, to: Vector2, col: Color) -> void:
 	p.scale_amount_max = 0.42
 	p.texture = soft_tex
 	p.color = col.lightened(0.32)
+	p.material = additive_material
 	p.z_index = 22
 	add_child(p)
 	p.emitting = true
@@ -174,6 +183,7 @@ func blocked_bump(pos: Vector2, col: Color) -> void:
 	s.texture = ring_tex
 	s.position = pos
 	s.modulate = Color(col.r, col.g, col.b, 0.62)
+	s.material = additive_material
 	s.scale = Vector2.ONE * 0.34
 	s.z_index = 25
 	add_child(s)
@@ -191,6 +201,7 @@ func impact(pos: Vector2, col: Color, big: bool = false) -> void:
 	flash.texture = soft_tex
 	flash.position = pos
 	flash.modulate = Color(1, 1, 1, 0.92)
+	flash.material = additive_material
 	flash.scale = Vector2.ONE * (1.15 if big else 0.72)
 	flash.z_index = 70
 	add_child(flash)
@@ -204,6 +215,7 @@ func impact(pos: Vector2, col: Color, big: bool = false) -> void:
 		s.texture = ring_tex
 		s.position = pos
 		s.modulate = Color(col.r, col.g, col.b, 0.95)
+		s.material = additive_material
 		s.scale = Vector2.ONE * 0.16
 		s.z_index = 68
 		add_child(s)
@@ -229,6 +241,7 @@ func impact(pos: Vector2, col: Color, big: bool = false) -> void:
 	stars.scale_amount_max = 0.85 if big else 0.58
 	stars.texture = star_tex
 	stars.color = col.lightened(0.25)
+	stars.material = additive_material
 	stars.z_index = 69
 	add_child(stars)
 	stars.emitting = true

@@ -1,5 +1,5 @@
 class_name RoomData
-## 젤리 아지트의 수집·성장·가구 데이터. 가구 외형은 코드로 그려 별도 에셋 없이 일관되게 표시한다.
+## 젤리 아지트의 수집·성장·가구 데이터. 외형은 FurnitureArt의 2D 가구 아틀라스를 사용한다.
 
 const MetaProgressionCatalogLib = preload("res://scripts/MetaProgressionCatalog.gd")
 
@@ -10,6 +10,21 @@ const CELL := 76.0
 const ORIGIN := Vector2(56, 390)
 const SCREEN_Y_OFFSET := 50.0
 
+# 모든 테마는 같은 8×6 가구 좌표를 사용한다. 배경에는 가구가 포함되지 않는다.
+const DEFAULT_ROOM_THEME := "b"
+const ROOM_THEMES := [
+	{"id":"b", "unlock_level":0, "name":"민트 아침", "asset":"res://assets/backgrounds/rooms/room_b.png", "wall_ratio":0.578, "canvas":"#f6edda"},
+	{"id":"a", "unlock_level":20, "name":"햇살 크림", "asset":"res://assets/backgrounds/rooms/room_a.png", "wall_ratio":0.505, "canvas":"#f9dfb8"},
+	{"id":"d", "unlock_level":40, "name":"달빛 아지트", "asset":"res://assets/backgrounds/rooms/room_d.png", "wall_ratio":0.504, "canvas":"#67425f"},
+]
+
+static func room_theme(id: String) -> Dictionary:
+	for theme in ROOM_THEMES:
+		if theme.id == id:
+			return theme
+	return ROOM_THEMES[0]
+
+
 const STARTER_ITEM_IDS := ["cushion_r", "lamp_y", "table_b", "shelf_g"]
 const FURNITURE_PRICES := {
 	"sofa_p": 120, "bench_o": 180, "rug_r": 260, "cabinet_b": 340,
@@ -19,6 +34,10 @@ const FURNITURE_PRICES := {
 	"ach_first": 480, "ach_five": 700, "ach_ch1": 920, "ach_15": 1180,
 	"ach_25": 1460, "ach_ch3": 1780, "ach_3x10": 2150, "ach_3x25": 2600,
 	"ach_clear": 3200, "ach_perfect": 4000,
+	"journey_lantern": 900, "journey_compass": 1100, "journey_radio": 1300,
+	"journey_picnic": 1500, "journey_chime": 1700, "journey_portal": 2000,
+	"journey_cloud": 2300, "journey_scope": 2600, "journey_banner": 2900,
+	"journey_throne": 3400,
 }
 
 const REGULAR_ITEMS := [
@@ -57,6 +76,32 @@ const ACHIEVEMENT_ITEMS := [
 	{"id":"ach_perfect", "name":"별의 성좌", "shape":"ZH", "color":"#8d71e8", "achievement":9, "mark":"✦"},
 ]
 
+const JOURNEY_ITEMS := [
+	{"id":"journey_lantern", "name":"유령숲 등불", "shape":"V2", "color":"#8b7bd7", "mark":"☾"},
+	{"id":"journey_compass", "name":"시럽 나침반", "shape":"S1", "color":"#e49a58", "mark":"✥"},
+	{"id":"journey_radio", "name":"구조대 무전기", "shape":"H2", "color":"#5da9d5", "mark":"⌁"},
+	{"id":"journey_picnic", "name":"말랑 피크닉", "shape":"SQ", "color":"#ef7890", "mark":"♥"},
+	{"id":"journey_chime", "name":"바람별 모빌", "shape":"V3", "color":"#83c9dc", "mark":"✦"},
+	{"id":"journey_portal", "name":"작은 포털문", "shape":"TD", "color":"#9670d5", "mark":"◇"},
+	{"id":"journey_cloud", "name":"구름 영사기", "shape":"H2", "color":"#80bce8", "mark":"☁"},
+	{"id":"journey_scope", "name":"별빛 관측대", "shape":"L4A", "color":"#e5bd48", "mark":"☆"},
+	{"id":"journey_banner", "name":"원정대 깃발", "shape":"V3", "color":"#67b877", "mark":"⚑"},
+	{"id":"journey_throne", "name":"마음별 지휘석", "shape":"TU", "color":"#b274da", "mark":"♛"},
+]
+
+const EXCLUSIVE_ITEMS := [
+	{"id":"vip_nameplate", "name":"VIP 별빛 명패", "shape":"H2", "color":"#f2c84b", "mark":"VIP", "package_exclusive":true, "animated":true, "reaction":"우리 구조대의 특별한 별빛이야!"},
+	{"id":"premium_star_lounge", "name":"별구름 라운지", "shape":"LA", "color":"#cf83e8", "mark":"✦", "package_exclusive":true, "animated":true, "reaction":"구름 위에 누운 것처럼 폭신해!"},
+	{"id":"premium_aurora_lamp", "name":"오로라 스탠드", "shape":"V2", "color":"#68d6dc", "mark":"◇", "package_exclusive":true, "animated":true, "reaction":"방 안에 오로라가 춤추고 있어!"},
+	{"id":"premium_music_box", "name":"젤리 음악상자", "shape":"S1", "color":"#ef7fa6", "mark":"♪", "package_exclusive":true, "animated":true, "reaction":"내가 좋아하는 말랑말랑한 노래야!"},
+	{"id":"premium_memory_projector", "name":"추억 프로젝터", "shape":"H2", "color":"#778ee8", "mark":"★", "package_exclusive":true, "animated":true, "reaction":"우리가 함께한 모험이 별처럼 떠올라!"},
+	{"id":"season_welcome_sign", "name":"피크닉 환영 간판", "shape":"H2", "color":"#f0b75a", "mark":"S1", "package_exclusive":true, "animated":true, "reaction":"새 시즌 피크닉이 시작됐어!"},
+	{"id":"season_picnic_mat", "name":"마음별 피크닉 매트", "shape":"SQ", "color":"#ef8ca8", "mark":"♥", "package_exclusive":true, "animated":true, "reaction":"다 같이 앉을 자리가 충분해!"},
+	{"id":"season_balloon_arch", "name":"별풍선 아치", "shape":"TD", "color":"#78bfe2", "mark":"☆", "package_exclusive":true, "animated":true, "reaction":"풍선 사이로 달리면 축제가 시작돼!"},
+	{"id":"season_star_table", "name":"별과자 테이블", "shape":"H2", "color":"#e8c84f", "mark":"★", "package_exclusive":true, "animated":true, "reaction":"별과자가 반짝반짝 맛있어 보여!"},
+	{"id":"season_memory_tree", "name":"추억나무", "shape":"V3", "color":"#72c47f", "mark":"✦", "package_exclusive":true, "animated":true, "reaction":"우리 추억이 잎사귀마다 자라고 있어!"},
+]
+
 const ACHIEVEMENT_NAMES := [
 	"첫 스테이지 클리어", "5개 스테이지 클리어", "챕터 1 완주", "15개 스테이지 클리어",
 	"25개 스테이지 클리어", "챕터 3 완주", "3성 스테이지 10개", "3성 스테이지 25개",
@@ -65,7 +110,7 @@ const ACHIEVEMENT_NAMES := [
 
 
 static func all_items() -> Array:
-	return REGULAR_ITEMS + ACHIEVEMENT_ITEMS
+	return REGULAR_ITEMS + ACHIEVEMENT_ITEMS + JOURNEY_ITEMS + EXCLUSIVE_ITEMS
 
 
 static func starter_items() -> Array:
@@ -82,7 +127,7 @@ static func starter_items() -> Array:
 static func purchasable_items() -> Array:
 	var items: Array = []
 	for item in all_items():
-		if not STARTER_ITEM_IDS.has(String(item.id)):
+		if not STARTER_ITEM_IDS.has(String(item.id)) and not bool(item.get("package_exclusive", false)):
 			items.append(item)
 	return items
 
@@ -108,23 +153,23 @@ static func item_by_id(id: String) -> Dictionary:
 
 static func total_stars(save) -> int:
 	var total := 0
-	for idx in range(100):
-		total += save.get_stars(idx)
+	for value in save.stars.values():
+		total += int(value)
 	return total
 
 
 static func clear_count(save) -> int:
 	var count := 0
-	for idx in range(100):
-		if save.get_stars(idx) > 0:
+	for value in save.stars.values():
+		if int(value) > 0:
 			count += 1
 	return count
 
 
 static func three_star_count(save) -> int:
 	var count := 0
-	for idx in range(100):
-		if save.get_stars(idx) >= 3:
+	for value in save.stars.values():
+		if int(value) >= 3:
 			count += 1
 	return count
 
@@ -203,6 +248,10 @@ static func validate_catalog() -> PackedStringArray:
 		errors.append("일반 아지트 가구가 20종이 아님")
 	if ACHIEVEMENT_ITEMS.size() != 10:
 		errors.append("업적 아지트 가구가 10종이 아님")
+	if JOURNEY_ITEMS.size() != 10:
+		errors.append("장기 원정 가구가 10종이 아님")
+	if EXCLUSIVE_ITEMS.size() != 10:
+		errors.append("VIP/꾸미기/시즌 한정 가구가 10종이 아님")
 	var ids := {}
 	for item in all_items():
 		if ids.has(item.id):
@@ -219,4 +268,7 @@ static func validate_catalog() -> PackedStringArray:
 	for item in purchasable_items():
 		if furniture_price(String(item.id)) <= 0:
 			errors.append("가구 별가루 가격 누락: %s" % item.id)
+	for item in EXCLUSIVE_ITEMS:
+		if not bool(item.get("package_exclusive", false)) or not bool(item.get("animated", false)):
+			errors.append("한정 가구 속성 오류: %s" % String(item.get("id", "")))
 	return errors

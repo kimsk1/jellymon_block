@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "enabled": false,
+  "endpoint": "",
+  "environment": "closed_beta",
+  "batch_size": 30,
+  "request_timeout_seconds": 12,
+  "feedback_prompt": true,
+  "privacy": "pseudonymous_gameplay_events_only_no_raw_device_id"
+}

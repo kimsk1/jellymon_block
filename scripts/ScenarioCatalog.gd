@@ -43,10 +43,26 @@ static func chapter(chapter_index: int, phase: String) -> Dictionary:
 	sequence["sequence_id"] = "chapter_%02d_%s" % [chapter_index + 1, phase]
 	sequence["chapter"] = chapter_index + 1
 	sequence["phase"] = phase
-	sequence["title"] = "CHAPTER %d  %s" % [chapter_index + 1, String(data.get("title", ""))]
+	sequence["title"] = String(data.get("title", ""))
 	sequence["subtitle"] = String(data.get("subtitle", ""))
 	sequence["cast"] = manifest().get("cast", {})
 	return sequence
+
+
+static func journey(level_number: int, phase: String) -> Dictionary:
+	if level_number < 101 or level_number > 1000 or not ["start", "end"].has(phase):
+		return {}
+	var data := _read_json(ROOT + "/long_journey.json")
+	for raw in data.get("sequences", []):
+		if int(raw.get("level", 0)) != level_number or String(raw.get("phase", "")) != phase:
+			continue
+		var sequence: Dictionary = Dictionary(raw).duplicate(true)
+		sequence["sequence_id"] = "journey_%03d_%s" % [level_number, phase]
+		sequence["subtitle"] = "마음별 원정대 · LEVEL %d" % level_number
+		sequence["journey_level"] = level_number
+		sequence["cast"] = manifest().get("cast", {})
+		return sequence
+	return {}
 
 
 static func validate() -> PackedStringArray:
@@ -59,6 +75,10 @@ static func validate() -> PackedStringArray:
 	for chapter_index in range(5):
 		sequences.append(chapter(chapter_index, "start"))
 		sequences.append(chapter(chapter_index, "end"))
+	for level_number in [101, 151, 201, 251, 301, 501, 751]:
+		sequences.append(journey(level_number, "start"))
+	for level_number in [150, 200, 250, 300, 500, 750, 1000]:
+		sequences.append(journey(level_number, "end"))
 	var ids := {}
 	for sequence in sequences:
 		var sequence_id := String(sequence.get("sequence_id", ""))

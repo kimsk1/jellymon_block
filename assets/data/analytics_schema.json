@@ -12,7 +12,17 @@
     "shop_purchase": ["item_id", "kind", "result"],
     "currency_source": ["currency", "amount", "source"],
     "currency_sink": ["currency", "amount", "sink"],
-    "resident_bond": ["resident_id", "level", "affection"]
+    "resident_bond": ["resident_id", "level", "affection"],
+    "resident_request": ["request_id", "resident_id", "result"],
+    "live_activity": ["kind", "modifier", "result"],
+    "season_reward": ["level", "track"],
+    "town_upgrade": ["district_id", "level"],
+    "shop_offer_view": ["item_id", "reason"],
+    "room_share": ["furniture_count", "town_level"],
+    "signature_moment": ["level", "phase"],
+    "adventure_support": ["time_bonus", "shiny_bonus", "stardust_bonus"],
+    "vip_daily_support": ["result"],
+    "beta_feedback": ["fun", "attachment", "purchase_intent", "level"]
     ,"tutorial_step_start": ["tutorial_id", "level", "step"]
     ,"tutorial_step_complete": ["tutorial_id", "level", "step"]
     ,"tutorial_error": ["tutorial_id", "level", "reason"]

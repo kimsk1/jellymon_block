@@ -12,6 +12,11 @@ const LEVELS_PER_CHAPTER := 10
 const LEVEL_CHUNK_SIZE := 100
 const LEVEL_CHUNK_CACHE_LIMIT := 3
 const BOSS_TYPES := ["king", "splitter", "thief"]
+const LATE_TIME_COMFORT_SCALE := 1.25
+const EARLY_LATE_BOSS_READ_BONUS := 15.0
+const LATE_TIME_MIN_LEVEL := 70
+const LATE_TIME_MIN_SECONDS := 90.0
+const EarlyCampaignCatalogLib = preload("res://scripts/EarlyCampaignCatalog.gd")
 
 const CHAPTER_NAMES := [
 	"젤리 마을", "캔디 숲", "소다 해변", "아이스 설산", "초코 화산",
@@ -101,13 +106,76 @@ static func level_count() -> int:
 static func get_level(index: int) -> Dictionary:
 	if index < 0 or index >= level_count():
 		return {}
+	var level: Dictionary
 	if _level_index.is_empty():
-		return _load_legacy_levels()[index]
-	var chunk_size := int(_level_index.get("chunk_size", LEVEL_CHUNK_SIZE))
-	var chunk_index := index / chunk_size
-	var chunk := _load_chunk(chunk_index)
-	var local_index := index % chunk_size
-	return chunk[local_index] if local_index < chunk.size() else {}
+		level = _load_legacy_levels()[index]
+	else:
+		var chunk_size := int(_level_index.get("chunk_size", LEVEL_CHUNK_SIZE))
+		var chunk_index := index / chunk_size
+		var chunk := _load_chunk(chunk_index)
+		var local_index := index % chunk_size
+		level = chunk[local_index] if local_index < chunk.size() else {}
+	return _apply_long_campaign_presentation(_apply_early_campaign_design(level, index + 1), index + 1)
+
+
+static func _apply_early_campaign_design(source: Dictionary, level_number: int) -> Dictionary:
+	var design := EarlyCampaignCatalogLib.design_for_level(level_number)
+	if design.is_empty():
+		return source
+	var level := source.duplicate(true)
+	level["campaign_arc"] = String(design.get("arc", ""))
+	level["campaign_role"] = String(design.get("role", ""))
+	# 첫 20레벨은 규칙을 읽고 직접 시험할 시간을 보장한다. 자동 생성기의
+	# 급격한 타이머 하락은 첫 두 챕터가 끝난 뒤부터 적용한다.
+	if level_number <= 4:
+		level["time"] = maxf(float(level.get("time", 0.0)), 95.0)
+	elif level_number <= 9:
+		level["time"] = float(level.get("time", 0.0)) + 8.0
+	elif level_number == 10:
+		level["time"] = float(level.get("time", 0.0)) + 14.0
+	elif level_number <= 19:
+		level["time"] = float(level.get("time", 0.0)) + 10.0
+	elif level_number == 20:
+		level["time"] = float(level.get("time", 0.0)) + 18.0
+	level["onboarding_phase"] = (
+		"touch" if level_number <= 4 else
+		"confidence" if level_number <= 10 else
+		"strategy" if level_number <= 20 else "campaign"
+	)
+	var signature: Dictionary = design.get("signature", {})
+	if not signature.is_empty():
+		level["signature"] = signature.duplicate(true)
+		level["name"] = "%s · %s" % [chapter_name((level_number - 1) / 10), String(signature.get("title", level.get("name", "구조 작전")))]
+		level["hint"] = String(signature.get("objective", level.get("hint", "")))
+	return level
+
+
+static func _apply_long_campaign_presentation(source: Dictionary, level_number: int) -> Dictionary:
+	if level_number <= 300:
+		return source
+	var level := source.duplicate(true)
+	var arcs := [
+		[301, 500, "복구 마을 원정", "다섯 지역의 구조 거점을 이어 주세요", "#62b879"],
+		[501, 750, "차원 여행로", "포털과 무너지는 길의 구조 표식을 모아 주세요", "#5aa9d6"],
+		[751, 1000, "전설의 시간 원정", "천 번째 마음까지 구조 기록을 완성해 주세요", "#9a72cf"],
+	]
+	for arc in arcs:
+		if level_number < int(arc[0]) or level_number > int(arc[1]):
+			continue
+		level["campaign_arc"] = String(arc[2])
+		level["campaign_role"] = String(arc[3])
+		level["campaign_progress"] = level_number - int(arc[0]) + 1
+		level["campaign_total"] = int(arc[1]) - int(arc[0]) + 1
+		if level_number % 50 == 0:
+			level["signature"] = {
+				"title": "%s 거점" % String(arc[2]),
+				"eyebrow": "MASTER EXPEDITION · LEVEL %d" % level_number,
+				"objective": String(arc[3]),
+				"reward_line": "%d번째 구조 표식이 원정 지도에 새겨졌어요!" % level_number,
+				"accent": String(arc[4]),
+			}
+		return level
+	return level
 
 
 static func all_levels() -> Array:
@@ -346,7 +414,8 @@ static func _generated_level(number: int) -> Dictionary:
 
 	var specs := _capacity_catchers(board, colors, w, h, number)
 
-	# L1~4 이후는 색/밀도가 늘어나며, 얼음 구간에서는 63초에서 52초까지 다시 압축한다.
+	# L1~4 이후는 색/밀도가 늘어난다. 아래 값은 난도 곡선용 기준 시간이며,
+	# 51레벨 이후에는 복합 기믹을 읽고 조작할 수 있도록 공통 여유 비율을 적용한다.
 	var time_limit := maxf(63.0, 83.0 - float(number - 9) * 0.5)
 	if number >= 51 and number <= 100:
 		# 각 10레벨 구간 안에서 꾸준히 짧아지고, 다음 구간은 신규 기믹을
@@ -384,6 +453,17 @@ static func _generated_level(number: int) -> Dictionary:
 	if milestone_challenge and number >= 110:
 		# 보스 관문은 추가 규칙을 읽고 대응할 시간이 필요하므로 되돌려 준다.
 		time_limit += 14.0 if boss_type_for(number) == "thief" else 8.0
+	if number >= 51:
+		# 얼음부터는 기믹 해석과 실제 드래그 시간이 함께 늘어난다. 기존 곡선의
+		# 상대 난도는 유지하면서 전 구간에 25%의 조작 여유를 준다.
+		time_limit *= LATE_TIME_COMFORT_SCALE
+		# 51~100의 관문은 과거 시간 상한 때문에 일반 레벨보다 지나치게 짧았다.
+		# 복합 규칙과 보스를 처음 학습하는 구간에 한해 읽기 시간을 별도로 돌려준다.
+		if milestone_challenge and number <= 100:
+			time_limit += EARLY_LATE_BOSS_READ_BONUS
+		time_limit = snappedf(time_limit, 0.1)
+	if number >= LATE_TIME_MIN_LEVEL:
+		time_limit = maxf(time_limit, LATE_TIME_MIN_SECONDS)
 	var chapter_name := chapter_name(chapter)
 	var titles := ["길 열기", "엇갈린 줄", "색의 성", "굽은 통로", "한붓 쓸기", "갈림길", "큰 몸 작은 문", "색깔 미로", "연쇄 구출", "최종 관문"]
 	var hint := "색의 층과 캐처 모양을 보고 구출 순서를 정하세요."
@@ -2729,11 +2809,14 @@ static func validate_all() -> PackedStringArray:
 			if number > 1 and number < 110:
 				var previous_level: Dictionary = levels[number - 2]
 				var time_not_harder := float(level.time) >= float(previous_level.time)
-				if number == 60:
-					time_not_harder = float(level.time) > float(previous_level.time)
+				# 51레벨부터 관문은 보스와 복합 기믹 자체가 난도를 담당한다.
+				# 일반 레벨보다 짧은 시간까지 동시에 강제하지 않는다.
+				if number >= 51:
+					time_not_harder = false
 				if total_jellies <= _level_jelly_count(previous_level) or time_not_harder:
 					errors.append("L%d: 직전 일반 레벨보다 대도전 난도 상승이 부족함" % number)
-			if number > 10 and number < 110:
+			# 70레벨 이후는 90초 하한을 보장하므로 시간 단축을 통한 단계 상승을 요구하지 않는다.
+			if number > 10 and number < LATE_TIME_MIN_LEVEL:
 				var previous_milestone: Dictionary = levels[number - 11]
 				# 밀도 또는 제한 시간 중 적어도 한 축이 강화되면 다음 티어로 인정한다.
 				# 신규 기믹이 더해지는 후반부까지 두 수치를 동시에 강제하면 맵이 과밀해진다.
@@ -2758,10 +2841,13 @@ static func validate_all() -> PackedStringArray:
 			if total_jellies < int(level.get("density_target", 999)):
 				errors.append("L%d: 후반 젤리 밀도 부족(%d/%d)" % [number, total_jellies, int(level.get("density_target", 999))])
 			# 5단위 도전과 그 직후 레벨은 별도 시간 보너스/회복 곡선을 쓰므로 제외한다.
-			if number > 51 and (number - 51) % 10 != 0 and not expected_challenge and not _is_challenge_level(number - 1):
+			if number > 51 and number < LATE_TIME_MIN_LEVEL and (number - 51) % 10 != 0 and not expected_challenge and not _is_challenge_level(number - 1):
 				var previous_late: Dictionary = levels[number - 2]
 				if float(level.time) >= float(previous_late.time):
 					errors.append("L%d: 같은 후반 구간에서 제한 시간이 증가함" % number)
+			# 70레벨부터는 시간 단축 대신 최소한의 생각/조작 시간을 보장한다.
+			if number >= LATE_TIME_MIN_LEVEL and float(level.time) < LATE_TIME_MIN_SECONDS:
+				errors.append("L%d: 후반 제한 시간이 최소 %.0f초보다 짧음" % [number, LATE_TIME_MIN_SECONDS])
 		var expected := _gimmick_flags(number)
 		if number <= 100:
 			# 1~100레벨의 학습 순서는 기존과 완전히 동일해야 한다.
@@ -3040,6 +3126,7 @@ static func _greedy_solve(level: Dictionary) -> Dictionary:
 	for shift in range(maxi(1, catcher_count)):
 		var attempt := _solve_with_shift(level, shift)
 		if bool(attempt.ok):
+			attempt["shift"] = shift
 			return attempt
 	return best
 

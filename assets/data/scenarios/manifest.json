@@ -36,6 +36,7 @@
     {"id": "chapter_02", "path": "res://assets/data/scenarios/chapter_02.json"},
     {"id": "chapter_03", "path": "res://assets/data/scenarios/chapter_03.json"},
     {"id": "chapter_04", "path": "res://assets/data/scenarios/chapter_04.json"},
-    {"id": "chapter_05", "path": "res://assets/data/scenarios/chapter_05.json"}
+    {"id": "chapter_05", "path": "res://assets/data/scenarios/chapter_05.json"},
+    {"id": "long_journey", "path": "res://assets/data/scenarios/long_journey.json"}
   ]
 }

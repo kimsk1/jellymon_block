@@ -2,7 +2,7 @@ class_name ShopCatalog
 ## 상점 상품은 APK/PCK에도 원본이 포함되는 assets/data/item.json에서 관리한다.
 
 const PATH := "res://assets/data/item.json"
-const REQUIRED_IDS := ["stardust_50", "stardust_110", "heart_5", "remove_ads"]
+const REQUIRED_IDS := ["stardust_50", "stardust_110", "heart_5", "remove_ads", "starter_rescue_pack", "chapter_rescue_pack", "hideout_decor_pack", "season_heart_star_pass"]
 
 
 static func load_items() -> Array[Dictionary]:
@@ -40,8 +40,8 @@ static func item_by_id(id: String) -> Dictionary:
 static func validate_catalog() -> PackedStringArray:
 	var errors := PackedStringArray()
 	var items := load_items()
-	if items.size() != 4:
-		errors.append("상점 상품이 4종이 아님")
+	if items.size() < REQUIRED_IDS.size():
+		errors.append("필수 상점 상품 수가 부족함")
 	var ids := {}
 	for item in items:
 		var id := String(item.get("id", ""))
@@ -61,4 +61,18 @@ static func validate_catalog() -> PackedStringArray:
 		errors.append("광고 제거 상품 구성 오류")
 	if int(item_by_id("heart_5").get("amount", 0)) != 5 or int(item_by_id("heart_5").get("price_krw", 0)) != 500:
 		errors.append("하트 5 상품 구성 오류")
+	for bundle_id in ["starter_rescue_pack", "chapter_rescue_pack", "hideout_decor_pack"]:
+		var bundle := item_by_id(bundle_id)
+		if String(bundle.get("type", "")) != "bundle" or bundle.get("boosters", {}).is_empty():
+			errors.append("패키지 상품 구성 오류: %s" % bundle_id)
+	if String(item_by_id("season_heart_star_pass").get("type", "")) != "season_pass":
+		errors.append("28일 프리미엄 시즌 상품 구성 오류")
+	for exclusive_id in ["remove_ads", "hideout_decor_pack", "season_heart_star_pass"]:
+		var exclusive_item := item_by_id(exclusive_id)
+		if not bool(exclusive_item.get("exclusive", false)) or exclusive_item.get("furniture_ids", []).is_empty():
+			errors.append("독점 보상 상품 구성 오류: %s" % exclusive_id)
+		for raw_furniture_id in exclusive_item.get("furniture_ids", []):
+			var furniture := RoomData.item_by_id(String(raw_furniture_id))
+			if furniture.is_empty() or not bool(furniture.get("package_exclusive", false)):
+				errors.append("상품 전용 가구 연결 오류: %s" % String(raw_furniture_id))
 	return errors
