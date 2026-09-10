@@ -15,6 +15,7 @@ chmod 600 .env
 `.env`를 편집합니다.
 
 - `HIVE_APP_ID`: Hive에 등록된 실제 App ID. 예시의 `com.jellymon.game`이 콘솔 값과 같은지 확인합니다.
+- `HIVE_ALLOWED_APP_IDS`: 같은 게임의 허용 App ID 목록(쉼표 구분). Android/iOS를 함께 서비스할 때 `com.jellymon.game,com.jellymontest.game`으로 설정합니다. 새 앱은 `app_id`를 전송하며 서버는 허용 목록을 검사한 뒤 해당 ID로 Hive 토큰을 검증합니다. `app_id`가 없는 구버전 앱은 `HIVE_APP_ID`로 검증합니다. iOS 지원을 적용하려면 서버 코드와 `.env`를 함께 갱신하고 `npm run build` 후 서버를 재시작해야 합니다. 리더보드는 두 플랫폼 모두 163번을 사용합니다.
 - `HIVE_LEADERBOARD_ID=163`
 - `HIVE_CERTIFICATION_KEY`: Hive 서버용 Certification Key. Client Secret, 로그인 토큰, DataStore 공개키와는 다릅니다. 키는 서버에만 보관합니다.
 - `HIVE_ZONE=sandbox`: 현재 테스트 앱과 같은 환경. 운영 앱이면 `live`로 변경합니다.
@@ -113,3 +114,10 @@ npm test
 - `test/ranking.test.ts`: 임시 DB/가짜 Hive 및 실제 로컬 HTTP 테스트
 
 `legacy-python/`은 이전 구현의 참고용 보관본입니다. 실행과 Docker 빌드에는 포함되지 않습니다. 기존 Python 서버의 records 테이블과 호환되지만 같은 DB에 두 서버를 동시에 실행하지 마세요.
+# Google Play 결제 API
+
+기존 서버에 `/v1/billing/order`, `/verify`, `/ack`, `/entitlements`를 추가했습니다. 실제 경로는 모두 `/v1/billing/` 접두사를 사용하며 Hive 인증이 필요합니다. 기본값은 결제 비활성화입니다.
+
+`config/iap-products.json`을 서버에 함께 배포하고 `.env.example`의 `HIVE_IAP_*` 설정을 적용한 뒤 재시작하세요. `GET /healthz`의 `billing:true`로 활성화를 확인합니다. 상세 콘솔 등록값과 테스트 순서는 [Google Play · Hive IAP 가이드](../../docs/GOOGLE_PLAY_HIVE_IAP_SETUP.md)를 참고하세요.
+
+SQLite 구매 기록을 보존해야 중복 지급을 방지할 수 있습니다. 완료된 패키지 재화를 재설치마다 재지급하지 않으며 영구 권한·가구만 복원합니다. 환불 이후 자동 회수는 별도 구현 대상입니다.

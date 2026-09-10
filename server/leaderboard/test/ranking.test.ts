@@ -71,7 +71,7 @@ test('HTTP health, auth, invalid JSON, oversized body, top 100, persistence resp
   const url = `http://127.0.0.1:${address.port}`;
   const post = (body: string, token = 'test-only') => fetch(url + '/v1/ranking/record', { method: 'POST', headers: { 'x-hive-access-token': token }, body });
   try {
-    assert.deepEqual(await (await fetch(url + '/healthz')).json(), { status: 'ok' });
+    assert.deepEqual(await (await fetch(url + '/healthz')).json(), { status: 'ok', billing: false });
     assert.equal((await post('{')).status, 400);
     assert.equal((await post('[]')).status, 400);
     assert.equal((await post('x'.repeat(9000))).status, 413);
@@ -120,4 +120,21 @@ test('Hive authorization failures remain distinguishable without exposing tokens
     async () => new Response('private upstream details', {status: 403}));
   await assert.rejects(hive.top(), (e: unknown) => e instanceof APIError && e.status === 502 &&
     e.message.includes('인증 실패') && !e.message.includes('never-expose-this') && !e.message.includes('private'));
+});
+
+test('iOS and Android tokens use their allowed App ID; unknown IDs never reach Hive', async () => {
+  const sent: string[] = [];
+  const hive = new HiveAPI(readConfig({ HIVE_APP_ID: 'android', HIVE_ALLOWED_APP_IDS: 'android, ios', HIVE_CERTIFICATION_KEY: 'test' }),
+    async (_url, init) => {
+      sent.push(JSON.parse(String(init?.body)).appid);
+      return Response.json({ result_code: 0, token_validation: { result_code: 0 } });
+    });
+  const headers = new Headers({ 'x-hive-player-token': 'test', 'x-hive-access-token': 'test' });
+  const data = { player_id: '7', did: 'test' };
+  await hive.authenticate(headers, data);
+  await hive.authenticate(headers, { ...data, app_id: 'ios' });
+  await hive.authenticate(headers, { ...data, app_id: 'android' });
+  for (const app_id of ['foreign', '', null, 7])
+    await assert.rejects(hive.authenticate(headers, { ...data, app_id }), (e: unknown) => e instanceof APIError && e.status === 401);
+  assert.deepEqual(sent, ['android', 'ios', 'android']);
 });

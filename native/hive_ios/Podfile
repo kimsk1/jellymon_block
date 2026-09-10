@@ -1,0 +1,40 @@
+source 'https://cdn.cocoapods.org/'
+source 'https://github.com/Com2uSPlatformCorp/HiveSDK-iOS'
+source 'https://github.com/Com2uSPlatformCorp/HiveAdiz-iOS.git'
+
+$HIVE_SDK_VERSION = '26.4.0'
+$HIVE_ADIZ_VERSION = '3.0.0'
+$IOS_DEPLOYMENT_TARGET = '14.0'
+
+platform :ios, $IOS_DEPLOYMENT_TARGET
+use_frameworks!
+inhibit_all_warnings!
+
+project 'JellyMon.xcodeproj'
+
+target 'JellyMon' do
+  pod 'HiveSDK', $HIVE_SDK_VERSION
+  pod 'HiveAuthV4ProviderGoogle', $HIVE_SDK_VERSION
+  pod 'HiveAuthV4ProviderAppleSignIn', $HIVE_SDK_VERSION
+  pod 'HiveDataStore', $HIVE_SDK_VERSION
+  pod 'HiveAdiz', $HIVE_ADIZ_VERSION
+end
+
+post_install do |installer|
+  installer.pods_project.targets.each do |target|
+    target.build_configurations.each do |config|
+      if config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'].to_f < $IOS_DEPLOYMENT_TARGET.to_f
+        config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = $IOS_DEPLOYMENT_TARGET
+      end
+      config.build_settings['BUILD_LIBRARY_FOR_DISTRIBUTION'] = 'YES'
+      if config.build_settings['WRAPPER_EXTENSION'] == 'bundle'
+        config.build_settings['CODE_SIGNING_ALLOWED'] = 'NO'
+      end
+      next unless config.base_configuration_reference
+      xcconfig_path = config.base_configuration_reference.real_path
+      next unless File.exist?(xcconfig_path)
+      xcconfig = File.read(xcconfig_path)
+      File.write(xcconfig_path, xcconfig.gsub(/DT_TOOLCHAIN_DIR/, 'TOOLCHAIN_DIR'))
+    end
+  end
+end

@@ -1,11 +1,12 @@
 import { APIError, object, ordered, scoreFor, validateRecord, type Entry, type Hive, type RecordData } from './ranking.js';
-export interface Config { appId: string; boardId: string; key: string; zone: 'sandbox' | 'live' }
+export interface Config { appId: string; allowedAppIds: string[]; boardId: string; key: string; zone: 'sandbox' | 'live' }
 export function readConfig(env: NodeJS.ProcessEnv): Config {
   const appId = env.HIVE_APP_ID?.trim(), boardId = env.HIVE_LEADERBOARD_ID?.trim() ?? '163', key = env.HIVE_CERTIFICATION_KEY?.trim();
   if (!appId || !key || !/^[1-9]\d*$/.test(boardId)) throw new Error('HIVE_APP_ID, HIVE_CERTIFICATION_KEY, HIVE_LEADERBOARD_ID 설정을 확인하세요.');
   const zone = env.HIVE_ZONE ?? 'sandbox';
   if (zone !== 'sandbox' && zone !== 'live') throw new Error('HIVE_ZONE은 sandbox 또는 live여야 합니다.');
-  return { appId, boardId, key, zone };
+  const allowedAppIds = [...new Set([appId, ...(env.HIVE_ALLOWED_APP_IDS ?? '').split(',').map(v => v.trim()).filter(Boolean)])];
+  return { appId, allowedAppIds, boardId, key, zone };
 }
 export class HiveAPI implements Hive {
   readonly base: string;
@@ -42,6 +43,9 @@ export class HiveAPI implements Hive {
     }
   }
   async authenticate(headers: Headers, data: Record<string, unknown>): Promise<string> {
+    const appId = data.app_id === undefined ? this.config.appId : data.app_id;
+    if (typeof appId !== 'string' || !this.config.allowedAppIds.includes(appId))
+      throw new APIError(401, '허용되지 않은 Hive App ID입니다. 서버 설정을 확인해 주세요.');
     const pid = data.player_id, did = data.did;
     const token = headers.get('x-hive-player-token'), access = headers.get('x-hive-access-token');
     if (typeof pid !== 'string' || !/^[1-9]\d{0,15}$/.test(pid) || !Number.isSafeInteger(Number(pid)) || typeof did !== 'string' || !did || did.length > 256 || !token || !access)
@@ -51,7 +55,7 @@ export class HiveAPI implements Hive {
     for (const [i, host] of hosts.entries()) {
       try {
         result = object(await this.request(host + '/v2/game/token/get-token', 'POST',
-          { appid: this.config.appId, did, player_id: Number(pid), include_fields: ['is_blocked'] },
+          { appid: appId, did, player_id: Number(pid), include_fields: ['is_blocked'] },
           { Authorization: token, 'X-Access-Token': access, ISCRYPT: '0' }));
         break;
       } catch (e) { if (i === hosts.length - 1) throw e; }

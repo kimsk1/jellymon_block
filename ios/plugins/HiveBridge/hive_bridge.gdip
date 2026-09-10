@@ -1,0 +1,17 @@
+[config]
+name="HiveBridge"
+binary="hive_bridge.xcframework"
+
+initialization="register_hive_bridge_types"
+deinitialization="unregister_hive_bridge_types"
+
+[dependencies]
+linked=[]
+embedded=[]
+system=["AuthenticationServices.framework"]
+capabilities=[]
+files=["hive_config.xml"]
+
+[plist]
+NSUserTrackingUsageDescription:string="맞춤형 광고 제공과 광고 효과 측정을 위해 기기 식별자를 사용합니다. 허용하지 않아도 게임을 이용할 수 있습니다."
+GADApplicationIdentifier:string="ca-app-pub-3940256099942544~1458002511"

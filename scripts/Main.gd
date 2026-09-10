@@ -19,6 +19,7 @@ signal rewarded_ad_requested(on_reward: Callable, on_unavailable: Callable)
 var audio: AudioMgr
 var music: Node
 var ranking: Node
+var billing: Node
 var adventure_cloud: Node
 var platform: Node
 var analytics: Node
@@ -423,6 +424,9 @@ func _initialize_runtime() -> void:
 	ranking = preload("res://scripts/RankingService.gd").new()
 	add_child(ranking)
 	ranking.configure(platform, save)
+	billing = preload("res://scripts/BillingService.gd").new()
+	add_child(billing)
+	billing.configure(platform, save)
 	platform.cloud_state_changed.connect(func(_message): ranking.sync_record.call_deferred())
 	platform.account_disconnect_completed.connect(_on_account_disconnect_completed)
 	_startup_trace("save_loaded")
@@ -486,6 +490,7 @@ func _reset_local_account_data() -> void:
 	adventure_cloud._verifying = false
 	adventure_cloud._retry_seconds = 30.0
 	ranking.save = save
+	billing.save = save
 	ranking._read.cancel_request()
 	ranking.entries = []
 	ranking.loading = false

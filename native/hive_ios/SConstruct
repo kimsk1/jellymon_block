@@ -1,0 +1,39 @@
+import os
+import subprocess
+
+opts = Variables([], ARGUMENTS)
+env = DefaultEnvironment()
+opts.Add(EnumVariable('arch', 'Architecture', 'arm64', ['arm64', 'x86_64']))
+opts.Add(BoolVariable('simulator', 'Build for simulator', False))
+opts.Add(PathVariable('godot_path', 'Godot source root', '/private/tmp/godot-4.7'))
+opts.Add(PathVariable('project_root', 'JellyMon project root', '../..'))
+opts.Add(PathVariable('target_path', 'Output directory', 'bin'))
+opts.Update(env)
+
+sdk = 'iphonesimulator' if env['simulator'] else 'iphoneos'
+sdk_path = subprocess.check_output(['xcrun', '--sdk', sdk, '--show-sdk-path'], text=True).strip()
+minimum = '-mios-simulator-version-min=14.0' if env['simulator'] else '-miphoneos-version-min=14.0'
+slice_name = 'ios-arm64_x86_64-simulator' if env['simulator'] else 'ios-arm64'
+pods = os.path.abspath(os.path.join(env['project_root'], 'build/ios/Pods'))
+
+framework_paths = []
+for base in ['HiveSDK', 'HiveDataStore']:
+    root = os.path.join(pods, base)
+    for current, dirs, files in os.walk(root):
+        if current.endswith('.xcframework/' + slice_name):
+            framework_paths.append(current)
+adiz = os.path.join(pods, 'HiveAdiz/Hive_Adiz_iOS_v3.0.0/HiveAdiz.xcframework', slice_name)
+framework_paths.append(adiz)
+
+env['CC'] = 'clang'
+env['CXX'] = 'clang++'
+env.Append(CPPPATH=[env['godot_path'], os.path.join(env['godot_path'], 'platform/ios')])
+env.Append(CCFLAGS=['-arch', env['arch'], '-isysroot', sdk_path, minimum, '-fobjc-arc', '-fblocks', '-fmodules', '-fcxx-modules', '-fmodules-cache-path=/private/tmp/jellymon-clang-cache', '-fvisibility=hidden', '-DDEBUG_ENABLED', '-DPTRCALL_ENABLED', '-DIOS_ENABLED', '-DUNIX_ENABLED', '-DCOREAUDIO_ENABLED'])
+env.Append(CXXFLAGS=['-std=gnu++17', '-DNEED_LONG_INT', '-DVULKAN_ENABLED', '-fno-exceptions'])
+for path in framework_paths:
+    env.Append(CCFLAGS=['-F' + path])
+
+sources = Glob('plugin/*.cpp') + Glob('plugin/*.mm')
+kind = 'simulator' if env['simulator'] else 'ios'
+library = env.StaticLibrary(target=os.path.join(env['target_path'], 'hive_bridge_%s_%s' % (env['arch'], kind)), source=sources)
+Default(library)

@@ -33,6 +33,7 @@ var shop_popup: Control
 var purchase_confirm_popup: Control
 var shop_balance_label: Label
 var shop_status_label: Label
+var _billing_buttons: Array = []
 var home_energy_label: Label
 var header_name_label: Label
 var nickname_popup: Control
@@ -56,6 +57,7 @@ var drag_offset := Vector2i.ZERO
 
 
 func _ready() -> void:
+	main.billing.changed.connect(_refresh_billing_ui)
 	ArtDirection.set_room_theme(main.save.get_room_theme())
 	theme = ArtDirection.ui_theme()
 	get_tree().root.theme = theme
@@ -837,6 +839,10 @@ func _shop_item_card(item: Dictionary) -> PanelContainer:
 	var buy := _button(tr("보유 중") if purchased and is_furniture else ("구매 완료" if purchased else String(item.get("display_price", ""))), Color("#77b984") if purchased else Color("#eb8650"), Vector2(135, 68), 23)
 	buy.disabled = purchased
 	buy.pressed.connect(func(): _show_purchase_confirmation(item, buy))
+	if not is_furniture:
+		_billing_buttons.append({"button": buy, "item": item})
+		buy.text = "구매 완료" if purchased else main.billing.price(item)
+		buy.disabled = purchased or not main.billing.can_buy(item)
 	row.add_child(buy)
 	return card
 
@@ -968,14 +974,33 @@ func _show_shop_popup() -> void:
 		furniture_scroll.visible = true
 	)
 	shop_status_label = Label.new()
-	shop_status_label.text = "개발 빌드에서는 실제 결제 없이 테스트 상품이 지급됩니다." if OS.is_debug_build() else "구매 가격은 스토어 결제창에서 최종 확인할 수 있어요."
+	shop_status_label.text = main.billing.status
+	shop_status_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	shop_status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	shop_status_label.add_theme_font_size_override("font_size", 16)
 	shop_status_label.add_theme_color_override("font_color", ArtDirection.ink())
 	content.add_child(shop_status_label)
+	var restore := _button("구매 복원 / 상품 새로고침", ArtDirection.panel_color(), Vector2(390, 58), 21)
+	restore.pressed.connect(func(): main.billing.refresh())
+	content.add_child(restore)
 	var close := _button(tr("닫기"), Color("#806aa7"), Vector2(190, 64), 24)
 	close.pressed.connect(_close_shop_popup)
 	content.add_child(close)
+	main.billing.refresh()
+
+func _refresh_billing_ui() -> void:
+	if not is_instance_valid(shop_status_label): return
+	shop_status_label.text = main.billing.status
+	for entry in _billing_buttons:
+		if not is_instance_valid(entry.button): continue
+		var item: Dictionary = entry.item
+		var owned: bool = main.save.has_purchased_shop_item(String(item.id)) or (String(item.type) == "season_pass" and main.save.season_premium)
+		entry.button.text = "구매 완료" if owned else main.billing.price(item)
+		entry.button.disabled = owned or not main.billing.can_buy(item)
+	shop_balance_label.text = "보유 별가루  ★ %d" % main.save.get_stardust()
+	stardust_label.text = ("%s" if (ArtDirection.is_botanical() or ArtDirection.is_night()) else "★ %s") % _format_number(main.save.get_stardust())
+	_refresh_home_energy()
+	_refresh_vip_identity()
 
 
 func _show_purchase_confirmation(item: Dictionary, buy_button: Button) -> void:
@@ -1026,13 +1051,14 @@ func _show_purchase_confirmation(item: Dictionary, buy_button: Button) -> void:
 	title.add_theme_color_override("font_color", ArtDirection.ink())
 	content.add_child(title)
 	var product := Label.new()
-	product.text = "%s\n%s" % [String(item.get("name", "")), String(item.get("display_price", ""))]
+	product.text = "%s\n%s" % [String(item.get("name", "")), String(item.get("display_price", "")) if item_type == "furniture" else main.billing.price(item)]
 	product.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	product.add_theme_font_size_override("font_size", 25)
 	product.add_theme_color_override("font_color", ArtDirection.ink())
 	content.add_child(product)
 	var notice := Label.new()
-	notice.text = "보유 별가루에서 즉시 차감됩니다." if item_type == "furniture" else "구매 버튼을 누르면 결제가 진행됩니다."
+	notice.text = "보유 별가루에서 즉시 차감됩니다." if item_type == "furniture" else "Google Play 결제창에서 최종 확인 후 구매합니다."
+	if item_type == "season_pass": notice.text += "\n현재 시즌 종료까지 이용 · 자동 갱신 없음"
 	notice.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	notice.add_theme_font_size_override("font_size", 17)
 	notice.add_theme_color_override("font_color", ArtDirection.ink())
@@ -1086,32 +1112,11 @@ func _purchase_shop_item(item: Dictionary, buy_button: Button) -> void:
 		buy_button.disabled = true
 		shop_status_label.text = "%s 구매 완료! 꾸미기에서 배치할 수 있어요." % String(item.get("name", ""))
 		return
-	if not OS.is_debug_build():
-		shop_status_label.text = "플랫폼 결제 공급자를 연결한 뒤 구매할 수 있어요."
-		if main.analytics:
-			main.analytics.track("shop_purchase", {"item_id": analytics_item_id, "kind": analytics_item_kind, "result": "provider_unavailable"})
-		return
-	if not main.save.apply_verified_shop_item(item):
-		shop_status_label.text = "이미 구매했거나 지급할 수 없는 상품이에요."
-		if main.analytics:
-			main.analytics.track("shop_purchase", {"item_id": analytics_item_id, "kind": analytics_item_kind, "result": "failed"})
-		return
-	if main.analytics:
-		main.analytics.track("shop_purchase", {"item_id": analytics_item_id, "kind": analytics_item_kind, "result": "debug_success"})
-	main.audio.play("shiny", 1.05)
-	G.haptic(18)
-	stardust_label.text = ("%s" if (ArtDirection.is_botanical() or ArtDirection.is_night()) else "★ %s") % _format_number(main.save.get_stardust())
-	_refresh_home_energy()
-	shop_balance_label.text = "보유 별가루  ★ %d" % main.save.get_stardust()
-	if not bool(item.get("consumable", true)) or String(item.get("type", "")) == "season_pass":
-		buy_button.text = tr("구매 완료")
-		buy_button.disabled = true
-	if String(item.get("type", "")) == "remove_ads":
-		_refresh_vip_identity()
-	shop_status_label.text = "%s 지급 완료!" % String(item.get("name", ""))
+	main.billing.purchase(item)
 
 
 func _close_shop_popup() -> void:
+	_billing_buttons.clear()
 	_close_purchase_confirmation()
 	if shop_popup and is_instance_valid(shop_popup):
 		shop_popup.queue_free()

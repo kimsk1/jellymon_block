@@ -56,6 +56,7 @@ var attendance_claimed_days := 0
 var attendance_last_claim_date := ""
 var ads_removed := false
 var claimed_shop_items: Array[String] = []
+var iap_transactions: Dictionary = {}
 var vip_reward_skip_date := ""
 var vip_daily_support_date := ""
 var nickname := ""
@@ -123,6 +124,7 @@ func load_data() -> void:
 		if f:
 			var d = JSON.parse_string(f.get_as_text())
 			if typeof(d) == TYPE_DICTIONARY:
+				iap_transactions = d.get("iap_transactions", {})
 				stars = d.get("stars", {})
 				best_clear_times = d.get("best_clear_times", {})
 				best_clear_at = d.get("best_clear_at", {})
@@ -276,6 +278,7 @@ func to_dictionary() -> Dictionary:
 		"attendance_last_claim_date": attendance_last_claim_date,
 		"ads_removed": ads_removed,
 		"claimed_shop_items": claimed_shop_items,
+		"iap_transactions": iap_transactions,
 		"vip_reward_skip_date": vip_reward_skip_date,
 		"vip_daily_support_date": vip_daily_support_date,
 		"nickname": nickname,
@@ -320,6 +323,7 @@ func to_dictionary() -> Dictionary:
 func cloud_data() -> Dictionary:
 	var data := to_dictionary()
 	data.erase("hive_record_owner")
+	data.erase("iap_transactions") # Device delivery journal must not roll back with a cloud snapshot.
 	return data
 
 func apply_cloud_data(data: Dictionary) -> void:
@@ -330,19 +334,21 @@ func apply_cloud_data(data: Dictionary) -> void:
 		else:
 			set(key, data[key].duplicate(true) if data[key] is Dictionary else data[key])
 
-func save_data() -> void:
-	if not persistence_enabled: return
+func save_data() -> bool:
+	if not persistence_enabled: return false
 	var data := to_dictionary()
 	data["cloud_baseline"] = cloud_baseline
 	var f := FileAccess.open(storage_path + ".tmp", FileAccess.WRITE)
-	if not f: return
+	if not f: return false
 	f.store_string(JSON.stringify(data))
 	f.flush()
 	var error := f.get_error()
 	f.close()
-	if error != OK: return
+	if error != OK: return false
 	if DirAccess.rename_absolute(storage_path + ".tmp", storage_path) == OK:
 		data_saved.emit()
+		return true
+	return false
 
 
 func _now() -> int:
@@ -937,7 +943,7 @@ func get_attendance_next_reward() -> Dictionary:
 	return attendance_reward_for_claim_count(attendance_claimed_days)
 
 
-func apply_verified_shop_item(item: Dictionary) -> bool:
+func apply_verified_shop_item(item: Dictionary, persist: bool = true) -> bool:
 	## 결제 공급자가 영수증 검증을 끝낸 뒤에만 호출하는 지급 지점.
 	match String(item.get("type", "")):
 		"stardust":
@@ -971,15 +977,51 @@ func apply_verified_shop_item(item: Dictionary) -> bool:
 			_grant_shop_furniture(item)
 			claimed_shop_items.append(item_id)
 		"season_pass":
-			refresh_season()
+			if persist: refresh_season()
 			if season_premium:
 				return false
 			season_premium = true
 			_grant_shop_furniture(item)
 		_:
 			return false
-	save_data()
+	if persist: save_data()
 	return true
+
+func apply_iap_delivery(transaction_id: String, item: Dictionary, season: String, entitlement_only: bool = false) -> bool:
+	if transaction_id.is_empty() or not persistence_enabled: return false
+	if iap_transactions.has(transaction_id) and not entitlement_only: return true
+	var before := cloud_data().duplicate(true)
+	var journal := iap_transactions.duplicate(true)
+	var item_id := String(item.get("id", ""))
+	var kind := String(item.get("type", ""))
+	if kind == "season_pass" and season != str(int(Time.get_unix_time_from_system()) / (28 * 86400)):
+		return false
+	if entitlement_only:
+		if kind == "remove_ads": ads_removed = true
+		if kind == "season_pass":
+			if season_key != season:
+				season_key = season
+				season_xp = 0
+				claimed_season_free.clear()
+				claimed_season_premium.clear()
+			season_premium = true
+		if not bool(item.get("consumable", true)) and not claimed_shop_items.has(item_id): claimed_shop_items.append(item_id)
+		_grant_shop_furniture(item)
+	elif not has_purchased_shop_item(item_id):
+		if kind == "season_pass" and season_key != season:
+			season_key = season
+			season_xp = 0
+			season_premium = false
+			claimed_season_free.clear()
+			claimed_season_premium.clear()
+		if not (kind == "season_pass" and season_premium) and not apply_verified_shop_item(item, false):
+			apply_cloud_data(before)
+			return false
+	if not entitlement_only: iap_transactions[transaction_id] = true
+	if save_data(): return true
+	apply_cloud_data(before)
+	iap_transactions = journal
+	return false
 
 
 func _grant_shop_furniture(item: Dictionary) -> bool:

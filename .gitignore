@@ -1,9 +1,15 @@
 .godot/
 *.tmp
 build/
+!build/
+build/*
+!build/.gdignore
 native/hive_android/.gradle/
+native/hive_android/build/
 native/hive_android/plugin/build/
 native/hive_android/local.properties
+native/hive_ios/bin/
+android/build/
 .DS_Store
 assets_backup/
 output/

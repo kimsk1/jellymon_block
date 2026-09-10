@@ -1,5 +1,29 @@
 # Hive 전체 게임 데이터 저장 및 복원
 
+## 2026-09-10 iPhone 오류 진단
+
+### Android 실기기 비교 결과
+
+- 연결된 Galaxy Note10+ (`SM_N971N`)의 설치 앱에서 `initialize zone=SANDBOX`를 확인했다.
+- 같은 실행에서 `snapshot load success=true code=Success` → `snapshot save success=true code=Success` → `snapshot load success=true code=Success`가 기록됐다. 단순 로그인 성공이 아니라 저장과 재조회까지 성공했다.
+- Android SDK 수신 응답에 `data_store=1`, 비어 있지 않은 `data_store_key`(392자)가 포함됐다. 공개키 원문은 진단 문서에 저장하지 않는다. 비교용 SHA-256: `ec12d5e0798a609d66e2a5b4e1f0c26c4c077b25b0a7f633b3b4b6bc602dc875`.
+- Android DataStore 주소는 `https://sandbox-gds-api.qpyou.cn/users/get/userkey` 및 `/users/insert`다. iOS에서 실패한 조회와 같은 호스트/경로다.
+- 따라서 저장소의 일반적인 미생성이나 Sandbox 서비스 전체 장애로 볼 근거는 약하다. 다음 비교 대상은 iOS App ID에 대한 초기화 응답의 `data_store`, 공개키 지문, 실제 DataStore 요청 형식이다. Android 성공만으로 iOS의 설정 수신 성공을 단정하지 않는다.
+- iPhone을 다시 연결해 18:06 초기화 응답을 확인했다. iOS도 `data_store=true`, 공개키 392자이며 위 Android SHA-256과 완전히 일치했다. DataStore 활성화·공개키의 미전달/불일치는 이번 오류의 원인에서 제외한다. 같은 실행에서도 조회는 `-8000007`로 실패했다.
+- 18:10 추가 추적: iOS 단일 키 조회는 `POST https://sandbox-gds-api.qpyou.cn/users/get`으로 전송된다. 요청에는 `app_id=com.jellymontest.game`, `data_key=jellymon_save_v1`, `sdk_version=4.26.4.0`이 들어 있으며, 응답은 HTTP 500 / `{"detail":"Server Internal Error"}`다. 이전 `getMyData` 호출의 `/users/get/userkey`도 실패했다. 따라서 단일 키 조회 API 선택만의 문제로 볼 수 없다.
+- 현재 확정 범위는 iOS App ID/SDK 요청에 대한 DataStore 서버 처리 실패다. 잘못된 요청 형식인지 해당 App ID/계정의 서버 처리 문제인지는 서버 내부 로그 또는 동일 요청 조건 비교가 더 필요하다. 공개키를 재발급하거나 정상 Android 설정을 바꾸지 않는다.
+- Hive 지원팀 요청 추적 정보: 2026-09-10 18:10 KST, `/users/get`, `x-cloud-trace-context`의 trace ID `a0b2d46fc37537425b4eb41cfb442dcd`. 인증 토큰이나 공개키 원문 없이 해당 요청의 서버 내부 예외를 조회할 때 사용할 수 있다.
+- iOS Debug Sandbox 빌드는 초기화 응답에서 활성화 여부와 공개키 SHA-256만 `Documents/hive_datastore_configuration.json`에 기록한다. 초기화가 끝나면 진단 리스너를 해제한다. 임시 SDK 원문 추적과 로그 형식 진단은 제거했다.
+
+- 환경: Hive SDK 26.4.0, App ID `com.jellymontest.game`, Game Index 3674 (JellyADtest), sandbox.
+- Hive 초기화와 Google 로그인은 각각 `success=1 code=0`으로 완료됐다.
+- 전체 데이터 조회에서 `POST https://sandbox-gds-api.qpyou.cn/users/get/userkey`의 실제 HTTP 응답은 **500**, 본문은 `{"detail":"Server Internal Error"}`였다.
+- SDK는 이 오류 본문을 정상 DataStore 응답으로 해석하지 못해 기본 문구 `Not initialized.`를 남겼다. 최종 앱 오류는 `-8000007 / [DataStore] Server response error : Not initialized.`다. 따라서 이 문구만으로 로그인 SDK 미초기화나 공개키 미등록을 단정하지 않는다.
+- iOS 조회를 `getMyData`에서 필요한 저장 키의 `get`으로 변경해 확인했으나, 17:08 기기 실행에서도 같은 `-8000007`이 재현됐다. 클라우드 저장/복원은 아직 성공하지 않았다.
+- 조회 실패는 빈 데이터로 취급하지 않는다. **명시적인 `DataStoreNotExistKey`(-8000001)만** 새 저장으로 처리한다. 임시 원문 응답 추적은 제거했고, `Documents/hive_datastore_status.json`에는 호출 종류·결과 코드·메시지만 남긴다.
+- 다음 확인: Hive Console → 게임 데이터 스토어 → 데이터 관리에서 `[3674] JellyADtest`의 저장소가 생성됐는지, 해당 저장소 공개키가 같은 게임의 Hive 제품 설정에 등록돼 있는지 확인한다. 일치하는데도 재현되면 위 App ID·sandbox·시각·API 경로·HTTP 500 응답을 Hive 지원팀에 전달해 해당 요청의 서버 로그 확인을 요청한다. 이 진단만으로 구체적인 서버 내부 원인이나 전체 서비스 장애를 확정할 수 없다.
+- 리더보드 163은 랭킹용이며 DataStore 저장소 ID로 사용하지 않는다.
+
 ## 콘솔 활성화
 
 1. Hive Console → **게임 데이터 스토어 → 데이터 관리**에서 JellyMon 게임을 선택하고 **데이터 관리 시작**을 누른다.

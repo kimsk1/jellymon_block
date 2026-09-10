@@ -8,6 +8,8 @@ import android.view.View
 import android.view.ViewTreeObserver
 import com.hive.AuthV4
 import com.hive.DataStore
+import com.hive.IAPV4
+import org.json.JSONArray
 import com.hive.Configuration
 import com.hive.HiveActivity
 import com.hive.ResultAPI
@@ -32,6 +34,7 @@ class HiveBridgePlugin(godot: Godot) : GodotPlugin(godot) {
         private const val TAG = "HiveBridge"
         private const val SNAPSHOT_KEY = "jellymon_save_v1"
         private const val ADVENTURE_KEY = "jellymon_adventure_v1"
+        private val BILLING_EVENT = SignalInfo("billing_event", String::class.java, String::class.java)
         private val DISCONNECT_COMPLETED = SignalInfo("account_disconnect_completed", java.lang.Boolean::class.java, String::class.java)
         private val RANKING_AUTH = SignalInfo("ranking_auth_ready", java.lang.Integer::class.java,
             java.lang.Boolean::class.java, String::class.java)
@@ -89,6 +92,7 @@ class HiveBridgePlugin(godot: Godot) : GodotPlugin(godot) {
         SNAPSHOT_SAVED,
         RECORD_SAVED,
         RANKING_AUTH,
+        BILLING_EVENT,
         DISCONNECT_COMPLETED
     )
 
@@ -273,6 +277,86 @@ class HiveBridgePlugin(godot: Godot) : GodotPlugin(godot) {
                 }
             })
         }
+    }
+
+    private var billingBusy = false
+    private var billingOwner = ""
+    private fun billingEvent(kind: String, owner: String, data: JSONObject = JSONObject()) {
+        if (owner != authenticatedPlayerId) return
+        data.put("player_id", owner)
+        emitSignal(BILLING_EVENT, kind, data.toString())
+    }
+    private fun billingError(owner: String, result: ResultAPI, stage: String = "purchase") {
+        billingBusy = false
+        // Result code only: purchase results may contain confidential receipt material.
+        Log.i(TAG, "billing stage=$stage code=${result.code} errorCode=${result.errorCode}")
+        val message = when (stage) {
+            "market", "products" -> "상점 상품을 불러오지 못했습니다. 잠시 후 상품 새로고침을 눌러 주세요."
+            "restore" -> "구매 내역을 불러오지 못했습니다. 구매 복원을 다시 눌러 주세요."
+            "finish" -> "상품은 저장했지만 거래 완료 확인이 필요합니다. 구매 복원을 눌러 주세요."
+            else -> "Google Play 결제를 완료하지 못했습니다. 취소·대기 상태를 확인해 주세요."
+        }
+        billingEvent("error", owner, JSONObject().put("message", message).put("code", "${result.code}/${result.errorCode}"))
+    }
+    @UsedByGodot
+    fun billingInitialize() = runOnHostThread {
+        val owner = authenticatedPlayerId
+        if (!hiveReady || owner.isEmpty() || billingBusy) return@runOnHostThread
+        billingBusy = true
+        IAPV4.marketConnect(object : IAPV4.IAPV4MarketInfoListener {
+            override fun onIAPV4MarketInfo(result: ResultAPI, markets: ArrayList<IAPV4.IAPV4Type>?) {
+                if (!result.isSuccess) { billingError(owner, result, "market"); return }
+                IAPV4.getProductInfo(object : IAPV4.IAPV4ProductInfoListener {
+                    override fun onIAPV4ProductInfo(result: ResultAPI, products: ArrayList<IAPV4.IAPV4Product>?, balance: Int) {
+                        billingBusy = false
+                        if (!result.isSuccess) { billingError(owner, result, "products"); return }
+                        billingOwner = owner
+                        val list = JSONArray()
+                        products?.forEach { list.put(JSONObject().put("sku", it.marketPid).put("price", it.displayPrice)) }
+                        billingEvent("products", owner, JSONObject().put("products", list))
+                    }
+                })
+            }
+        })
+    }
+    @UsedByGodot
+    fun billingPurchase(sku: String, payload: String) = runOnHostThread {
+        val owner = authenticatedPlayerId
+        if (owner.isEmpty() || owner != billingOwner || billingBusy) return@runOnHostThread
+        billingBusy = true
+        IAPV4.purchase(sku, payload, object : IAPV4.IAPV4PurchaseListener {
+            override fun onIAPV4Purchase(result: ResultAPI, receipt: IAPV4.IAPV4Receipt?) {
+                billingBusy = false
+                if (!result.isSuccess || receipt == null) { billingError(owner, result); return }
+                billingEvent("receipts", owner, JSONObject().put("receipts", JSONArray().put(JSONObject().put("sku", receipt.product.marketPid).put("receipt", receipt.bypassInfo))))
+            }
+        })
+    }
+    @UsedByGodot
+    fun billingRestore() = runOnHostThread {
+        val owner = authenticatedPlayerId
+        if (owner.isEmpty() || owner != billingOwner || billingBusy) return@runOnHostThread
+        billingBusy = true
+        IAPV4.restore(object : IAPV4.IAPV4RestoreListener {
+            override fun onIAPV4Restore(result: ResultAPI, receipts: ArrayList<IAPV4.IAPV4Receipt>?) {
+                billingBusy = false
+                if (!result.isSuccess) { billingError(owner, result, "restore"); return }
+                val list = JSONArray()
+                receipts?.forEach { list.put(JSONObject().put("sku", it.product.marketPid).put("receipt", it.bypassInfo)) }
+                billingEvent("receipts", owner, JSONObject().put("receipts", list))
+            }
+        })
+    }
+    @UsedByGodot
+    fun billingFinish(sku: String) = runOnHostThread {
+        val owner = authenticatedPlayerId
+        if (owner.isEmpty() || owner != billingOwner) return@runOnHostThread
+        IAPV4.transactionFinish(sku, object : IAPV4.IAPV4TransactionFinishListener {
+            override fun onIAPV4TransactionFinish(result: ResultAPI, marketPid: String) {
+                if (!result.isSuccess) { billingError(owner, result, "finish"); return }
+                billingEvent("finished", owner, JSONObject().put("sku", marketPid))
+            }
+        })
     }
 
     @UsedByGodot

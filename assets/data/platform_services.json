@@ -10,6 +10,14 @@
     "zone": "sandbox",
     "test_ads": true
   },
+  "ios": {
+    "singleton": "HiveBridge",
+    "bundle_id": "com.jellymontest.game",
+    "hive_sdk_version": "26.4.0",
+    "adiz_version": "3.0.0",
+    "zone": "sandbox",
+    "test_ads": true
+  },
   "features": {
     "login": true,
     "rewarded_ads": true,

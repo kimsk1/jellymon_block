@@ -11,6 +11,7 @@ signal account_disconnect_completed(success: bool, message: String)
 var account_disconnect_pending := false
 
 signal ranking_auth_ready(request_id: int, success: bool, json: String)
+signal billing_event(kind: String, json: String)
 
 signal adventure_record_loaded(request_id: int, success: bool, json: String, message: String)
 signal adventure_record_saved(request_id: int, success: bool, message: String)
@@ -28,7 +29,7 @@ signal rewarded_ad_state_changed(state: String, message: String)
 const CONFIG_PATH := "res://assets/data/platform_services.json"
 const LOCAL_CLOUD_PATH := "user://jellymon_cloud_fallback.json"
 const LOCAL_RANK_PATH := "user://jellymon_rank_fallback.json"
-const ANDROID_SINGLETON := "HiveBridge"
+const NATIVE_SINGLETON := "HiveBridge"
 
 var native_available := false
 var native_ready := false
@@ -49,24 +50,28 @@ var _pending_unavailable := Callable()
 
 func initialize() -> void:
 	config = _read_json(CONFIG_PATH)
-	var singleton_name := String(config.get("android", {}).get("singleton", ANDROID_SINGLETON))
+	var platform_key := "ios" if OS.get_name() == "iOS" else "android"
+	var platform_config: Dictionary = config.get(platform_key, {})
+	var singleton_name := String(platform_config.get("singleton", NATIVE_SINGLETON))
 	native_available = Engine.has_singleton(singleton_name)
 	if native_available:
 		_native_bridge = Engine.get_singleton(singleton_name)
 		_connect_native_signals()
-		var test_ads := bool(config.get("android", {}).get("test_ads", OS.is_debug_build()))
-		var sandbox := String(config.get("android", {}).get("zone", "sandbox")) == "sandbox"
+		var test_ads := bool(platform_config.get("test_ads", OS.is_debug_build()))
+		var sandbox := String(platform_config.get("zone", "sandbox")) == "sandbox"
 		_native_bridge.call("initialize", test_ads, sandbox)
 		return
 	player_id = "guest_%s" % OS.get_unique_id().substr(0, 10)
-	# 데스크톱 개발 환경은 기존 로컬 폴백을 유지한다. Android 출시 빌드는
+	# 데스크톱 개발 환경은 기존 로컬 폴백을 유지한다. 모바일 출시 빌드는
 	# 네이티브 플러그인이 없으면 보상/로그인을 성공 처리하지 않는다.
-	native_ready = OS.get_name() != "Android"
-	setup_message = "로컬 개발 모드" if native_ready else "HIVE Android 플러그인을 찾을 수 없습니다."
+	native_ready = OS.get_name() not in ["Android", "iOS"]
+	setup_message = "로컬 개발 모드" if native_ready else "HIVE %s 플러그인을 찾을 수 없습니다." % OS.get_name()
 	setup_changed.emit(native_ready, setup_message)
 
 
 func _connect_native_signals() -> void:
+	if _native_bridge.has_signal("billing_event"):
+		_native_bridge.connect("billing_event", billing_event.emit)
 	if _native_bridge.has_signal("game_snapshot_loaded"):
 		_native_bridge.connect("game_snapshot_loaded", game_snapshot_loaded.emit)
 		_native_bridge.connect("game_snapshot_saved", game_snapshot_saved.emit)
@@ -84,13 +89,13 @@ func _connect_native_signals() -> void:
 
 
 func is_guest_account() -> bool:
-	return logged_in and native_available and _native_bridge.has_java_method("isGuestAccount") and bool(_native_bridge.call("isGuestAccount"))
+	return logged_in and native_available and _bridge_has_method("isGuestAccount") and bool(_native_bridge.call("isGuestAccount"))
 
 
 func disconnect_account(confirmation: String, allow_guest_delete: bool = false) -> bool:
 	if confirmation != "DELETE ACCOUNT" or account_disconnect_pending or not logged_in:
 		return false
-	if not native_available or not _native_bridge.has_java_method("disconnectAccount"):
+	if not native_available or not _bridge_has_method("disconnectAccount"):
 		account_disconnect_completed.emit.call_deferred(false, "연결 해제를 지원하는 최신 앱이 필요합니다.")
 		return false
 	account_disconnect_pending = true
@@ -145,7 +150,7 @@ func show_rewarded_ad(on_reward: Callable, on_unavailable: Callable = Callable()
 		_pending_unavailable = on_unavailable
 		_native_bridge.call("showRewardedAd")
 		return
-	if OS.is_debug_build() and OS.get_name() != "Android":
+	if OS.is_debug_build() and OS.get_name() not in ["Android", "iOS"]:
 		await get_tree().create_timer(0.65).timeout
 		if on_reward.is_valid():
 			on_reward.call()
@@ -234,21 +239,28 @@ func submit_weekly_record(milliseconds: int) -> bool:
 
 
 func prepare_ranking_auth(request_id: int) -> void:
-	if logged_in and native_available and _native_bridge.has_java_method("prepareRankingAuth"):
+	if logged_in and native_available and _bridge_has_method("prepareRankingAuth"):
 		_native_bridge.call("prepareRankingAuth", request_id, player_id)
 	else:
 		ranking_auth_ready.emit.call_deferred(request_id, false, "")
 
+func billing_available() -> bool:
+	return OS.get_name() == "Android" and logged_in and native_available and _bridge_has_method("billingInitialize")
+
+func billing_call(method: String, args: Array = []) -> void:
+	if billing_available() and method in ["billingInitialize", "billingPurchase", "billingRestore", "billingFinish"]:
+		_native_bridge.callv(method, args)
+
 
 func load_adventure_record(request_id: int) -> void:
-	if logged_in and native_available and _native_bridge.has_java_method("loadAdventureRecord"):
+	if logged_in and native_available and _bridge_has_method("loadAdventureRecord"):
 		_native_bridge.call("loadAdventureRecord", request_id, player_id)
 	else:
 		adventure_record_loaded.emit.call_deferred(request_id, false, "", "Hive 데이터 저장 모듈이 필요합니다.")
 
 
 func save_adventure_record(request_id: int, record: Dictionary) -> void:
-	if logged_in and native_available and _native_bridge.has_java_method("saveAdventureRecord"):
+	if logged_in and native_available and _bridge_has_method("saveAdventureRecord"):
 		_native_bridge.call("saveAdventureRecord", request_id, player_id, JSON.stringify(record))
 	else:
 		adventure_record_saved.emit.call_deferred(request_id, false, "Hive 데이터 저장 모듈이 필요합니다.")
@@ -317,13 +329,21 @@ func _write_json(path: String, value: Dictionary) -> bool:
 	return true
 
 func load_game_snapshot(request_id: int) -> void:
-	if logged_in and native_available and _native_bridge.has_java_method("loadGameSnapshot"):
+	if logged_in and native_available and _bridge_has_method("loadGameSnapshot"):
 		_native_bridge.call("loadGameSnapshot", request_id, player_id)
 	else:
 		game_snapshot_loaded.emit.call_deferred(request_id, false, "", "최신 클라우드 저장 모듈이 필요합니다.")
 
 func save_game_snapshot(request_id: int, snapshot: Dictionary) -> void:
-	if logged_in and native_available and _native_bridge.has_java_method("saveGameSnapshot"):
+	if logged_in and native_available and _bridge_has_method("saveGameSnapshot"):
 		_native_bridge.call("saveGameSnapshot", request_id, player_id, JSON.stringify(snapshot))
 	else:
 		game_snapshot_saved.emit.call_deferred(request_id, false, "최신 클라우드 저장 모듈이 필요합니다.")
+
+
+func _bridge_has_method(method_name: StringName) -> bool:
+	if _native_bridge == null:
+		return false
+	if _native_bridge.has_method("has_java_method"):
+		return bool(_native_bridge.call("has_java_method", method_name))
+	return _native_bridge.has_method(method_name)

@@ -1,16 +1,17 @@
 import { createServer, type IncomingMessage } from 'node:http';
 import { APIError, object, validateRecord, type Entry, type Hive, RecordStore } from './ranking.js';
-async function body(req: IncomingMessage): Promise<Record<string, unknown>> {
+import type { Billing } from './billing.js';
+async function body(req: IncomingMessage, limit = 8192): Promise<Record<string, unknown>> {
   const chunks: Buffer[] = []; let size = 0;
   for await (const part of req) {
     size += part.length;
-    if (size > 8192) throw new APIError(413, '요청이 너무 큽니다.');
+    if (size > limit) throw new APIError(413, '요청이 너무 큽니다.');
     chunks.push(Buffer.from(part));
   }
   try { return object(JSON.parse(Buffer.concat(chunks).toString('utf8'))); }
   catch { throw new APIError(400, '잘못된 요청입니다.'); }
 }
-export function createRankingServer(hive: Hive, store: RecordStore, retryMs = 30_000) {
+export function createRankingServer(hive: Hive, store: RecordStore, retryMs = 30_000, billing?: Billing) {
   let cache: Entry[] | undefined, cacheAt = 0, generation = 0;
   let read: Promise<Entry[]> | undefined;
   const invalidate = () => { generation++; cacheAt = 0; };
@@ -24,7 +25,15 @@ export function createRankingServer(hive: Hive, store: RecordStore, retryMs = 30
       let status = 200, value: unknown;
       const path = req.url?.split('?')[0];
       if (req.method === 'GET' && path === '/healthz') {
-        store.db.prepare('SELECT 1').get(); value = { status: 'ok' };
+        store.db.prepare('SELECT 1').get(); value = { status: 'ok', billing: billing?.config.enabled ?? false };
+      } else if (req.method === 'POST' && path?.startsWith('/v1/billing/')) {
+        if (!billing) throw new APIError(503, '상점 결제를 준비 중입니다.');
+        const data = await body(req, 262144), headers = new Headers();
+        for (const key of ['x-hive-player-token', 'x-hive-access-token']) {
+          const token = req.headers[key]; if (typeof token === 'string') headers.set(key, token);
+        }
+        const pid = await hive.authenticate(headers, data);
+        value = await billing.handle(path.slice('/v1/billing/'.length), pid, data);
       } else if (req.method === 'GET' && path === '/v1/ranking/top') {
         if (!cache || Date.now() - cacheAt >= 10_000) {
           if (!read) {

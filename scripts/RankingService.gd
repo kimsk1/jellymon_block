@@ -109,7 +109,11 @@ func sync_record() -> void:
 		changed.emit()
 		return
 	var record := save.three_star_ranking_record()
-	if record.is_empty() or record == _acked: return
+	if record.is_empty():
+		submit_status = "별 3개로 클리어하면 랭킹에 등록됩니다."
+		changed.emit()
+		return
+	if record == _acked: return
 	if save.hive_record_owner.is_empty():
 		save.hive_record_owner = platform.player_id
 		save.save_data()
@@ -130,6 +134,7 @@ func _on_auth(id: int, success: bool, json: String) -> void:
 		return
 	var data := _sent.duplicate(true)
 	data["player_id"] = _account
+	data["app_id"] = String(platform.config.get("ios", {}).get("bundle_id", "")) if OS.get_name() == "iOS" else String(platform.config.get("app_id", ""))
 	data["did"] = String(auth.get("did", ""))
 	var headers := PackedStringArray(["Content-Type: application/json", "X-Hive-Player-Token: " + String(auth.get("player_token", "")), "X-Hive-Access-Token: " + String(auth.get("access_token", ""))])
 	headers.append_array(_transport_headers())
@@ -138,6 +143,13 @@ func _on_auth(id: int, success: bool, json: String) -> void:
 
 func _on_write(result: int, code: int, _headers: PackedStringArray, _body: PackedByteArray) -> void:
 	if not _busy or platform.player_id != _account: return
+	print("[JellyMonRanking] upload transport=%d http=%d" % [result, code])
+	if result == HTTPRequest.RESULT_SUCCESS and code == 202:
+		_submit_failed("서버에 기록을 보관했습니다. Hive 반영을 기다리는 중입니다.")
+		return
+	if result == HTTPRequest.RESULT_SUCCESS and code == 401:
+		_submit_failed("랭킹 인증에 실패했습니다. 서버의 Hive App ID 설정과 로그인을 확인해 주세요.")
+		return
 	if result != HTTPRequest.RESULT_SUCCESS or code != 200:
 		_submit_failed("기록을 보관했습니다. Hive 반영을 다시 확인합니다.")
 		return

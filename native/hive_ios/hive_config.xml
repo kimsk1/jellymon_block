@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<properties>
+	<appId>com.jellymontest.game</appId>
+	<gameLanguage>ko</gameLanguage>
+	<useLog>true</useLog>
+	<company>shgame</company>
+	<channel>C2S</channel>
+	<market>AP</market>
+	<zone>sandbox</zone>
+	<httpConnectTimeout>8</httpConnectTimeout>
+	<httpReadTimeout>8</httpReadTimeout>
+	<agreementDetermineBase>device</agreementDetermineBase>
+	<providers>
+		<google clientId="233149254808-ua4q690ufoo2i7huo13cfvndb26dks88.apps.googleusercontent.com" serverClientId="233149254808-nn9nejgkfubc5djlf1k9nu85ha3enp2e.apps.googleusercontent.com" reversedClientId="com.googleusercontent.apps.233149254808-ua4q690ufoo2i7huo13cfvndb26dks88" />
+	</providers>
+</properties>

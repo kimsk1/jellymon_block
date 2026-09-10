@@ -42,6 +42,7 @@ dependencies {
     implementation("com.com2us.android.hive:hive-sdk")
     implementation("com.com2us.android.hive:hive-hercules")
     implementation("com.com2us.android.hive:hive-datastore")
+    implementation("com.com2us.android.hive:hive-iapv4-market-google")
     implementation("com.com2us.android.hive:hive-authv4-provider-google-credential-signin")
     implementation("com.com2us.android.hive:hive-authv4-provider-google-playgames")
     implementation("com.android.installreferrer:installreferrer")
