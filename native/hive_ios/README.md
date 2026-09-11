@@ -58,3 +58,9 @@ controller. Native `[JellyMonAdiz]` logs report initialization and load/show sta
 The Godot native singleton source and binary are maintained under
 `ios/plugins/HiveBridge`. Re-exporting the project must not remove that source
 folder; rerun the preparation script after every clean export.
+
+## App Store billing
+
+Hive IAP v4 purchase, pending-transaction restore and finish are implemented in
+`plugin/hive_billing.mm`. See [the complete iOS setup and release guide](../../docs/IOS_HIVE_IAP_SETUP.md)
+for App Store Connect/Hive registration, server configuration, build steps and device acceptance tests.

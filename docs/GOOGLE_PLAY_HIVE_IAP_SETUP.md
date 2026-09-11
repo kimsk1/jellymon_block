@@ -1,6 +1,6 @@
 # 젤리몬 Google Play · Hive 인앱 결제 등록 및 테스트 가이드
 
-작성일: 2026-09-10. 대상: **Android Google Play 단건 결제**. iOS App Store 결제는 이번 구현 대상이 아닙니다.
+작성일: 2026-09-10. 대상: **Android Google Play 단건 결제**. iOS App Store 결제는 별도 [iOS · Hive IAP 가이드](IOS_HIVE_IAP_SETUP.md)를 참고하세요.
 
 ## 1. 현재 적용 범위와 진행 순서
 

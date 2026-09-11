@@ -3,6 +3,8 @@ package com.jellymon.hive
 import android.app.Activity
 import android.content.Intent
 import android.content.Context
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.view.View
 import android.view.ViewTreeObserver
@@ -73,6 +75,12 @@ class HiveBridgePlugin(godot: Godot) : GodotPlugin(godot) {
     private var disconnecting = false
     private var adizReady = false
     private var rewardedAd: AdizRewarded? = null
+    @Volatile private var rewardedLoaded = false
+    private var adLoading = false
+    private var adGeneration = 0
+    private var adRetryScheduled = false
+    private var adRetryAttempt = 0
+    private val adHandler = Handler(Looper.getMainLooper())
     private var pendingAdShow = false
     private var rewardGranted = false
     private var hasStarted = false
@@ -127,6 +135,11 @@ class HiveBridgePlugin(godot: Godot) : GodotPlugin(godot) {
     }
 
     override fun onMainDestroy() {
+        adGeneration++
+        adizReady = false
+        rewardedLoaded = false
+        adHandler.removeCallbacksAndMessages(null)
+        adRetryScheduled = false
         rewardedAd?.destroy()
         rewardedAd = null
         activity?.let {
@@ -434,7 +447,7 @@ class HiveBridgePlugin(godot: Godot) : GodotPlugin(godot) {
     }
 
     @UsedByGodot
-    fun isRewardedAdReady(): Boolean = adizReady && rewardedAd?.isLoaded() == true
+    fun isRewardedAdReady(): Boolean = adizReady && rewardedLoaded
 
     @UsedByGodot
     fun showRewardedAd(): Boolean {
@@ -445,18 +458,20 @@ class HiveBridgePlugin(godot: Godot) : GodotPlugin(godot) {
                 return@runOnHostThread
             }
             val ad = rewardedAd
-            if (!adizReady || ad == null) {
+            if (!adizReady) {
                 emitSignal(AD_COMPLETED, false, "광고 SDK가 아직 준비되지 않았습니다.")
                 return@runOnHostThread
             }
-            if (!ad.isLoaded()) {
+            if (!rewardedLoaded || ad == null || !ad.isLoaded()) {
+                rewardedLoaded = false
                 // 늦게 로드된 광고가 다른 화면에서 갑자기 열리지 않도록 재시도를 안내한다.
                 emitSignal(AD_COMPLETED, false, "광고를 준비 중입니다. 잠시 후 다시 시도해 주세요.")
                 emitSignal(AD_STATE, "loading", "")
-                ad.load()
+                queueRewardedLoad(0)
                 return@runOnHostThread
             }
             pendingAdShow = true
+            rewardedLoaded = false
             rewardGranted = false
             Log.i(TAG, "rewarded show requested loaded=true")
             ad.show()
@@ -467,12 +482,13 @@ class HiveBridgePlugin(godot: Godot) : GodotPlugin(godot) {
     @UsedByGodot
     fun reloadRewardedAd() {
         if (!adizReady) return
-        runOnHostThread { rewardedAd?.load() }
+        runOnHostThread { if (!rewardedLoaded) queueRewardedLoad(0) }
     }
 
     private fun initializeAdiz() {
         val hostActivity = activity
         if (hostActivity == null) {
+            adLoading = false
             emitSignal(AD_STATE, "failed", "Android Activity를 찾을 수 없습니다.")
             return
         }
@@ -489,24 +505,53 @@ class HiveBridgePlugin(godot: Godot) : GodotPlugin(godot) {
         })
     }
 
+    private fun queueRewardedLoad(delayMs: Long) {
+        if (!adizReady || adLoading || adRetryScheduled || pendingAdShow) return
+        adRetryScheduled = true
+        val expectedGeneration = adGeneration
+        Log.i(TAG, "rewarded reload scheduled delayMs=$delayMs")
+        adHandler.postDelayed({
+            adRetryScheduled = false
+            if (adizReady && expectedGeneration == adGeneration && !pendingAdShow) createRewardedAd()
+        }, delayMs)
+    }
+
     private fun createRewardedAd() {
+        // Adiz.isLoaded() can remain true after an adapter failure. A fresh
+        // instance plus our onLoad state prevents a permanent NeedLoad loop.
+        val generation = ++adGeneration
+        rewardedLoaded = false
+        adLoading = true
+        rewardedAd?.destroy()
+        rewardedAd = null
         val listener = object : AdizListener() {
             override fun onLoad() {
+                if (generation != adGeneration || pendingAdShow) return
+                rewardedLoaded = true
+                adLoading = false
+                adRetryAttempt = 0
                 Log.i(TAG, "rewarded onLoad pendingShow=$pendingAdShow")
                 emitSignal(AD_STATE, "ready", "")
 
             }
 
             override fun onFail(error: AdizError) {
+                if (generation != adGeneration) return
+                adGeneration++ // Ignore late callbacks from this failed instance.
+                rewardedLoaded = false
+                adLoading = false
                 Log.w(TAG, "rewarded onFail code=${error.getCode()} message=${error.getMessage()}")
                 val hadRequest = pendingAdShow
                 pendingAdShow = false
                 rewardGranted = false
                 emitSignal(AD_STATE, "failed", "${error.getCode()}: ${error.getMessage()}")
                 if (hadRequest) emitSignal(AD_COMPLETED, false, error.getMessage())
+                val retryDelay = 2000L shl minOf(adRetryAttempt++, 4)
+                queueRewardedLoad(retryDelay)
             }
 
             override fun onShow() {
+                if (generation != adGeneration) return
                 Log.i(TAG, "rewarded onShow")
                 emitSignal(AD_STATE, "showing", "")
             }
@@ -516,23 +561,28 @@ class HiveBridgePlugin(godot: Godot) : GodotPlugin(godot) {
             override fun onPaidEvent(adRevenueData: AdRevenueData) = Unit
 
             override fun onRewarded(rewardItem: RewardItem) {
+                if (generation != adGeneration) return
                 Log.i(TAG, "rewarded onRewarded")
                 if (pendingAdShow) rewardGranted = true
             }
 
             override fun onClose() {
-                if (!pendingAdShow) return
+                if (generation != adGeneration || !pendingAdShow) return
+                adGeneration++
+                rewardedLoaded = false
+                adLoading = false
                 val granted = rewardGranted
                 Log.i(TAG, "rewarded onClose granted=$granted")
                 pendingAdShow = false
                 rewardGranted = false
                 emitSignal(AD_COMPLETED, granted, if (granted) "" else "광고 시청이 완료되지 않았습니다.")
                 emitSignal(AD_STATE, "loading", "")
-                rewardedAd?.load()
+                queueRewardedLoad(0)
             }
         }
         val hostActivity = activity
         if (hostActivity == null) {
+            adLoading = false
             emitSignal(AD_STATE, "failed", "Android Activity를 찾을 수 없습니다.")
             return
         }

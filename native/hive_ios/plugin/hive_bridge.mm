@@ -115,6 +115,11 @@ static UIViewController *root_view_controller() {
 HiveBridge *HiveBridge::singleton = nullptr;
 
 void HiveBridge::_bind_methods() {
+	ClassDB::bind_method(D_METHOD("billingInitialize"), &HiveBridge::billing_initialize);
+	ClassDB::bind_method(D_METHOD("billingPurchase", "sku", "payload"), &HiveBridge::billing_purchase);
+	ClassDB::bind_method(D_METHOD("billingRestore"), &HiveBridge::billing_restore);
+	ClassDB::bind_method(D_METHOD("billingFinish", "sku"), &HiveBridge::billing_finish);
+	ADD_SIGNAL(MethodInfo("billing_event", PropertyInfo(Variant::STRING, "kind"), PropertyInfo(Variant::STRING, "json")));
 	ClassDB::bind_method(D_METHOD("initialize", "test_ads", "sandbox"), &HiveBridge::initialize);
 	ClassDB::bind_method(D_METHOD("login"), &HiveBridge::login);
 	ClassDB::bind_method(D_METHOD("isGuestAccount"), &HiveBridge::is_guest_account);
@@ -217,6 +222,7 @@ bool HiveBridge::login() {
 			NSDictionary *diagnostics = @{@"success": @([result isSuccess]), @"code": @([result getCode]), @"missing_key": missing_key};
 			NSURL *directory = [NSFileManager.defaultManager URLsForDirectory:NSDocumentDirectory inDomains:NSUserDomainMask].firstObject;
 			[[NSJSONSerialization dataWithJSONObject:diagnostics options:0 error:nil] writeToURL:[directory URLByAppendingPathComponent:@"hive_login_status.json"] atomically:YES];
+			reset_billing();
 			if ([result isSuccess] && info) {
 				authenticated_player_id = String::num_int64(info.playerID);
 				emit_signal("hive_login_completed", true, authenticated_player_id, godot_string(info.playerName), "");
@@ -249,6 +255,7 @@ void HiveBridge::disconnect_account(const String &p_confirmation, bool p_allow_g
 			emit_signal("account_disconnect_completed", false, "Hive 게스트 계정은 일반 로그아웃을 지원하지 않습니다.");
 			return;
 		}
+		reset_billing();
 		disconnecting = true;
 		void (^handler)(HIVEResultAPI *) = ^(HIVEResultAPI *result) {
 			disconnecting = false;
@@ -297,10 +304,12 @@ void HiveBridge::load_adventure_record(int64_t p_request_id, const String &p_pla
 	if (!hive_ready || !valid_player(p_player_id, authenticated_player_id)) {
 		emit_signal("adventure_record_loaded", p_request_id, false, "", "Hive 로그인이 필요합니다."); return;
 	}
+	// Own the caller's String before the asynchronous block outlives the Godot call.
+	const String requested_player = p_player_id;
 	[HIVEDataStore get:kAdventureKey handler:^(HIVEResultAPI *result, NSString *data) {
 		log_datastore_result(@"load_adventure", result);
 		bool missing = [result getCode] == HIVEResultAPICodeDataStoreNotExistKey;
-		bool success = ([result isSuccess] || missing) && valid_player(p_player_id, authenticated_player_id);
+		bool success = ([result isSuccess] || missing) && valid_player(requested_player, authenticated_player_id);
 		emit_signal("adventure_record_loaded", p_request_id, success, success && !missing ? godot_string(data) : String(), success ? String() : result_message(result));
 	}];
 }
@@ -309,9 +318,10 @@ void HiveBridge::save_adventure_record(int64_t p_request_id, const String &p_pla
 	if (!hive_ready || !valid_player(p_player_id, authenticated_player_id)) {
 		emit_signal("adventure_record_saved", p_request_id, false, "Hive 로그인이 필요합니다."); return;
 	}
+	const String requested_player = p_player_id;
 	[HIVEDataStore set:kAdventureKey value:ns_string(p_json) handler:^(HIVEResultAPI *result) {
 		log_datastore_result(@"save_adventure", result);
-		bool success = [result isSuccess] && valid_player(p_player_id, authenticated_player_id);
+		bool success = [result isSuccess] && valid_player(requested_player, authenticated_player_id);
 		emit_signal("adventure_record_saved", p_request_id, success, success ? String() : result_message(result));
 	}];
 }
@@ -320,11 +330,13 @@ void HiveBridge::load_game_snapshot(int64_t p_request_id, const String &p_player
 	if (!hive_ready || !valid_player(p_player_id, authenticated_player_id)) {
 		emit_signal("game_snapshot_loaded", p_request_id, false, "", "Hive 로그인이 필요합니다."); return;
 	}
+	// Own the caller's String before the asynchronous block outlives the Godot call.
+	const String requested_player = p_player_id;
 	[HIVEDataStore get:kSnapshotKey handler:^(HIVEResultAPI *result, NSString *data) {
 		log_datastore_result(@"load_snapshot", result);
 		// Only an explicit missing-key result means a new save. Server failures stay failures.
 		bool missing = [result getCode] == HIVEResultAPICodeDataStoreNotExistKey;
-		bool success = ([result isSuccess] || missing) && valid_player(p_player_id, authenticated_player_id);
+		bool success = ([result isSuccess] || missing) && valid_player(requested_player, authenticated_player_id);
 		emit_signal("game_snapshot_loaded", p_request_id, success, success && !missing ? godot_string(data) : String(), success ? String() : result_message(result));
 	}];
 }
@@ -333,9 +345,10 @@ void HiveBridge::save_game_snapshot(int64_t p_request_id, const String &p_player
 	if (!hive_ready || !valid_player(p_player_id, authenticated_player_id)) {
 		emit_signal("game_snapshot_saved", p_request_id, false, "Hive 로그인이 필요합니다."); return;
 	}
+	const String requested_player = p_player_id;
 	[HIVEDataStore set:kSnapshotKey value:ns_string(p_json) handler:^(HIVEResultAPI *result) {
 		log_datastore_result(@"save_snapshot", result);
-		bool success = [result isSuccess] && valid_player(p_player_id, authenticated_player_id);
+		bool success = [result isSuccess] && valid_player(requested_player, authenticated_player_id);
 		emit_signal("game_snapshot_saved", p_request_id, success, success ? String() : result_message(result));
 	}];
 }

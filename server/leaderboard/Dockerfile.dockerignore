@@ -1,0 +1,15 @@
+**
+!server/
+!server/leaderboard/
+!server/leaderboard/package.json
+!server/leaderboard/package-lock.json
+!server/leaderboard/tsconfig.json
+!server/leaderboard/src/
+!server/leaderboard/src/**
+!server/leaderboard/test/
+!server/leaderboard/test/**
+!server/leaderboard/config/
+!server/leaderboard/config/**
+!assets/
+!assets/data/
+!assets/data/item.json

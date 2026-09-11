@@ -14,3 +14,15 @@ android/build/
 assets_backup/
 output/
 tmp/
+
+# Keep Godot import exclusions in generated directories.
+!tmp/
+tmp/*
+!tmp/.gdignore
+!output/
+output/*
+!output/.gdignore
+# One-off transfer archives must not return to source control.
+/sync_now.tgz
+/zi1LjBtV
+/ziqDdOWi

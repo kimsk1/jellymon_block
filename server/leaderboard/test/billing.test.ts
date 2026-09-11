@@ -101,3 +101,104 @@ test('verification sends original opaque receipt only to configured Hive endpoin
   }) as typeof fetch);
   assert.deepEqual(await verify('opaque-not-decoded', '10'), { result: 0 });
 });
+
+const iosConfig: BillingConfig = { ...config, iosAppId: 'hive.ios.test', iosBundleId: 'com.jellymontest.game' };
+const iosData = { ...data, app_id: iosConfig.iosAppId, platform: 'ios', sku: products[0].ios_product_id };
+function apple(payload: string, sk1 = false, sku = iosData.sku): Record<string, unknown> {
+  const transaction = sk1
+    ? { transaction_id: 'apple-tx', product_id: sku, quantity: '1' }
+    : { transactionId: 'apple-tx', productId: sku, quantity: 1, bundleId: iosConfig.iosBundleId };
+  return { ...verified(payload, 'AP_test', sku), hiveiap_market_id: 1,
+    hiveiap_market_transaction_id: 'apple-tx', hiveiap_receipt: 'opaque-apple-receipt',
+    hiveiap_receipt_verify_result: { status: 0, receipt: sk1 ? { bundle_id: iosConfig.iosBundleId, in_app: [transaction] } : transaction } };
+}
+for (const sk1 of [false, true]) test(`Apple StoreKit ${sk1 ? 1 : 2}: verify, durable grant, ACK and replay`, async () => {
+  const db = new DatabaseSync(':memory:'); let response: any;
+  const service = new Billing(db, iosConfig, products, async () => response);
+  try {
+    const order: any = await service.handle('order', '10', iosData);
+    response = apple(order.payload, sk1);
+    const request = { ...iosData, receipt: 'bypass' };
+    const first: any = await service.handle('verify', '10', request);
+    assert.equal(first.item.id, 'stardust_50'); assert.equal(first.delivered, false);
+    assert.deepEqual(await service.handle('verify', '10', request), first);
+    await assert.rejects(service.handle('verify', '11', request));
+    await assert.rejects(service.handle('ack', '10', { ...iosData, transaction_id: first.transaction_id, install_id: 'b'.repeat(32) }));
+    await service.handle('ack', '10', { ...iosData, transaction_id: first.transaction_id });
+    assert.equal((await service.handle('verify', '10', request) as any).delivered, true);
+    assert.equal(db.prepare('SELECT count(*) n FROM iap_grants').get()!.n, 1);
+  } finally { db.close(); }
+});
+test('Apple rejects foreign bundle, wrong product, failed status, revoked, wrong transaction, quantity and market', async () => {
+  const db = new DatabaseSync(':memory:'); let response: any;
+  const service = new Billing(db, iosConfig, products, async () => response);
+  try {
+    const order: any = await service.handle('order', '10', iosData);
+    const good: any = apple(order.payload);
+    const receipt = good.hiveiap_receipt_verify_result.receipt;
+    const badReceipts = [{ ...receipt, bundleId: 'foreign' }, { ...receipt, productId: 'foreign' },
+      { ...receipt, quantity: 2 }, { ...receipt, revocationDate: 123 }, { ...receipt, transactionId: 'another' }];
+    for (const invalid of [
+      ...badReceipts.map(receipt => ({ hiveiap_receipt_verify_result: { status: 0, receipt } })),
+      { hiveiap_receipt_verify_result: { status: 1, receipt } }, { hiveiap_market_id: 2 },
+      { hiveiap_purchase_cancel_state: 1 }, { hiveiap_account_uuid_compare: 0 }, { hiveiap_purchase_test: 'N' },
+      { hiveiap_iap_payload: '{}' }, { hiveiap_market_pid: 'foreign' },
+    ]) {
+      response = { ...good, ...invalid };
+      await assert.rejects(service.handle('verify', '10', { ...iosData, receipt: 'bypass' }));
+      assert.equal(db.prepare('SELECT count(*) n FROM iap_grants').get()!.n, 0);
+    }
+    response = apple(order.payload, true);
+    response.hiveiap_receipt_verify_result.receipt.in_app = [{ product_id: iosData.sku, transaction_id: 'unrelated', quantity: '1' }];
+    await assert.rejects(service.handle('verify', '10', { ...iosData, receipt: 'bypass' }));
+  } finally { db.close(); }
+});
+test('iOS configuration is explicit; Apple and Google orders cannot cross even with identical App ID/SKU', async () => {
+  const db = new DatabaseSync(':memory:'); let response: any;
+  try {
+    const disabled = new Billing(db, config, products, async () => response);
+    await assert.rejects(disabled.handle('order', '10', iosData));
+    const same = { ...iosConfig, iosAppId: config.appId };
+    const service = new Billing(db, same, products, async () => response);
+    const ios = { ...iosData, app_id: same.iosAppId };
+    const go: any = await service.handle('order', '10', data);
+    const ap: any = await service.handle('order', '10', ios);
+    assert.notEqual(go.payload, ap.payload);
+    response = apple(go.payload);
+    await assert.rejects(service.handle('verify', '10', { ...ios, receipt: 'bypass' }));
+    response = apple(ap.payload);
+    await service.handle('verify', '10', { ...ios, receipt: 'bypass' });
+    await assert.rejects(service.handle('ack', '10', { ...data, transaction_id: 'AP_test' }));
+    await assert.rejects(service.handle('order', '10', { ...ios, platform: 'unknown' }));
+  } finally { db.close(); }
+});
+test('Apple non-consumable ownership restores only to its owner after ACK', async () => {
+  const db = new DatabaseSync(':memory:'); let response: any;
+  const service = new Billing(db, iosConfig, products, async () => response);
+  const request = { ...iosData, sku: products[3].ios_product_id };
+  try {
+    const order: any = await service.handle('order', '10', request);
+    response = apple(order.payload, false, request.sku);
+    await service.handle('verify', '10', { ...request, receipt: 'bypass' });
+    await service.handle('ack', '10', { ...request, transaction_id: 'AP_test' });
+    const restored: any = await service.handle('entitlements', '10', iosData);
+    assert.equal(restored.entitlements[0].item.id, 'remove_ads');
+    await assert.rejects(service.handle('order', '10', request));
+    assert.deepEqual(await service.handle('entitlements', '11', iosData), { entitlements: [] });
+    assert.deepEqual(await service.handle('entitlements', '10', data), { entitlements: [] });
+  } finally { db.close(); }
+});
+test('existing database rows migrate to Google without data loss; migration is repeatable', () => {
+  const db = new DatabaseSync(':memory:');
+  try {
+    db.exec(`CREATE TABLE iap_orders(id TEXT PRIMARY KEY,pid TEXT,app TEXT,sku TEXT,season TEXT,created INTEGER);
+      CREATE TABLE iap_grants(tx TEXT PRIMARY KEY,order_id TEXT,pid TEXT,app TEXT,sku TEXT,season TEXT,install TEXT,delivered INTEGER,item TEXT);
+      INSERT INTO iap_orders VALUES('old','10','app','sku','',1);
+      INSERT INTO iap_grants VALUES('GO_old','old','10','app','sku','','install',1,'{}');`);
+    new Billing(db, iosConfig, products, async () => ({}));
+    new Billing(db, iosConfig, products, async () => ({}));
+    assert.equal(db.prepare('SELECT market FROM iap_orders WHERE id=?').get('old')!.market, 2);
+    const grant = db.prepare('SELECT * FROM iap_grants WHERE tx=?').get('GO_old')!;
+    assert.equal(grant.market, 2); assert.equal(grant.delivered, 1);
+  } finally { db.close(); }
+});

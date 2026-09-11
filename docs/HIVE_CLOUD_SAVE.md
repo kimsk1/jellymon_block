@@ -1,5 +1,31 @@
 # Hive 전체 게임 데이터 저장 및 복원
 
+## 2026-09-11 iPhone 재검증: 응답 후 네이티브 충돌 수정
+
+- 연결된 iPhone 16 Pro의 기존 설치본을 14:24·14:25 KST에 재실행했다. 초기화와 로그인은 모두 `success=true`, `code=0`이었다.
+- DataStore 활성화와 392자 공개키 수신은 정상이며, 공개키 SHA-256은 아래 9월 10일 기록과 같았다. 콘솔 설정이나 키를 변경하지 않았다. `HIVE_CERTIFICATION_KEY`는 리더보드 서버용으로, 이 SDK DataStore 경로에는 사용하지 않는다.
+- 이번 조회 응답은 이전 `-8000007` 대신 **`-8000001 / [DataStore] Key is not exist.`**였다. 명시적인 키 부재는 신규 저장으로 처리할 정상 분기이며, SDK의 `isSuccess=false`만으로 장애라고 판단하지 않는다.
+- 하지만 응답 직후 기존 앱이 `EXC_BAD_ACCESS / SIGSEGV`로 종료됐다. 14:25:54 충돌 보고서의 main-thread 스택은 `valid_player(String const&, String const&)` → `HiveBridge::load_game_snapshot`의 Objective-C block이다.
+- 원인: 비동기 block이 Godot 메서드 인자인 `const String &p_player_id` 참조를 그대로 캡처했다. Godot 호출이 끝난 뒤 응답에서 참조를 읽으면서 해제된 메모리에 접근했다. 이전 서버 오류에서는 `([result isSuccess] || missing)`이 false라 계정 비교가 실행되지 않아 이 문제가 가려졌다.
+- 수정: 전체 저장·조회와 모험 요약 저장·조회 총 4개 메서드에서 Player ID를 지역 `String` 값으로 복사한 뒤 block이 소유하도록 변경했다. 응답 시 현재 계정과 비교하는 보호 로직은 유지했다. 같은 참조 캡처 패턴이 있던 iOS 결제의 상품 ID·payload 인자도 값 복사로 보완했다. 실결제 성공을 검증했다는 의미는 아니다.
+- 검증: 기기용·시뮬레이터용 HiveBridge 빌드 성공, Xcode Debug iPhone 앱 빌드 성공, 공통 `tools/verify_cloud_save.tscn`의 업로드/재조회·복원·충돌·조회 실패·이전 계정 응답 차단 검사 통과.
+- 14:31 KST에 `com.jellymontest.game` 기존 앱 위로 수정본 업데이트 설치를 완료했다. 앱 삭제·사용자 저장 초기화·클라우드 삭제는 하지 않았다. 기존 iOS export에 수정 네이티브 브리지를 반영했으며 전체 게임 리소스를 최신 상태로 재export한 빌드는 아니다.
+- 설치 직후 14:31 실행은 iPhone 잠금으로 차단됐으나, **14:46~14:47 잠금 해제 후 실제 저장·재조회 및 앱 재실행 검증을 완료했다.** 아래 결과로 잠금 때문에 남아 있던 검증 항목을 해소했다.
+
+### 잠금 해제 후 최종 실기기 결과
+
+- 14:45 첫 시도는 초기화 성공 후 로그인에서 `AuthV4ServerResponseError(-1200057)`가 발생했다. 14:46 재실행에서는 로그인 `code=0`으로 성공했다. 간헐적인 로그인 서버 응답 오류는 관찰 사실로 남기며 이번 참조 수명 수정으로 해결했다고 판단하지 않는다.
+- 14:46:38 `load_snapshot`: `-8000001`(키 없음).
+- 14:46:39 `save_snapshot`: `success=1 code=0`.
+- 14:46:39 `load_snapshot`: `success=1 code=0`. 이후 저장·재조회도 반복 성공했다.
+- 로컬 저장 파일에서 `cloud_baseline`과 `hive_record_owner`가 기록된 것을 확인했다. 공통 동기화 서비스가 쓰기 후 재조회 내용의 지문을 비교하고 `_ack()`까지 완료한 증거다. 계정 ID와 저장 원문은 문서에 남기지 않는다.
+- 14:47 앱을 다시 종료·실행한 뒤 로그인 성공, **첫 조회부터 `success=1 code=0`**을 확인했다. 저장 데이터가 서버에 유지됐으며 이후 저장·재조회도 성공했다.
+- 이번 관찰에서 이전 `valid_player()`의 SIGSEGV는 재발하지 않았다. 재실행 시 도구가 이전 앱을 종료한 signal 9는 충돌로 집계하지 않는다.
+- 검증 범위는 iPhone 16 Pro, `com.jellymontest.game`, Sandbox의 현재 계정이다. 별도 계정 전환·다른 기기 복원·운영 환경 전체를 검증한 결과는 아니다.
+- 추가 관찰: 대기 화면에서도 수초 간격 저장이 반복됐다. 현재 `SaveGame.refresh_energy()`가 하트 최대 상태에서도 회복 기준 시각을 갱신하는 코드가 있어 동기화 빈도 최적화는 별도 점검 대상으로 남긴다. 이번 설치본에서는 이 공통 게임 로직을 변경하지 않았다.
+
+공식 iOS 설정과 호출 방식은 [DataStore iOS 준비](https://developers.hiveplatform.ai/en/latest/dev/datastore/hive-sdk-prep/ios/) 및 [DataStore 사용](https://developers.hiveplatform.ai/en/v4.26.3.0/dev/datastore/)과 대조했다. 이번 변경은 SDK 교체나 인증키 재발급이 아니라 앱의 C++ 참조 수명 수정이다.
+
 ## 2026-09-10 iPhone 오류 진단
 
 ### Android 실기기 비교 결과

@@ -1,5 +1,6 @@
 extends Node2D
 class_name Catcher
+const L10n = preload("res://scripts/LocalizedText.gd")
 ## 플레이어가 움직이는 색상 구멍 블록 (다양한 폴리오미노 모양).
 ## 같은 색 젤리는 흡수하며 지나가고, 다른 색 젤리·다른 캐처·벽에는 막힌다.
 
@@ -84,7 +85,7 @@ func setup(cid: String, shape: String, amount: int = 1) -> void:
 	badge_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(badge_panel)
 	count_badge = Label.new()
-	count_badge.text = str(remaining_capacity)
+	count_badge.text = L10n.text(str(remaining_capacity))
 	count_badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	count_badge.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	count_badge.add_theme_font_size_override("font_size", 28)
@@ -128,7 +129,7 @@ func set_key_locked(value: bool) -> void:
 	key_lock_panel.add_theme_stylebox_override("panel", style)
 	add_child(key_lock_panel)
 	var icon := Label.new()
-	icon.text = "🔒"
+	icon.text = L10n.text("🔒")
 	icon.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	icon.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	icon.add_theme_font_size_override("font_size", 27)
@@ -204,7 +205,7 @@ func consume() -> bool:
 	if completed:
 		return true
 	remaining_capacity = maxi(0, remaining_capacity - 1)
-	count_badge.text = str(remaining_capacity)
+	count_badge.text = L10n.text(str(remaining_capacity))
 	var tw := count_badge.create_tween()
 	tw.tween_property(count_badge, "scale", Vector2(1.35, 1.35), 0.08)
 	tw.tween_property(count_badge, "scale", Vector2.ONE, 0.12)
@@ -229,7 +230,7 @@ func set_full() -> void:
 	completed = true
 	# GO는 포획 완료 상태일 뿐 이동 완료 상태가 아니다. 같은 색 출구까지 계속 드래그할 수 있어야 한다.
 	movement_locked = false
-	count_badge.text = "GO"
+	count_badge.text = L10n.text("GO")
 	count_badge.add_theme_font_size_override("font_size", 20)
 	badge_style.bg_color = Color("#dfffe6")
 	badge_style.border_color = Color("#43b66a")

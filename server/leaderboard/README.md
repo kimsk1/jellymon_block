@@ -121,3 +121,17 @@ npm test
 `config/iap-products.json`을 서버에 함께 배포하고 `.env.example`의 `HIVE_IAP_*` 설정을 적용한 뒤 재시작하세요. `GET /healthz`의 `billing:true`로 활성화를 확인합니다. 상세 콘솔 등록값과 테스트 순서는 [Google Play · Hive IAP 가이드](../../docs/GOOGLE_PLAY_HIVE_IAP_SETUP.md)를 참고하세요.
 
 SQLite 구매 기록을 보존해야 중복 지급을 방지할 수 있습니다. 완료된 패키지 재화를 재설치마다 재지급하지 않으며 영구 권한·가구만 복원합니다. 환불 이후 자동 회수는 별도 구현 대상입니다.
+
+### iOS App Store 결제
+
+iOS 주문은 `platform: "ios"`와 iOS Hive App ID를 전송합니다. 서버에
+`HIVE_IAP_IOS_APP_ID`, `HIVE_IAP_IOS_BUNDLE_ID`를 설정하고 해당 Hive App ID를
+`HIVE_ALLOWED_APP_IDS`에 포함해야 합니다. 기존 Android 요청은 호환됩니다.
+스토어별 주문을 분리하기 위해 기존 결제 테이블에 `market` 컬럼을 자동 추가하며
+기존 거래는 Google(2)로 유지합니다. 배포 전 DB를 백업하세요.
+
+Docker Compose의 빌드 컨텍스트는 이제 저장소 루트입니다. 저장소 전체를 체크아웃하고
+이 디렉터리에서 기존 `docker compose` 명령을 실행합니다. 빌드/런타임 이미지에
+상품 카탈로그를 포함하고, Compose에서 IAP 환경변수도 전달합니다.
+
+[Apple/Hive 등록·구매·복원·출시 가이드](../../docs/IOS_HIVE_IAP_SETUP.md)를 참고하세요.

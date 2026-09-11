@@ -9,6 +9,10 @@ class HiveBridge : public Object {
 	static HiveBridge *singleton;
 	static void _bind_methods();
 
+	bool billing_busy = false;
+	bool billing_connected = false;
+	uint64_t billing_generation = 0;
+	uint64_t begin_billing();
 	bool hive_ready = false;
 	bool auto_sign_in = false;
 	bool disconnecting = false;
@@ -25,6 +29,14 @@ class HiveBridge : public Object {
 
 public:
 	static HiveBridge *get_singleton();
+
+	void billing_initialize();
+	void billing_purchase(const String &p_sku, const String &p_payload);
+	void billing_restore();
+	void billing_finish(const String &p_sku);
+	void reset_billing();
+	bool billing_matches(uint64_t p_generation, const String &p_owner) const;
+	void billing_result(const String &p_kind, const String &p_json);
 
 	void initialize(bool p_test_ads, bool p_sandbox);
 	bool login();

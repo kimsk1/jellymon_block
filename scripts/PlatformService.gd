@@ -244,8 +244,20 @@ func prepare_ranking_auth(request_id: int) -> void:
 	else:
 		ranking_auth_ready.emit.call_deferred(request_id, false, "")
 
+func billing_platform() -> String:
+	return "ios" if OS.get_name() == "iOS" else "android"
+
+func billing_app_id() -> String:
+	if billing_platform() == "ios":
+		var ios: Dictionary = config.get("ios", {})
+		return String(ios.get("hive_app_id", ios.get("bundle_id", "")))
+	return String(config.get("app_id", ""))
+
+func billing_store_name() -> String:
+	return "App Store" if billing_platform() == "ios" else "Google Play"
+
 func billing_available() -> bool:
-	return OS.get_name() == "Android" and logged_in and native_available and _bridge_has_method("billingInitialize")
+	return OS.get_name() in ["Android", "iOS"] and logged_in and native_available and _bridge_has_method("billingInitialize")
 
 func billing_call(method: String, args: Array = []) -> void:
 	if billing_available() and method in ["billingInitialize", "billingPurchase", "billingRestore", "billingFinish"]:

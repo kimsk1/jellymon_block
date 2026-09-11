@@ -1,16 +1,20 @@
+# Build from repository root: docker build -f server/leaderboard/Dockerfile .
 FROM node:24-bookworm-slim AS build
-WORKDIR /app
-COPY package.json package-lock.json tsconfig.json ./
+WORKDIR /workspace/server/leaderboard
+COPY server/leaderboard/package.json server/leaderboard/package-lock.json server/leaderboard/tsconfig.json ./
 RUN npm ci
-COPY src ./src
-COPY test ./test
+COPY server/leaderboard/src ./src
+COPY server/leaderboard/test ./test
+COPY server/leaderboard/config ./config
+COPY assets/data/item.json /workspace/assets/data/item.json
 RUN npm test
 
 FROM node:24-bookworm-slim
 ENV NODE_ENV=production HOST=0.0.0.0 PORT=8787 RANKING_DB_PATH=/data/ranking.sqlite3
 WORKDIR /app
-COPY --from=build /app/dist/src ./dist/src
-COPY package.json ./
+COPY --from=build /workspace/server/leaderboard/dist/src ./dist/src
+COPY --from=build /workspace/server/leaderboard/config ./config
+COPY server/leaderboard/package.json ./
 RUN mkdir /data && chown node:node /data
 USER node
 EXPOSE 8787

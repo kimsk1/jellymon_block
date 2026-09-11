@@ -25,6 +25,16 @@ static func season() -> Dictionary:
 	return data().get("season", {})
 
 
+static func season_reward_levels() -> Array[int]:
+	var levels: Array[int] = []
+	for track in ["free_rewards", "premium_rewards"]:
+		for key in season().get(track, {}):
+			var level := int(key)
+			if level > 0 and not levels.has(level): levels.append(level)
+	levels.sort()
+	return levels
+
+
 static func season_days_remaining() -> int:
 	var duration := maxi(1, int(season().get("duration_days", 28)))
 	var day_index := int(Time.get_unix_time_from_system()) / (24 * 60 * 60)

@@ -24,6 +24,7 @@ var chapter_previous: Button
 var chapter_next: Button
 var chapter_forward_ten: Button
 
+const L10n = preload("res://scripts/LocalizedText.gd")
 const ChapterPathScene = preload("res://scripts/ChapterPath.gd")
 const CHAPTER_PATH_HEIGHT := 840.0
 const CHAPTER_HEADER_HEIGHT := 140.0
@@ -70,7 +71,7 @@ func _ready() -> void:
 	_add_energy_panel()
 
 	var title := Label.new()
-	title.text = tr("구조 원정")
+	title.text = L10n.text(tr("구조 원정"))
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", 54)
 	title.add_theme_color_override("font_color", ArtDirection.text_color(Color(0.42, 0.32, 0.56)))
@@ -127,7 +128,7 @@ func _ready() -> void:
 
 	var ranking_button := Button.new()
 	ranking_button.name = "AdventureRankingButton"
-	ranking_button.text = tr("모험 랭킹")
+	ranking_button.text = L10n.text(tr("모험 랭킹"))
 	ranking_button.custom_minimum_size = Vector2(220, 76)
 	ranking_button.add_theme_font_size_override("font_size", 28)
 	ArtDirection.apply_button(ranking_button, ArtDirection.primary_color(), 20)
@@ -136,7 +137,7 @@ func _ready() -> void:
 	add_child(ranking_button)
 	var back := Button.new()
 	back.name = "MapHomeButton"
-	back.text = tr("홈으로")
+	back.text = L10n.text(tr("홈으로"))
 	back.custom_minimum_size = Vector2(220, 76)
 	back.add_theme_font_size_override("font_size", 30)
 	ArtDirection.apply_button(back, Color(0.62, 0.56, 0.72), 20)
@@ -199,7 +200,7 @@ func _add_chapter_selector() -> void:
 
 func _chapter_nav_button(text: String, delta: int, font_size: int) -> Button:
 	var button := Button.new()
-	button.text = text
+	button.text = L10n.text(text)
 	button.custom_minimum_size = Vector2(54, 52)
 	button.add_theme_font_size_override("font_size", font_size)
 	ArtDirection.apply_button(button, Color("#8d6cbd"), 16)
@@ -243,7 +244,7 @@ func _rebuild_chapter_window() -> void:
 func _update_chapter_selector() -> void:
 	var chapter_number := selected_chapter_idx + 1
 	var world_index := selected_chapter_idx / 5
-	chapter_selector_label.text = "지역 %02d · %s\nCHAPTER %03d / %03d  ·  %s" % [world_index + 1, WORLD_NAMES[clampi(world_index, 0, WORLD_NAMES.size() - 1)], chapter_number, Levels.CHAPTER_NAMES.size(), Levels.CHAPTER_NAMES[selected_chapter_idx]]
+	chapter_selector_label.text = L10n.text("지역 %02d · %s\nCHAPTER %03d / %03d  ·  %s") % [world_index + 1, L10n.text(WORLD_NAMES[clampi(world_index, 0, WORLD_NAMES.size() - 1)]), chapter_number, Levels.CHAPTER_NAMES.size(), L10n.text(Levels.CHAPTER_NAMES[selected_chapter_idx])]
 	chapter_back_ten.disabled = selected_chapter_idx <= 0
 	chapter_previous.disabled = selected_chapter_idx <= 0
 	chapter_next.disabled = selected_chapter_idx >= visible_chapter_total - 1
@@ -274,7 +275,7 @@ func _build_chapter_section(chapter: int) -> VBoxContainer:
 	var path_points := _chapter_path_points(chapter)
 	var world_index := chapter / 5
 	var region_tag := Label.new()
-	region_tag.text = "지역 %02d · %s" % [world_index + 1, WORLD_NAMES[clampi(world_index, 0, WORLD_NAMES.size() - 1)]]
+	region_tag.text = L10n.text("지역 %02d · %s") % [world_index + 1, L10n.text(WORLD_NAMES[clampi(world_index, 0, WORLD_NAMES.size() - 1)])]
 	region_tag.position = Vector2(26, 20)
 	region_tag.size = Vector2(G.W - 124, 30)
 	region_tag.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -292,7 +293,7 @@ func _build_chapter_section(chapter: int) -> VBoxContainer:
 	ArtDirection.decorate_surface(sign, 22, Color.WHITE, 0.82)
 	stage.add_child(sign)
 	var chapter_title := Label.new()
-	chapter_title.text = "CHAPTER %d  ·  %s" % [chapter + 1, Levels.CHAPTER_NAMES[chapter]]
+	chapter_title.text = L10n.text("CHAPTER %d  ·  %s" % [chapter + 1, L10n.text(Levels.CHAPTER_NAMES[chapter])])
 	chapter_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	chapter_title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	chapter_title.add_theme_font_size_override("font_size", 27)
@@ -468,11 +469,11 @@ func _update_energy_display() -> void:
 	if main == null or energy_label == null:
 		return
 	var current: int = main.save.get_energy()
-	stardust_label.text = tr("★ 별가루 %d") % main.save.get_stardust()
-	energy_label.text = tr("♥ %d/%d") % [current, SaveGame.MAX_ENERGY]
-	energy_timer_label.text = "가득 참" if current >= SaveGame.MAX_ENERGY else "다음 " + _energy_time_text()
+	stardust_label.text = L10n.text(tr("★ 별가루 %d") % main.save.get_stardust())
+	energy_label.text = L10n.text(tr("♥ %d/%d") % [current, SaveGame.MAX_ENERGY])
+	energy_timer_label.text = L10n.text("가득 참") if current >= SaveGame.MAX_ENERGY else L10n.text("다음 ") + _energy_time_text()
 	if empty_energy_timer_label:
-		empty_energy_timer_label.text = "지금 도전할 수 있어요!" if current > 0 else "다음 행동력  " + _energy_time_text()
+		empty_energy_timer_label.text = L10n.text("지금 도전할 수 있어요!") if current > 0 else L10n.text("다음 행동력  ") + _energy_time_text()
 
 
 func show_energy_empty() -> void:
@@ -506,19 +507,19 @@ func show_energy_empty() -> void:
 	box.add_theme_constant_override("separation", 18)
 	panel.add_child(box)
 	var heart := Label.new()
-	heart.text = "♥"
+	heart.text = L10n.text("♥")
 	heart.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	heart.add_theme_font_size_override("font_size", 74)
 	heart.add_theme_color_override("font_color", ArtDirection.danger_color())
 	box.add_child(heart)
 	var title := Label.new()
-	title.text = "행동력이 부족해요"
+	title.text = L10n.text("행동력이 부족해요")
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", 38)
 	title.add_theme_color_override("font_color", ArtDirection.ink())
 	box.add_child(title)
 	var guide := Label.new()
-	guide.text = "10분마다 행동력이 1개씩 회복돼요.\n1개가 생기면 바로 다시 도전할 수 있어요!"
+	guide.text = L10n.text("10분마다 행동력이 1개씩 회복돼요.\n1개가 생기면 바로 다시 도전할 수 있어요!")
 	guide.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	guide.add_theme_font_size_override("font_size", 23)
 	guide.add_theme_color_override("font_color", ArtDirection.ink())
@@ -529,7 +530,7 @@ func show_energy_empty() -> void:
 	empty_energy_timer_label.add_theme_color_override("font_color", ArtDirection.danger_color())
 	box.add_child(empty_energy_timer_label)
 	var ok := Button.new()
-	ok.text = tr("확인")
+	ok.text = L10n.text(tr("확인"))
 	ok.custom_minimum_size = Vector2(250, 72)
 	ok.add_theme_font_size_override("font_size", 29)
 	var button_style := StyleBoxFlat.new()
@@ -570,19 +571,19 @@ func _level_segment_gate_card(segment: int) -> PanelContainer:
 	content.add_theme_constant_override("separation", 12)
 	card.add_child(content)
 	var title := Label.new()
-	title.text = "🔒 LEVEL %d~%d" % [first_level, last_level]
+	title.text = L10n.text("🔒 LEVEL %d~%d" % [first_level, last_level])
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", 31)
 	title.add_theme_color_override("font_color", ArtDirection.ink())
 	content.add_child(title)
 	var guide := Label.new()
-	guide.text = "광고를 보고 다음 100레벨을 영구 해금하세요."
+	guide.text = L10n.text("광고를 보고 다음 100레벨을 영구 해금하세요.")
 	guide.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	guide.add_theme_font_size_override("font_size", 20)
 	guide.add_theme_color_override("font_color", ArtDirection.ink())
 	content.add_child(guide)
 	var unlock := Button.new()
-	unlock.text = "바로 열기" if main.save.has_removed_ads() else "광고 보고 다음 구간 열기"
+	unlock.text = L10n.text("바로 열기") if main.save.has_removed_ads() else L10n.text("광고 보고 다음 구간 열기")
 	unlock.custom_minimum_size = Vector2(390, 70)
 	unlock.add_theme_font_size_override("font_size", 24)
 	ArtDirection.apply_button(unlock, Color("#8e64c8"), 20)
@@ -619,7 +620,7 @@ func _level_button(i: int, local_index: int = -1) -> Button:
 	b.add_child(v)
 
 	var num := Label.new()
-	num.text = ("관문\n%d" % (i + 1) if is_boss else str(i + 1)) if unlocked else "◆"
+	num.text = L10n.text((L10n.text("관문\n%d") % (i + 1) if is_boss else str(i + 1)) if unlocked else "◆")
 	num.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	num.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	num.add_theme_font_size_override("font_size", 28 if is_boss else (35 if unlocked else 22))
@@ -645,7 +646,7 @@ func _level_button(i: int, local_index: int = -1) -> Button:
 		row.add_child(tr)
 	if is_reward:
 		var reward := Label.new()
-		reward.text = "보상"
+		reward.text = L10n.text("보상")
 		reward.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		reward.add_theme_font_size_override("font_size", 14)
 		reward.add_theme_color_override("font_color", ArtDirection.ink())
@@ -691,19 +692,19 @@ func _show_level_card(i: int) -> void:
 	box.add_theme_constant_override("separation", 10)
 	card.add_child(box)
 	var eyebrow := Label.new()
-	eyebrow.text = "CHAPTER %d · %s" % [chapter + 1, Levels.CHAPTER_NAMES[chapter]]
+	eyebrow.text = L10n.text("CHAPTER %d · %s" % [chapter + 1, L10n.text(Levels.CHAPTER_NAMES[chapter])])
 	eyebrow.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	eyebrow.add_theme_font_size_override("font_size", 18)
 	eyebrow.add_theme_color_override("font_color", ArtDirection.text_color(accent.darkened(0.28)))
 	box.add_child(eyebrow)
 	var heading := Label.new()
-	heading.text = "LEVEL %d  %s" % [i + 1, String(level.get("name", "구조 원정"))]
+	heading.text = L10n.text("LEVEL %d  %s" % [i + 1, L10n.text(String(level.get("name", L10n.text("구조 원정"))))])
 	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	heading.add_theme_font_size_override("font_size", 34)
 	heading.add_theme_color_override("font_color", ArtDirection.ink())
 	box.add_child(heading)
 	var mechanics := Label.new()
-	mechanics.text = "  ·  ".join(_level_mechanic_labels(level))
+	mechanics.text = L10n.text("  ·  ".join(_level_mechanic_labels(level)))
 	mechanics.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	mechanics.add_theme_font_size_override("font_size", 20)
 	mechanics.add_theme_color_override("font_color", ArtDirection.ink())
@@ -711,13 +712,13 @@ func _show_level_card(i: int) -> void:
 	var record := Label.new()
 	var best: float = main.save.get_best_clear_time(i)
 	var earned: int = main.save.get_stars(i)
-	record.text = tr("달성 별  %s    최고 기록  %s") % ["★".repeat(earned) + "☆".repeat(3 - earned), _format_clear_time(best) if best > 0.0 else "--:--"]
+	record.text = L10n.text(tr("달성 별  %s    최고 기록  %s") % ["★".repeat(earned) + "☆".repeat(3 - earned), _format_clear_time(best) if best > 0.0 else "--:--"])
 	record.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	record.add_theme_font_size_override("font_size", 22)
 	record.add_theme_color_override("font_color", ArtDirection.ink())
 	box.add_child(record)
 	var start := Button.new()
-	start.text = "구조 원정 시작"
+	start.text = L10n.text("구조 원정 시작")
 	start.custom_minimum_size = Vector2(430, 78)
 	start.add_theme_font_size_override("font_size", 29)
 	ArtDirection.apply_button(start, Color("#ef7047"), 23)
@@ -728,18 +729,18 @@ func _show_level_card(i: int) -> void:
 func _level_mechanic_labels(level: Dictionary) -> Array[String]:
 	var labels: Array[String] = []
 	if level.has("boss"):
-		labels.append("보스 관문")
+		labels.append(L10n.text("보스 관문"))
 	if not level.get("exits", []).is_empty():
-		labels.append("젤리 배출구")
+		labels.append(L10n.text("젤리 배출구"))
 	if not level.get("frozen", []).is_empty():
-		labels.append("얼음 젤리")
+		labels.append(L10n.text("얼음 젤리"))
 	if not level.get("shape_seals", []).is_empty():
-		labels.append("모양 봉인")
+		labels.append(L10n.text("모양 봉인"))
 	if level.has("move_limit"):
-		labels.append("제한 이동")
+		labels.append(L10n.text("제한 이동"))
 	if labels.is_empty():
-		labels.append("색상 구조 퍼즐")
-	labels.append("제한시간 %d초" % int(level.get("time", 0)))
+		labels.append(L10n.text("색상 구조 퍼즐"))
+	labels.append(L10n.text("제한시간 %d초") % int(level.get("time", 0)))
 	return labels
 
 

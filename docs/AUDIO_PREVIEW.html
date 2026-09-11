@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="ko"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>JellyMon · 사운드 미리듣기</title>
+<style>
+body{font-family:system-ui,sans-serif;background:#fbf7ee;color:#344c43;max-width:960px;margin:40px auto;padding:0 22px}h1{font-size:32px;margin-bottom:8px}p{line-height:1.7;color:#61766c}h2{margin-top:34px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}.card{background:white;border:1px solid #e2e9da;border-radius:20px;padding:20px;box-shadow:0 5px 16px #35432a06}.card h3{margin:0 0 8px}.card p{font-size:14px;min-height:24px}audio{width:100%;margin-top:10px}button{border:0;border-radius:12px;background:#dceacb;color:#344c43;padding:10px 14px;cursor:pointer;margin-top:10px}.tag{display:inline-block;font-size:12px;color:#657456;background:#edf2df;padding:4px 9px;border-radius:20px}footer{margin:40px 0;font-size:13px;color:#718075}
+</style>
+<h1>JellyMon · 사운드 미리듣기</h1>
+<p>새 BGM v2: 작은 장난감 악기, 짧고 귀여운 멜로디, 가벼운 퍼즐 리듬. BGM은 자동 반복됩니다.<br>‘반복 이음새 듣기’를 누르면 끝나기 4초 전부터 다음 반복까지 확인할 수 있습니다.</p>
+<h2>BGM <span class="tag">5 themes · loop</span></h2><div id="music" class="grid"></div>
+<h2>효과음 <span class="tag">12 sounds</span></h2><div id="sfx" class="grid"></div>
+<footer>Sound Studio · ACE-Step 1.5 / Powered by Stability AI<br>파형·루프 재생 자동 검사와 음악적 청감 확인은 별개입니다. 제작 내역은 GAME_AUDIO.md와 AUDIO_ASSET_MANIFEST.json을 참고하세요.</footer>
+<script>
+const themes=[['home','말랑이의 작은 아지트','장난감 피아노 · 목금 · 다정한 짧은 응답'],['map','젤리 친구들의 산책','목금 · 리코더 · 통통 걷는 리듬'],['puzzle','한 칸씩 톡톡','성긴 목금 패턴 · 조용한 퍼즐 집중'],['boss','심술 젤리 달래기','익살스러운 목금 · 바순 · 가벼운 도전'],['story','마음을 여는 친구','새 홈 테마의 느린 변주 · 낮은 음량']];
+const effects=[['pop','작은 젤리 팝'],['pop_big','큰 젤리 팝'],['clear','퍼즐 성공'],['fail','다시 도전'],['shiny','반짝 발견'],['grab','젤리 집기'],['lock','블록 안착'],['ui_click','버튼 클릭'],['reward','출석 선물'],['merge','합치기 · 추가 라이브러리'],['grow','성장 · 추가 라이브러리'],['fever','피버 · 추가 라이브러리']];
+function card(id,title,desc,music){const el=document.createElement('article');el.className='card';const h=document.createElement('h3');h.textContent=title;el.append(h);if(desc){const p=document.createElement('p');p.textContent=desc;el.append(p)}const a=document.createElement('audio');a.controls=true;a.preload='metadata';a.loop=music;a.src='../audio/'+(music?'bgm/':'')+id+(music?'.ogg?v=2':'.wav');a.addEventListener('play',()=>document.querySelectorAll('audio').forEach(o=>{if(o!==a)o.pause()}));el.append(a);if(music){const b=document.createElement('button');b.textContent='반복 이음새 듣기';b.onclick=async()=>{if(!Number.isFinite(a.duration)){await new Promise((resolve,reject)=>{a.addEventListener('loadedmetadata',resolve,{once:true});a.addEventListener('error',reject,{once:true});a.load()})}a.currentTime=Math.max(0,a.duration-4);await a.play()};el.append(b);const compare=document.createElement('button');compare.style.marginLeft='8px';compare.textContent='이전 BGM 비교';let old=false;compare.onclick=()=>{old=!old;a.pause();a.src=old?'../tmp/audio-generation-v2/previous/'+id+'.ogg':'../audio/bgm/'+id+'.ogg?v=2';compare.textContent=old?'새 BGM 듣기':'이전 BGM 비교';a.play().catch(()=>{compare.textContent='이전 파일 없음'})};el.append(compare)}document.getElementById(music?'music':'sfx').append(el)}
+themes.forEach(x=>card(...x,true));effects.forEach(x=>card(x[0],x[1],'',false));
+</script></html>

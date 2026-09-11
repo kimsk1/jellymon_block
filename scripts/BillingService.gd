@@ -1,5 +1,5 @@
 extends Node
-## Google Play → Hive 검증 서버 → 기기 원자 저장 → 서버 ACK → SDK 거래 완료.
+## App Store / Google Play → Hive 검증 서버 → 기기 원자 저장 → 서버 ACK → SDK 거래 완료.
 signal changed
 var platform: Node
 var save: SaveGame
@@ -10,6 +10,7 @@ var _base := ""
 var _account := ""
 var _install := ""
 var _auth_id := -100000
+var _native_stage := ""
 var _action := ""
 var _data: Dictionary = {}
 var _queue: Array = []
@@ -57,6 +58,7 @@ func _on_login(_ok: bool, _pid: String) -> void:
 	_grant.clear()
 	busy = false
 	_action = ""
+	_native_stage = ""
 	_data.clear()
 	status = "상점에서 구매 내역을 확인할 수 있어요." if platform.logged_in else "계정 연결 후 상점을 이용할 수 있어요."
 	changed.emit()
@@ -69,33 +71,41 @@ func _notification(what: int) -> void:
 func available() -> bool:
 	return platform.billing_available() and _base.begins_with("https://") and _install.length() == 32 and save.persistence_enabled
 
+func _product_id(item: Dictionary) -> String:
+	return String(item.get("ios_product_id" if platform.billing_platform() == "ios" else "android_product_id", ""))
+
 func price(item: Dictionary) -> String:
-	return String(prices.get(String(item.get("android_product_id", "")), "상품 확인 중" if busy else "판매 준비 중"))
+	return String(prices.get(_product_id(item), "상품 확인 중" if busy else "판매 준비 중"))
 
 func can_buy(item: Dictionary) -> bool:
-	return available() and not busy and prices.has(String(item.get("android_product_id", "")))
+	return available() and not busy and prices.has(_product_id(item))
 
 func refresh() -> void:
 	if busy: return
 	if not available():
-		_fail("Google Play 결제를 사용할 수 없습니다. Android 앱의 계정 연결을 확인해 주세요.")
+		_fail("%s 결제를 사용할 수 없습니다. 앱의 계정 연결을 확인해 주세요." % platform.billing_store_name())
 		return
 	_account = platform.player_id
 	busy = true
 	status = "상점과 구매 내역을 확인하고 있어요."
 	_timeout.start()
 	changed.emit()
-	platform.billing_call("billingInitialize")
+	_call_native("billingInitialize")
 
 func purchase(item: Dictionary) -> void:
 	if not can_buy(item): return
 	_account = platform.player_id
 	status = "구매를 준비하고 있어요."
-	_post("order", {"sku": String(item.get("android_product_id", ""))})
+	_post("order", {"sku": _product_id(item)})
+
+func _call_native(method: String, args: Array = []) -> void:
+	_native_stage = method
+	platform.billing_call(method, args)
 
 func _post(action: String, data: Dictionary) -> void:
 	busy = true
 	_action = action
+	_native_stage = ""
 	_data = data.duplicate(true)
 	_auth_id -= 1
 	_timeout.start()
@@ -109,7 +119,7 @@ func _on_auth(id: int, success: bool, raw: String) -> void:
 		_fail("구매 확인을 위해 계정을 다시 연결해 주세요.")
 		return
 	var body := _data.duplicate(true)
-	body.merge({"app_id": String(platform.config.get("app_id", "")), "player_id": _account, "did": String(auth.get("did", "")), "install_id": _install}, true)
+	body.merge({"app_id": platform.billing_app_id(), "platform": platform.billing_platform(), "player_id": _account, "did": String(auth.get("did", "")), "install_id": _install}, true)
 	var headers := PackedStringArray(["Content-Type: application/json", "X-Hive-Player-Token: " + String(auth.get("player_token", "")), "X-Hive-Access-Token: " + String(auth.get("access_token", "")), "ngrok-skip-browser-warning: true"])
 	var error := _request.request(_base + "/v1/billing/" + _action, headers, HTTPClient.METHOD_POST, JSON.stringify(body))
 	_data.clear()
@@ -125,54 +135,65 @@ func _on_response(result: int, code: int, _headers: PackedStringArray, body: Pac
 		return
 	match _action:
 		"order":
-			status = "Google Play에서 구매를 완료해 주세요."
-			platform.billing_call("billingPurchase", [String(response.sku), String(response.payload)])
+			status = "%s에서 구매를 완료해 주세요." % platform.billing_store_name()
+			_call_native("billingPurchase", [String(response.sku), String(response.payload)])
 		"entitlements":
 			for entry in response.get("entitlements", []):
 				if not save.apply_iap_delivery("entitlement", entry.item, String(entry.season), true):
 					_fail("구매 내역을 기기에 저장하지 못했습니다. 저장 공간을 확인해 주세요.")
 					return
-			platform.billing_call("billingRestore")
+			_call_native("billingRestore")
 		"verify":
+			if _queue.is_empty():
+				_fail("확인할 구매 내역이 없습니다. 구매 복원을 다시 눌러 주세요.")
+				return
 			_grant = response
 			if String(response.get("sku", "")) != String(_queue[0].get("sku", "")):
 				_fail("구매 상품 확인에 실패했습니다.")
 				return
 			if bool(response.get("delivered", false)):
 				# Already granted: consumable currency is restored only through cloud saves.
-				platform.billing_call("billingFinish", [String(response.sku)])
+				_call_native("billingFinish", [String(response.sku)])
 			elif save.apply_iap_delivery(String(response.transaction_id), response.item, String(response.season)):
 				_post("ack", {"transaction_id": String(response.transaction_id)})
 			else:
 				_fail("지급을 저장하지 못했습니다. 저장 공간 또는 시즌 기간을 확인하고 구매 복원을 눌러 주세요.")
 		"ack":
-			platform.billing_call("billingFinish", [String(response.sku)])
+			if response.get("transaction_id", "") != _grant.get("transaction_id", "") or response.get("sku", "") != _grant.get("sku", ""):
+				_fail("구매 지급 확인이 일치하지 않습니다. 구매 복원을 다시 눌러 주세요.")
+				return
+			_call_native("billingFinish", [String(response.sku)])
 	changed.emit()
 
 func _on_native(kind: String, raw: String) -> void:
 	var data = JSON.parse_string(raw)
-	if not data is Dictionary or String(data.get("player_id", "")) != _account or platform.player_id != _account: return
+	if not busy or not data is Dictionary or String(data.get("player_id", "")) != _account or platform.player_id != _account: return
 	match kind:
 		"products":
+			if _native_stage != "billingInitialize": return
 			prices.clear()
 			for item in data.get("products", []):
 				if not String(item.get("price", "")).is_empty(): prices[String(item.sku)] = String(item.price)
 			_post("entitlements", {})
 		"receipts":
+			if _native_stage not in ["billingPurchase", "billingRestore"]: return
 			_queue = data.get("receipts", [])
 			_next_receipt()
 		"finished":
+			if _native_stage != "billingFinish" or _queue.is_empty() or data.get("sku", "") != _queue[0].get("sku", ""): return
 			if not _queue.is_empty(): _queue.pop_front()
 			_next_receipt()
 		"error":
+			if _native_stage.is_empty(): return
 			_fail(String(data.get("message", "구매를 완료하지 못했습니다.")) + " (" + String(data.get("code", "")) + ")")
 	changed.emit()
 
 func _next_receipt() -> void:
 	if _queue.is_empty():
 		busy = false
+		_native_stage = ""
 		_timeout.stop()
-		status = "구매 내역 확인 완료. 최종 가격은 Google Play 결제창에서 확인해 주세요."
+		status = "구매 내역 확인 완료. 최종 가격은 %s 결제창에서 확인해 주세요." % platform.billing_store_name()
 		if prices.is_empty(): status = "판매 중인 상품이 없습니다. 잠시 후 다시 확인해 주세요."
 		_grant.clear()
 		changed.emit()
@@ -181,8 +202,11 @@ func _next_receipt() -> void:
 		_post("verify", {"receipt": String(_queue[0].receipt)})
 
 func _fail(message: String) -> void:
+	_auth_id -= 1
+	_request.cancel_request()
 	busy = false
 	_action = ""
+	_native_stage = ""
 	_data.clear()
 	_queue.clear()
 	_grant.clear()

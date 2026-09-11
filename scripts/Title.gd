@@ -2,6 +2,8 @@ extends Control
 class_name Title
 ## 메인 화면 = 플레이 기록이 살아 움직이는 '젤리 아지트'.
 
+const L10n = preload("res://scripts/LocalizedText.gd")
+const AttendanceRewardPopupLib = preload("res://scripts/ui/AttendanceRewardPopup.gd")
 const FurnitureArtLib = preload("res://scripts/FurnitureArt.gd")
 const FurnitureRewards = preload("res://scripts/FurnitureRewardCatalog.gd")
 const HomeNavIconScene = preload("res://scripts/HomeNavIcon.gd")
@@ -129,7 +131,7 @@ func _panel_style(color: Color, border: Color, radius: int = 24) -> StyleBoxFlat
 
 func _button(text: String, color: Color, size := Vector2(150, 74), font_size := 27) -> Button:
 	var button := Button.new()
-	button.text = tr(text)
+	button.text = L10n.text(tr(text))
 	button.custom_minimum_size = size
 	button.add_theme_font_size_override("font_size", font_size)
 	ArtDirection.apply_button(button, color, 20)
@@ -208,7 +210,7 @@ func _nav_button(icon_kind: String, title_text: String, color: Color, width: flo
 	icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	icon_badge.add_child(icon)
 	var title := Label.new()
-	title.text = tr(title_text)
+	title.text = L10n.text(tr(title_text))
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -246,7 +248,7 @@ func _mark_furniture_placed(button: Button, item_color: Color) -> void:
 	badge.add_theme_stylebox_override("panel", badge_style)
 	button.add_child(badge)
 	var badge_label := Label.new()
-	badge_label.text = "✓ 배치됨"
+	badge_label.text = L10n.text("✓ 배치됨")
 	badge_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	badge_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	badge_label.add_theme_font_size_override("font_size", 14)
@@ -261,7 +263,7 @@ func _home_surface(color: Color = Color("#fff7e9"), radius: int = 22) -> StyleBo
 
 func _home_label(value: String, point: Vector2, bounds: Vector2, font_size: int = 22) -> Label:
 	var label := Label.new()
-	label.text = value
+	label.text = L10n.text(value)
 	label.position = point
 	label.size = bounds
 	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -274,7 +276,7 @@ func _home_label(value: String, point: Vector2, bounds: Vector2, font_size: int 
 
 func _home_button(value: String, bounds: Vector2, font_size: int = 22) -> Button:
 	var button := Button.new()
-	button.text = tr(value)
+	button.text = L10n.text(tr(value))
 	button.custom_minimum_size = bounds
 	button.size = bounds
 	button.clip_text = true
@@ -350,21 +352,21 @@ func _build_header() -> void:
 			home_energy_label = label
 		else:
 			stardust_label = label
-			label.text = ("%s" if (ArtDirection.is_botanical() or ArtDirection.is_night()) else "★ %s") % _format_number(main.save.get_stardust())
+			label.text = L10n.text(("%s" if (ArtDirection.is_botanical() or ArtDirection.is_night()) else "★ %s") % _format_number(main.save.get_stardust()))
 		var plus := _home_button("+", Vector2(30, 44), 23)
 		plus.position = panel.position + Vector2(panel.size.x - 33, 8)
 		plus.pressed.connect(_show_shop_popup)
 		ui_layer.add_child(plus)
-	room_theme_button = _home_button("방 테마", Vector2(280, 46), 20)
+	room_theme_button = _home_button(L10n.text("방 테마"), Vector2(280, 46), 20)
 	room_theme_button.position = Vector2(24, 138)
 	room_theme_button.pressed.connect(_show_room_themes)
 	ui_layer.add_child(room_theme_button)
-	mission_button = _home_button("구조 0/3", Vector2(132, 46), 19)
+	mission_button = _home_button(L10n.text("구조 0/3"), Vector2(132, 46), 19)
 	mission_button.position = Vector2(414, 138)
 	mission_button.pressed.connect(_show_daily_mission_popup)
 	mission_button.visible = main.save.home_feature_unlocked("missions")
 	ui_layer.add_child(mission_button)
-	attendance_button = _home_button("선물 받기", Vector2(144, 46), 19)
+	attendance_button = _home_button(L10n.text("선물 받기"), Vector2(144, 46), 19)
 	attendance_button.position = Vector2(554, 138)
 	attendance_button.pressed.connect(_show_attendance_popup)
 	attendance_button.visible = main.save.home_feature_unlocked("attendance")
@@ -396,7 +398,7 @@ func _add_botanical_action_icon(button: Button, kind: String) -> void:
 
 func _refresh_room_theme_label() -> void:
 	if is_instance_valid(room_theme_button):
-		room_theme_button.text = tr("방 테마") + " · " + tr(String(RoomData.room_theme(main.save.get_room_theme()).name))
+		room_theme_button.text = L10n.text(tr("방 테마") + " · " + tr(L10n.text(String(RoomData.room_theme(main.save.get_room_theme()).name))))
 
 
 func _select_room_theme(id: String) -> void:
@@ -444,29 +446,29 @@ func _show_room_themes() -> void:
 		var theme: Dictionary = RoomData.ROOM_THEMES[i]
 		var preview := TextureRect.new()
 		preview.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		preview.texture = load(String(theme.asset))
+		preview.texture = load(L10n.text(String(theme.asset)))
 		preview.position = Vector2(24 + i * 204, 128)
 		preview.size = Vector2(196, 218)
 		preview.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 		preview.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		card.add_child(preview)
-		var text := tr(String(theme.name))
+		var text := tr(L10n.text(String(theme.name)))
 		var choose := _home_button(text, Vector2(196, 68), 19)
 		choose.position = Vector2(24 + i * 204, 358)
 		choose.name = "Theme_" + String(theme.id)
 		var unlocked: bool = main.save.is_room_theme_unlocked(String(theme.id))
 		choose.disabled = not unlocked or main.save.get_room_theme() == theme.id
 		if not unlocked:
-			choose.text = text + "\n%d레벨 클리어 후 해금" % int(theme.unlock_level)
+			choose.text = L10n.text(text + L10n.text("\n%d레벨 클리어 후 해금") % int(theme.unlock_level))
 			choose.add_theme_font_size_override("font_size", 16)
 			preview.modulate = Color(0.65, 0.65, 0.65, 0.8)
 		elif choose.disabled:
-			choose.text = "✓ " + text
+			choose.text = L10n.text("✓ " + text)
 			choose.add_theme_stylebox_override("disabled", _home_surface(ArtDirection.selected_color()))
 			choose.add_theme_color_override("font_disabled_color", ArtDirection.success_color())
 		choose.pressed.connect(_select_room_theme.bind(String(theme.id)))
 		card.add_child(choose)
-	var close := _home_button("닫기", Vector2(240, 60), 23)
+	var close := _home_button(L10n.text("닫기"), Vector2(240, 60), 23)
 	close.position = Vector2(206, 454)
 	close.pressed.connect(func(): dim.queue_free(); room_theme_popup = null)
 	card.add_child(close)
@@ -475,37 +477,11 @@ func _show_room_themes() -> void:
 func _refresh_vip_identity() -> void:
 	if not header_name_label:
 		return
-	var display_name: String = String(main.save.get_nickname()) if main.save.has_nickname() else "내 젤리몬"
+	var display_name: String = String(main.save.get_nickname()) if main.save.has_nickname() else L10n.text("내 젤리몬")
+	header_name_label.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	header_name_label.text = "VIP ✦  %s" % display_name if main.save.has_removed_ads() else display_name
 	header_name_label.add_theme_color_override("font_color", ArtDirection.text_color(Color("#a36822") if main.save.has_removed_ads() else ArtDirection.ink()))
-	header_name_label.tooltip_text = "VIP 광고 스킵 패스 보유 · 전용 명패 지급 완료" if main.save.has_removed_ads() else ""
-
-
-func _add_resource_plus(panel: Control, color: Color, action: Callable) -> void:
-	var plus := Button.new()
-	plus.text = "+"
-	plus.position = panel.position + Vector2(panel.size.x - 36, 8)
-	plus.size = Vector2(32, 32)
-	plus.add_theme_font_size_override("font_size", 21)
-	var normal := _panel_style(color, color.darkened(0.34), 17)
-	normal.content_margin_left = 0
-	normal.content_margin_right = 0
-	normal.content_margin_top = 0
-	normal.content_margin_bottom = 0
-	normal.shadow_size = 3
-	normal.shadow_offset = Vector2(0, 2)
-	var pressed: StyleBoxFlat = normal.duplicate()
-	pressed.bg_color = ArtDirection.panel_color()
-	pressed.shadow_size = 3
-	plus.add_theme_stylebox_override("normal", normal)
-	plus.add_theme_stylebox_override("hover", normal)
-	plus.add_theme_stylebox_override("focus", normal)
-	plus.add_theme_stylebox_override("pressed", pressed)
-	plus.add_theme_color_override("font_color", ArtDirection.ink())
-	plus.add_theme_color_override("font_outline_color", color.darkened(0.48))
-	plus.add_theme_constant_override("outline_size", 0)
-	plus.pressed.connect(action)
-	ui_layer.add_child(plus)
+	header_name_label.tooltip_text = L10n.text("VIP 광고 스킵 패스 보유 · 전용 명패 지급 완료") if main.save.has_removed_ads() else ""
 
 
 func _add_notification_dot(target: Control, visible_now: bool) -> void:
@@ -527,7 +503,7 @@ func _add_notification_dot(target: Control, visible_now: bool) -> void:
 	target.add_child(dot)
 	dot.pivot_offset = Vector2(13.5, 13.5)
 	var mark := Label.new()
-	mark.text = "!"
+	mark.text = L10n.text("!")
 	mark.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	mark.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	mark.add_theme_font_size_override("font_size", 17)
@@ -576,13 +552,13 @@ func _show_nickname_popup() -> void:
 	avatar.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	content.add_child(avatar)
 	var title := Label.new()
-	title.text = tr("반가워요! 이름을 알려주세요")
+	title.text = L10n.text(tr("반가워요! 이름을 알려주세요"))
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", 34)
 	title.add_theme_color_override("font_color", ArtDirection.ink())
 	content.add_child(title)
 	var guide := Label.new()
-	guide.text = "공백 없이 1~12글자로 입력해 주세요."
+	guide.text = L10n.text("공백 없이 1~12글자로 입력해 주세요.")
 	guide.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	guide.add_theme_font_size_override("font_size", 20)
 	guide.add_theme_color_override("font_color", ArtDirection.ink())
@@ -590,7 +566,7 @@ func _show_nickname_popup() -> void:
 	nickname_input = LineEdit.new()
 	nickname_input.custom_minimum_size = Vector2(510, 72)
 	nickname_input.max_length = SaveGame.MAX_NICKNAME_LENGTH
-	nickname_input.placeholder_text = tr("닉네임 입력")
+	nickname_input.placeholder_text = L10n.text(tr("닉네임 입력"))
 	nickname_input.alignment = HORIZONTAL_ALIGNMENT_CENTER
 	nickname_input.add_theme_font_size_override("font_size", 28)
 	nickname_input.add_theme_color_override("font_color", ArtDirection.ink())
@@ -601,14 +577,14 @@ func _show_nickname_popup() -> void:
 	nickname_input.text_submitted.connect(func(_value: String): _confirm_nickname())
 	content.add_child(nickname_input)
 	nickname_error = Label.new()
-	nickname_error.text = "공백은 사용할 수 없어요."
+	nickname_error.text = L10n.text("공백은 사용할 수 없어요.")
 	nickname_error.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	nickname_error.add_theme_font_size_override("font_size", 18)
 	nickname_error.add_theme_color_override("font_color", ArtDirection.danger_color())
 	nickname_error.modulate.a = 0.0
 	content.add_child(nickname_error)
 	var notice := Label.new()
-	notice.text = "※ 불법·음란·위험한 단어는 외부 노출 시 *로 표시될 수 있어요."
+	notice.text = L10n.text("※ 불법·음란·위험한 단어는 외부 노출 시 *로 표시될 수 있어요.")
 	notice.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	notice.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	notice.custom_minimum_size.x = 540
@@ -628,13 +604,13 @@ func _on_nickname_text_changed(value: String) -> void:
 		nickname_confirm_button.disabled = not valid
 	if nickname_error:
 		nickname_error.modulate.a = 0.0 if value.is_empty() or valid else 1.0
-		nickname_error.text = "공백은 사용할 수 없어요." if value.length() <= SaveGame.MAX_NICKNAME_LENGTH else "닉네임은 12글자까지 사용할 수 있어요."
+		nickname_error.text = L10n.text("공백은 사용할 수 없어요.") if value.length() <= SaveGame.MAX_NICKNAME_LENGTH else L10n.text("닉네임은 12글자까지 사용할 수 있어요.")
 
 
 func _confirm_nickname() -> void:
 	if not nickname_input or not main.save.set_nickname(nickname_input.text):
 		if nickname_error:
-			nickname_error.text = "공백 없이 1~12글자로 입력해 주세요."
+			nickname_error.text = L10n.text("공백 없이 1~12글자로 입력해 주세요.")
 			nickname_error.modulate.a = 1.0
 		return
 	main.audio.play("shiny", 1.04)
@@ -647,7 +623,7 @@ func _confirm_nickname() -> void:
 	nickname_input = null
 	nickname_error = null
 	nickname_confirm_button = null
-	_show_toast("%s님, 환영해요!" % main.save.get_nickname())
+	_show_toast(L10n.text("%s님, 환영해요!") % main.save.get_nickname())
 	call_deferred("_continue_first_time_flow")
 
 
@@ -667,7 +643,7 @@ func _show_home_interaction_hint() -> void:
 		return
 	var hint := Label.new()
 	hint.name = "HomeInteractionHint"
-	hint.text = tr("젤리몬과 친구들을 톡 눌러 보세요!")
+	hint.text = L10n.text(tr("젤리몬과 친구들을 톡 눌러 보세요!"))
 	hint.position = Vector2(145, 176)
 	hint.size = Vector2(430, 66)
 	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -710,12 +686,12 @@ func _refresh_home_energy() -> void:
 	if not home_energy_label or main == null:
 		return
 	var current: int = main.save.get_energy()
-	var status := "가득 참"
+	var status := L10n.text("가득 참")
 	if current < SaveGame.MAX_ENERGY:
 		var seconds: int = main.save.seconds_until_next_energy()
-		status = "다음 %02d:%02d" % [seconds / 60, seconds % 60]
-	home_energy_label.text = (tr("%d/%d") if (ArtDirection.is_botanical() or ArtDirection.is_night()) else tr("♥ %d/%d")) % [current, SaveGame.MAX_ENERGY]
-	home_energy_label.tooltip_text = tr("하트 가득 참") if current >= SaveGame.MAX_ENERGY else tr("다음 하트까지 %s") % status.trim_prefix("다음 ")
+		status = "%02d:%02d" % [seconds / 60, seconds % 60]
+	home_energy_label.text = L10n.text((tr("%d/%d") if (ArtDirection.is_botanical() or ArtDirection.is_night()) else tr("♥ %d/%d")) % [current, SaveGame.MAX_ENERGY])
+	home_energy_label.tooltip_text = L10n.text(tr("하트 가득 참") if current >= SaveGame.MAX_ENERGY else tr("다음 하트까지 %s") % status)
 
 
 func _refresh_attendance_button() -> void:
@@ -724,19 +700,19 @@ func _refresh_attendance_button() -> void:
 	var week: int = main.save.get_attendance_week()
 	var claimed: int = main.save.get_attendance_day_in_week()
 	if main.save.can_claim_attendance():
-		attendance_button.text = "선물 받기"
-		attendance_button.tooltip_text = "%d주차 %d일차 출석 선물을 받을 수 있어요" % [week, claimed + 1]
+		attendance_button.text = L10n.text("선물 받기")
+		attendance_button.tooltip_text = L10n.text("%d주차 %d일차 출석 선물을 받을 수 있어요") % [week, claimed + 1]
 	else:
-		attendance_button.text = tr("출석 %d/7") % claimed
-		attendance_button.tooltip_text = "%d주차 출석 완료 · 다음 선물은 내일 받을 수 있어요" % week
+		attendance_button.text = L10n.text(tr("출석 %d/7") % claimed)
+		attendance_button.tooltip_text = L10n.text("%d주차 출석 완료 · 다음 선물은 내일 받을 수 있어요") % week
 
 
 func _shop_item_card(item: Dictionary) -> PanelContainer:
-	var is_ads := String(item.get("type", "")) == "remove_ads"
-	var is_energy := String(item.get("type", "")) == "energy"
-	var is_furniture := String(item.get("type", "")) == "furniture"
-	var is_bundle := String(item.get("type", "")) == "bundle"
-	var is_season := String(item.get("type", "")) == "season_pass"
+	var is_ads := L10n.text(String(item.get("type", ""))) == "remove_ads"
+	var is_energy := L10n.text(String(item.get("type", ""))) == "energy"
+	var is_furniture := L10n.text(String(item.get("type", ""))) == "furniture"
+	var is_bundle := L10n.text(String(item.get("type", ""))) == "bundle"
+	var is_season := L10n.text(String(item.get("type", ""))) == "season_pass"
 	var card := PanelContainer.new()
 	card.custom_minimum_size = Vector2(570, 128)
 	var style := StyleBoxFlat.new()
@@ -763,7 +739,7 @@ func _shop_item_card(item: Dictionary) -> PanelContainer:
 	row.add_child(icon_frame)
 	if is_furniture:
 		var furniture_icon := Label.new()
-		furniture_icon.text = String(item.get("mark", "◆"))
+		furniture_icon.text = L10n.text(String(item.get("mark", "◆")))
 		furniture_icon.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		furniture_icon.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		furniture_icon.add_theme_font_size_override("font_size", 45)
@@ -771,7 +747,7 @@ func _shop_item_card(item: Dictionary) -> PanelContainer:
 		icon_frame.add_child(furniture_icon)
 	elif is_ads:
 		var ad_icon := Label.new()
-		ad_icon.text = "VIP\nPASS"
+		ad_icon.text = L10n.text("VIP\nPASS")
 		ad_icon.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		ad_icon.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		ad_icon.add_theme_font_size_override("font_size", 23)
@@ -779,7 +755,7 @@ func _shop_item_card(item: Dictionary) -> PanelContainer:
 		icon_frame.add_child(ad_icon)
 	elif is_bundle:
 		var pack_icon := Label.new()
-		pack_icon.text = "PACK"
+		pack_icon.text = L10n.text("PACK")
 		pack_icon.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		pack_icon.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		pack_icon.add_theme_font_size_override("font_size", 20)
@@ -787,7 +763,7 @@ func _shop_item_card(item: Dictionary) -> PanelContainer:
 		icon_frame.add_child(pack_icon)
 	elif is_energy:
 		var heart_icon := Label.new()
-		heart_icon.text = "♥"
+		heart_icon.text = L10n.text("♥")
 		heart_icon.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		heart_icon.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		heart_icon.add_theme_font_size_override("font_size", 52)
@@ -807,41 +783,47 @@ func _shop_item_card(item: Dictionary) -> PanelContainer:
 	info.add_theme_constant_override("separation", 2)
 	row.add_child(info)
 	var name_label := Label.new()
-	name_label.text = String(item.get("name", ""))
+	name_label.text = L10n.text(String(item.get("name", "")))
+	name_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	name_label.add_theme_font_size_override("font_size", 28)
 	name_label.add_theme_color_override("font_color", ArtDirection.ink())
 	info.add_child(name_label)
 	if String(item.get("id", "")) == main.save.recommended_shop_item_id():
 		var recommended := Label.new()
-		recommended.text = "지금 추천 · 현재 진행에 가장 잘 맞아요"
+		recommended.text = L10n.text("지금 추천 · 현재 진행에 가장 잘 맞아요")
+		recommended.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		recommended.add_theme_font_size_override("font_size", 16)
 		recommended.add_theme_color_override("font_color", ArtDirection.danger_color())
 		info.add_child(recommended)
 	if bool(item.get("exclusive", false)):
 		var exclusive := Label.new()
-		exclusive.text = "EXCLUSIVE · 이 상품에서만 획득"
+		exclusive.text = L10n.text("EXCLUSIVE · 이 상품에서만 획득")
+		exclusive.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		exclusive.add_theme_font_size_override("font_size", 16)
 		exclusive.add_theme_color_override("font_color", ArtDirection.danger_color())
 		info.add_child(exclusive)
 	if String(item.get("id", "")) == "stardust_110":
 		var best := Label.new()
-		best.text = "BEST · 10개 보너스"
+		best.text = L10n.text("BEST · 10개 보너스")
+		best.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		best.add_theme_font_size_override("font_size", 17)
 		best.add_theme_color_override("font_color", ArtDirection.danger_color())
 		info.add_child(best)
 	var description := Label.new()
-	description.text = String(item.get("description", ""))
+	description.text = L10n.text(String(item.get("description", "")))
 	description.add_theme_font_size_override("font_size", 16)
 	description.add_theme_color_override("font_color", ArtDirection.ink())
 	description.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	info.add_child(description)
-	var purchased: bool = (is_season and main.save.season_premium) or (not bool(item.get("consumable", true)) and main.save.has_purchased_shop_item(String(item.get("id", "")))) or (is_furniture and main.save.has_furniture(String(item.get("furniture_id", ""))))
-	var buy := _button(tr("보유 중") if purchased and is_furniture else ("구매 완료" if purchased else String(item.get("display_price", ""))), Color("#77b984") if purchased else Color("#eb8650"), Vector2(135, 68), 23)
+	var purchased: bool = (is_season and main.save.season_premium) or (not bool(item.get("consumable", true)) and main.save.has_purchased_shop_item(String(item.get("id", "")))) or (is_furniture and main.save.has_furniture(L10n.text(String(item.get("furniture_id", "")))))
+	var buy := _button(tr("보유 중") if purchased and is_furniture else (L10n.text("구매 완료") if purchased else L10n.text(String(item.get("display_price", "")))), Color("#77b984") if purchased else Color("#eb8650"), Vector2(135, 68), 23)
+	buy.clip_text = true
+	buy.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	buy.disabled = purchased
 	buy.pressed.connect(func(): _show_purchase_confirmation(item, buy))
 	if not is_furniture:
 		_billing_buttons.append({"button": buy, "item": item})
-		buy.text = "구매 완료" if purchased else main.billing.price(item)
+		buy.text = L10n.text("구매 완료") if purchased else main.billing.price(item)
 		buy.disabled = purchased or not main.billing.can_buy(item)
 	row.add_child(buy)
 	return card
@@ -853,17 +835,17 @@ func _furniture_shop_product(item: Dictionary) -> Dictionary:
 		"id": "furniture_" + id,
 		"type": "furniture",
 		"furniture_id": id,
-		"name": String(item.name),
+		"name": L10n.text(String(item.name)),
 		"display_price": "★ %s" % _format_number(RoomData.furniture_price(id)),
-		"description": "한 번 구매하면 젤리 아지트에서 영구적으로 배치할 수 있어요.",
+		"description": L10n.text("한 번 구매하면 젤리 아지트에서 영구적으로 배치할 수 있어요."),
 		"color": String(item.color),
-		"mark": String(item.mark),
+		"mark": L10n.text(String(item.mark)),
 	}
 
 
 func _show_shop_popup() -> void:
 	if not main.save.home_feature_unlocked("shop"):
-		_show_toast("LEVEL %d 클리어 후 상점이 열려요" % main.save.home_feature_unlock_level("shop"))
+		_show_toast(L10n.text("LEVEL %d 클리어 후 상점이 열려요") % main.save.home_feature_unlock_level("shop"))
 		return
 	if shop_popup and is_instance_valid(shop_popup):
 		return
@@ -889,13 +871,13 @@ func _show_shop_popup() -> void:
 	content.add_theme_constant_override("separation", 12)
 	panel.add_child(content)
 	var title := Label.new()
-	title.text = tr("★ 젤리몬 상점")
+	title.text = L10n.text(tr("★ 젤리몬 상점"))
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", 43)
 	title.add_theme_color_override("font_color", ArtDirection.ink())
 	content.add_child(title)
 	shop_balance_label = Label.new()
-	shop_balance_label.text = "보유 별가루  ★ %d" % main.save.get_stardust()
+	shop_balance_label.text = L10n.text("보유 별가루  ★ %d") % main.save.get_stardust()
 	shop_balance_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	shop_balance_label.add_theme_font_size_override("font_size", 22)
 	shop_balance_label.add_theme_color_override("font_color", ArtDirection.ink())
@@ -932,12 +914,14 @@ func _show_shop_popup() -> void:
 	currency_products.add_theme_constant_override("separation", 10)
 	currency_scroll.add_child(currency_products)
 	var currency_guide := Label.new()
-	currency_guide.text = "모험에 필요한 별가루와 하트를 충전하세요."
+	currency_guide.text = L10n.text("모험에 필요한 별가루와 하트를 충전하세요.")
 	currency_guide.add_theme_font_size_override("font_size", 20)
 	currency_guide.add_theme_color_override("font_color", ArtDirection.ink())
 	currency_products.add_child(currency_guide)
+	if main.save.has_removed_ads():
+		currency_products.add_child(_vip_support_button())
 	var shop_items := ShopCatalog.load_items()
-	var recommended_id: String = String(main.save.recommended_shop_item_id())
+	var recommended_id: String = L10n.text(String(main.save.recommended_shop_item_id()))
 	if main.analytics and not recommended_id.is_empty():
 		main.analytics.track("shop_offer_view", {"item_id":recommended_id,"reason":"progress_recommendation"})
 	shop_items.sort_custom(func(a: Dictionary, b: Dictionary): return String(a.get("id", "")) == recommended_id and String(b.get("id", "")) != recommended_id)
@@ -956,7 +940,7 @@ func _show_shop_popup() -> void:
 	furniture_products.add_theme_constant_override("separation", 10)
 	furniture_scroll.add_child(furniture_products)
 	var furniture_guide := Label.new()
-	furniture_guide.text = "별가루로 구매한 가구는 영구적으로 보유해요."
+	furniture_guide.text = L10n.text("별가루로 구매한 가구는 영구적으로 보유해요.")
 	furniture_guide.add_theme_font_size_override("font_size", 20)
 	furniture_guide.add_theme_color_override("font_color", ArtDirection.ink())
 	furniture_products.add_child(furniture_guide)
@@ -974,13 +958,13 @@ func _show_shop_popup() -> void:
 		furniture_scroll.visible = true
 	)
 	shop_status_label = Label.new()
-	shop_status_label.text = main.billing.status
+	shop_status_label.text = L10n.text(main.billing.status)
 	shop_status_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	shop_status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	shop_status_label.add_theme_font_size_override("font_size", 16)
 	shop_status_label.add_theme_color_override("font_color", ArtDirection.ink())
 	content.add_child(shop_status_label)
-	var restore := _button("구매 복원 / 상품 새로고침", ArtDirection.panel_color(), Vector2(390, 58), 21)
+	var restore := _button(L10n.text("구매 복원 / 상품 새로고침"), ArtDirection.panel_color(), Vector2(390, 58), 21)
 	restore.pressed.connect(func(): main.billing.refresh())
 	content.add_child(restore)
 	var close := _button(tr("닫기"), Color("#806aa7"), Vector2(190, 64), 24)
@@ -990,15 +974,15 @@ func _show_shop_popup() -> void:
 
 func _refresh_billing_ui() -> void:
 	if not is_instance_valid(shop_status_label): return
-	shop_status_label.text = main.billing.status
+	shop_status_label.text = L10n.text(main.billing.status)
 	for entry in _billing_buttons:
 		if not is_instance_valid(entry.button): continue
 		var item: Dictionary = entry.item
-		var owned: bool = main.save.has_purchased_shop_item(String(item.id)) or (String(item.type) == "season_pass" and main.save.season_premium)
-		entry.button.text = "구매 완료" if owned else main.billing.price(item)
+		var owned: bool = main.save.has_purchased_shop_item(String(item.id)) or (L10n.text(String(item.type)) == "season_pass" and main.save.season_premium)
+		entry.button.text = L10n.text("구매 완료") if owned else main.billing.price(item)
 		entry.button.disabled = owned or not main.billing.can_buy(item)
-	shop_balance_label.text = "보유 별가루  ★ %d" % main.save.get_stardust()
-	stardust_label.text = ("%s" if (ArtDirection.is_botanical() or ArtDirection.is_night()) else "★ %s") % _format_number(main.save.get_stardust())
+	shop_balance_label.text = L10n.text("보유 별가루  ★ %d") % main.save.get_stardust()
+	stardust_label.text = L10n.text(("%s" if (ArtDirection.is_botanical() or ArtDirection.is_night()) else "★ %s") % _format_number(main.save.get_stardust()))
 	_refresh_home_energy()
 	_refresh_vip_identity()
 
@@ -1030,7 +1014,7 @@ func _show_purchase_confirmation(item: Dictionary, buy_button: Button) -> void:
 	var badge := PanelContainer.new()
 	badge.custom_minimum_size = Vector2(96, 96)
 	var badge_style := StyleBoxFlat.new()
-	var item_type := String(item.get("type", ""))
+	var item_type := L10n.text(String(item.get("type", "")))
 	badge_style.bg_color = ArtDirection.panel_color()
 	badge_style.border_color = ArtDirection.border_color()
 	badge_style.set_border_width_all(1)
@@ -1038,27 +1022,27 @@ func _show_purchase_confirmation(item: Dictionary, buy_button: Button) -> void:
 	badge.add_theme_stylebox_override("panel", badge_style)
 	content.add_child(badge)
 	var badge_icon := Label.new()
-	badge_icon.text = String(item.get("mark", "◆")) if item_type == "furniture" else ("★" if item_type == "stardust" else ("♥" if item_type == "energy" else ("PACK" if item_type == "bundle" else "VIP\nPASS")))
+	badge_icon.text = L10n.text(String(item.get("mark", "◆"))) if item_type == "furniture" else ("★" if item_type == "stardust" else ("♥" if item_type == "energy" else ("PACK" if item_type == "bundle" else "VIP\nPASS")))
 	badge_icon.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	badge_icon.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	badge_icon.add_theme_font_size_override("font_size", 20 if ["remove_ads", "bundle"].has(String(item.get("type", ""))) else 48)
+	badge_icon.add_theme_font_size_override("font_size", 20 if ["remove_ads", "bundle"].has(L10n.text(String(item.get("type", "")))) else 48)
 	badge_icon.add_theme_color_override("font_color", ArtDirection.ink())
 	badge.add_child(badge_icon)
 	var title := Label.new()
-	title.text = tr("구매할까요?")
+	title.text = L10n.text(tr("구매할까요?"))
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", 37)
 	title.add_theme_color_override("font_color", ArtDirection.ink())
 	content.add_child(title)
 	var product := Label.new()
-	product.text = "%s\n%s" % [String(item.get("name", "")), String(item.get("display_price", "")) if item_type == "furniture" else main.billing.price(item)]
+	product.text = L10n.text("%s\n%s" % [L10n.text(String(item.get("name", ""))), L10n.text(String(item.get("display_price", ""))) if item_type == "furniture" else main.billing.price(item)])
 	product.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	product.add_theme_font_size_override("font_size", 25)
 	product.add_theme_color_override("font_color", ArtDirection.ink())
 	content.add_child(product)
 	var notice := Label.new()
-	notice.text = "보유 별가루에서 즉시 차감됩니다." if item_type == "furniture" else "Google Play 결제창에서 최종 확인 후 구매합니다."
-	if item_type == "season_pass": notice.text += "\n현재 시즌 종료까지 이용 · 자동 갱신 없음"
+	notice.text = L10n.text("보유 별가루에서 즉시 차감됩니다.") if item_type == "furniture" else L10n.text("%s 결제창에서 최종 확인 후 구매합니다.") % main.platform.billing_store_name()
+	if item_type == "season_pass": notice.text += L10n.text("\n현재 시즌 종료까지 이용 · 자동 갱신 없음")
 	notice.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	notice.add_theme_font_size_override("font_size", 17)
 	notice.add_theme_color_override("font_color", ArtDirection.ink())
@@ -1086,18 +1070,18 @@ func _close_purchase_confirmation() -> void:
 
 func _purchase_shop_item(item: Dictionary, buy_button: Button) -> void:
 	var analytics_item_id := String(item.get("id", item.get("furniture_id", "unknown")))
-	var analytics_item_kind := String(item.get("type", "unknown"))
-	if String(item.get("type", "")) == "furniture":
-		var furniture_id := String(item.get("furniture_id", ""))
+	var analytics_item_kind := L10n.text(String(item.get("type", "unknown")))
+	if L10n.text(String(item.get("type", ""))) == "furniture":
+		var furniture_id := L10n.text(String(item.get("furniture_id", "")))
 		var price := RoomData.furniture_price(furniture_id)
 		if main.save.has_furniture(furniture_id):
-			shop_status_label.text = "이미 보유한 가구예요."
+			shop_status_label.text = L10n.text("이미 보유한 가구예요.")
 			return
 		if main.save.get_stardust() < price:
-			shop_status_label.text = "별가루가 부족해요.  ★ %s 필요" % _format_number(price)
+			shop_status_label.text = L10n.text("별가루가 부족해요.  ★ %s 필요") % _format_number(price)
 			return
 		if not main.save.purchase_furniture(furniture_id, price):
-			shop_status_label.text = "가구를 구매하지 못했어요."
+			shop_status_label.text = L10n.text("가구를 구매하지 못했어요.")
 			if main.analytics:
 				main.analytics.track("shop_purchase", {"item_id": analytics_item_id, "kind": analytics_item_kind, "result": "failed"})
 			return
@@ -1106,11 +1090,11 @@ func _purchase_shop_item(item: Dictionary, buy_button: Button) -> void:
 			main.analytics.track("currency_sink", {"currency": "stardust", "amount": price, "sink": "furniture"})
 		main.audio.play("shiny", 1.05)
 		G.haptic(18)
-		stardust_label.text = ("%s" if (ArtDirection.is_botanical() or ArtDirection.is_night()) else "★ %s") % _format_number(main.save.get_stardust())
-		shop_balance_label.text = "보유 별가루  ★ %d" % main.save.get_stardust()
-		buy_button.text = tr("보유 중")
+		stardust_label.text = L10n.text(("%s" if (ArtDirection.is_botanical() or ArtDirection.is_night()) else "★ %s") % _format_number(main.save.get_stardust()))
+		shop_balance_label.text = L10n.text("보유 별가루  ★ %d") % main.save.get_stardust()
+		buy_button.text = L10n.text(tr("보유 중"))
 		buy_button.disabled = true
-		shop_status_label.text = "%s 구매 완료! 꾸미기에서 배치할 수 있어요." % String(item.get("name", ""))
+		shop_status_label.text = L10n.text("%s 구매 완료! 꾸미기에서 배치할 수 있어요.") % L10n.text(String(item.get("name", "")))
 		return
 	main.billing.purchase(item)
 
@@ -1147,13 +1131,13 @@ func _attendance_tile(day: int, reward: Dictionary, claimed_days: int, claimable
 	box.add_theme_constant_override("separation", 2)
 	tile.add_child(box)
 	var day_label := Label.new()
-	day_label.text = "%d일%s" % [day, " ✓" if already_claimed else ""]
+	day_label.text = L10n.text("%d일%s") % [day, " ✓" if already_claimed else ""]
 	day_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	day_label.add_theme_font_size_override("font_size", 18)
 	day_label.add_theme_color_override("font_color", ArtDirection.ink())
 	box.add_child(day_label)
 	var reward_label := Label.new()
-	reward_label.text = _attendance_reward_compact(reward)
+	reward_label.text = L10n.text(_attendance_reward_compact(reward))
 	reward_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	reward_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	reward_label.custom_minimum_size = Vector2(68, 57)
@@ -1168,9 +1152,9 @@ func _attendance_reward_compact(reward: Dictionary) -> String:
 	var stardust := int(reward.get("stardust", 0))
 	var energy := int(reward.get("energy", 0))
 	if stardust > 0:
-		lines.append("★ 별 %d" % stardust)
+		lines.append(L10n.text("★ 별 %d") % stardust)
 	if energy > 0:
-		lines.append("♥ 하트 %d" % energy)
+		lines.append(L10n.text("♥ 하트 %d") % energy)
 	return "\n".join(lines)
 
 
@@ -1179,9 +1163,9 @@ func _attendance_reward_sentence(reward: Dictionary) -> String:
 	var stardust := int(reward.get("stardust", 0))
 	var energy := int(reward.get("energy", 0))
 	if stardust > 0:
-		parts.append("별가루 %d개" % stardust)
+		parts.append(L10n.text("별가루 %d개") % stardust)
 	if energy > 0:
-		parts.append("하트 %d개" % energy)
+		parts.append(L10n.text("하트 %d개") % energy)
 	return " + ".join(parts)
 
 
@@ -1252,13 +1236,13 @@ func _show_attendance_popup() -> void:
 		heading.add_theme_constant_override("separation", 2)
 		banner_row.add_child(heading)
 		var title := Label.new()
-		title.text = "첫 주 출석 선물" if week == 1 else "%d주차 출석 선물" % week
+		title.text = L10n.text("첫 주 출석 선물") if week == 1 else L10n.text("%d주차 출석 선물") % week
 		title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		title.add_theme_font_size_override("font_size", 40)
 		title.add_theme_color_override("font_color", ArtDirection.ink())
 		heading.add_child(title)
 		var subtitle := Label.new()
-		subtitle.text = "별가루와 하트를 매일 함께 받아요!" if week == 1 else "매주 새로운 선물이 기다리고 있어요!"
+		subtitle.text = L10n.text("별가루와 하트를 매일 함께 받아요!") if week == 1 else L10n.text("매주 새로운 선물이 기다리고 있어요!")
 		subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		subtitle.add_theme_font_size_override("font_size", 20)
 		subtitle.add_theme_color_override("font_color", ArtDirection.ink())
@@ -1287,16 +1271,16 @@ func _show_attendance_popup() -> void:
 	status.add_theme_font_size_override("font_size", 23)
 	status.add_theme_color_override("font_color", ArtDirection.ink())
 	if claimable:
-		status.text = "오늘은 %s를 받을 수 있어요." % _attendance_reward_sentence(main.save.get_attendance_next_reward())
+		status.text = L10n.text("오늘은 %s를 받을 수 있어요.") % _attendance_reward_sentence(main.save.get_attendance_next_reward())
 	else:
-		status.text = "오늘 선물을 받았어요. 내일 다시 만나요!"
+		status.text = L10n.text("오늘 선물을 받았어요. 내일 다시 만나요!")
 	status_panel.add_child(status)
 	var action_row := HBoxContainer.new()
 	action_row.alignment = BoxContainer.ALIGNMENT_CENTER
 	action_row.add_theme_constant_override("separation", 12)
 	content.add_child(action_row)
 	if claimable:
-		var claim := _button("선물 받기  " + _attendance_reward_compact(main.save.get_attendance_next_reward()).replace("\n", "  "), Color("#f29b45"), Vector2(330, 70), 23)
+		var claim := _button(L10n.text("선물 받기  ") + _attendance_reward_compact(main.save.get_attendance_next_reward()).replace("\n", "  "), Color("#f29b45"), Vector2(330, 70), 23)
 		claim.pressed.connect(_claim_attendance)
 		action_row.add_child(claim)
 	var close := _button(tr("닫기"), Color("#806aa7"), Vector2(150, 70), 25)
@@ -1308,21 +1292,27 @@ func _claim_attendance() -> void:
 	var reward: Dictionary = main.save.claim_attendance()
 	if reward.is_empty():
 		return
-	main.audio.play("shiny", 1.05)
+	main.audio.play("reward")
 	G.haptic(18)
 	if stardust_label:
-		stardust_label.text = ("%s" if (ArtDirection.is_botanical() or ArtDirection.is_night()) else "★ %s") % _format_number(main.save.get_stardust())
+		stardust_label.text = L10n.text(("%s" if (ArtDirection.is_botanical() or ArtDirection.is_night()) else "★ %s") % _format_number(main.save.get_stardust()))
 	_refresh_home_energy()
-	_close_attendance_popup()
+	_close_attendance_popup(false)
 	_refresh_attendance_button()
-	_show_toast("출석 완료!  " + _attendance_reward_sentence(reward))
+	var popup := AttendanceRewardPopupLib.new()
+	popup.reward = reward.duplicate(true)
+	_fit_overlay_to_viewport(popup)
+	popup.confirmed.connect(_close_attendance_popup)
+	attendance_popup = popup
+	add_child(popup)
 
 
-func _close_attendance_popup() -> void:
+func _close_attendance_popup(show_feedback: bool = true) -> void:
 	if attendance_popup and is_instance_valid(attendance_popup):
 		attendance_popup.queue_free()
 	attendance_popup = null
-	call_deferred("_maybe_show_beta_feedback")
+	if show_feedback:
+		call_deferred("_maybe_show_beta_feedback")
 
 
 func _maybe_show_beta_feedback() -> void:
@@ -1350,22 +1340,22 @@ func _show_beta_feedback_popup() -> void:
 	content.add_theme_constant_override("separation", 18)
 	panel.add_child(content)
 	var title := Label.new()
-	title.text = "구조대 경험을 알려주세요"
+	title.text = L10n.text("구조대 경험을 알려주세요")
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", 34)
 	title.add_theme_color_override("font_color", ArtDirection.ink())
 	content.add_child(title)
 	var guide := Label.new()
-	guide.text = "LEVEL 10까지 함께해 주셔서 고마워요.\n세 문항은 게임 개선에만 사용돼요."
+	guide.text = L10n.text("LEVEL 10까지 함께해 주셔서 고마워요.\n세 문항은 게임 개선에만 사용돼요.")
 	guide.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	guide.add_theme_font_size_override("font_size", 19)
 	guide.add_theme_color_override("font_color", ArtDirection.ink())
 	content.add_child(guide)
 	var answers := {"fun":0,"attachment":0,"purchase_intent":0}
-	for spec in [["fun","퍼즐이 계속하고 싶을 만큼 재미있나요?"],["attachment","젤리몬과 주민에게 애착이 생겼나요?"],["purchase_intent","시즌·꾸미기 상품이 갖고 싶나요?"]]:
-		var question_id := String(spec[0])
+	for spec in [["fun",L10n.text("퍼즐이 계속하고 싶을 만큼 재미있나요?")],["attachment",L10n.text("젤리몬과 주민에게 애착이 생겼나요?")],["purchase_intent",L10n.text("시즌·꾸미기 상품이 갖고 싶나요?")]]:
+		var question_id := L10n.text(String(spec[0]))
 		var question := Label.new()
-		question.text = String(spec[1])
+		question.text = L10n.text(String(spec[1]))
 		question.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		question.add_theme_font_size_override("font_size", 20)
 		question.add_theme_color_override("font_color", ArtDirection.ink())
@@ -1383,19 +1373,19 @@ func _show_beta_feedback_popup() -> void:
 				rating.modulate = Color("#fff0a0")
 			)
 			row.add_child(rating)
-	var submit := _button("의견 보내기", Color("#ef7c57"), Vector2(320, 72), 25)
+	var submit := _button(L10n.text("의견 보내기"), Color("#ef7c57"), Vector2(320, 72), 25)
 	submit.pressed.connect(func():
 		if int(answers.fun) <= 0 or int(answers.attachment) <= 0 or int(answers.purchase_intent) <= 0:
-			_show_toast("세 문항에 모두 답해 주세요")
+			_show_toast(L10n.text("세 문항에 모두 답해 주세요"))
 			return
 		main.analytics.track("beta_feedback", {"fun":int(answers.fun),"attachment":int(answers.attachment),"purchase_intent":int(answers.purchase_intent),"level":10})
 		main.analytics.flush()
 		main.save.mark_beta_feedback_submitted()
 		dim.queue_free()
-		_show_toast("고마워요! 더 재미있는 구조 작전을 만들게요")
+		_show_toast(L10n.text("고마워요! 더 재미있는 구조 작전을 만들게요"))
 	)
 	content.add_child(submit)
-	var later := _button("다음에 답하기", Color("#8d8398"), Vector2(230, 58), 19)
+	var later := _button(L10n.text("다음에 답하기"), Color("#8d8398"), Vector2(230, 58), 19)
 	later.pressed.connect(dim.queue_free)
 	content.add_child(later)
 
@@ -1405,11 +1395,11 @@ func _refresh_mission_button() -> void:
 		return
 	var completed: int = main.save.get_daily_completed_count()
 	if main.save.has_claimed_daily_mission_chest():
-		mission_button.text = "✓ 완료"
+		mission_button.text = L10n.text("✓ 완료")
 	elif main.save.can_claim_daily_mission_chest():
-		mission_button.text = tr("상자 받기!")
+		mission_button.text = L10n.text(tr("상자 받기!"))
 	else:
-		mission_button.text = tr("구조 %d/3") % completed
+		mission_button.text = L10n.text(tr("구조 %d/3") % completed)
 
 
 func _mission_row(mission: Dictionary) -> PanelContainer:
@@ -1424,7 +1414,7 @@ func _mission_row(mission: Dictionary) -> PanelContainer:
 	row.add_theme_constant_override("separation", 12)
 	panel.add_child(row)
 	var badge := Label.new()
-	badge.text = "✓" if complete else str(progress)
+	badge.text = L10n.text("✓" if complete else str(progress))
 	badge.custom_minimum_size = Vector2(50, 0)
 	badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	badge.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -1435,17 +1425,17 @@ func _mission_row(mission: Dictionary) -> PanelContainer:
 	copy.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(copy)
 	var title := Label.new()
-	title.text = String(mission.get("title", "오늘의 구조"))
+	title.text = L10n.text(String(mission.get("title", L10n.text("오늘의 구조"))))
 	title.add_theme_font_size_override("font_size", 21)
 	title.add_theme_color_override("font_color", ArtDirection.ink())
 	copy.add_child(title)
 	var desc := Label.new()
-	desc.text = String(mission.get("description", ""))
+	desc.text = L10n.text(String(mission.get("description", "")))
 	desc.add_theme_font_size_override("font_size", 16)
 	desc.add_theme_color_override("font_color", ArtDirection.ink())
 	copy.add_child(desc)
 	var count := Label.new()
-	count.text = "%d / %d" % [progress, target]
+	count.text = L10n.text("%d / %d" % [progress, target])
 	count.custom_minimum_size = Vector2(82, 0)
 	count.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	count.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -1490,21 +1480,22 @@ func _show_daily_mission_popup() -> void:
 	content.add_theme_constant_override("separation", 12)
 	card.add_child(content)
 	var heading := Label.new()
-	heading.text = tr("오늘의 구조")
+	heading.text = L10n.text(tr("오늘의 구조"))
 	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	heading.add_theme_font_size_override("font_size", 35)
 	heading.add_theme_color_override("font_color", ArtDirection.ink())
 	content.add_child(heading)
 	var sub := Label.new()
-	sub.text = "매일 세 가지 부탁을 완료하고 구조 상자를 받아요!"
+	sub.text = L10n.text("매일 세 가지 부탁을 완료하고 구조 상자를 받아요!")
 	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	sub.add_theme_font_size_override("font_size", 17)
 	sub.add_theme_color_override("font_color", ArtDirection.ink())
 	content.add_child(sub)
-	var lifestyle := _button("주민 부탁 · 시즌 · 마을  ▶", Color("#d06f91"), Vector2(520, 55), 19)
-	lifestyle.disabled = not main.save.home_feature_unlocked("lifestyle")
+	var lifestyle := _button(L10n.text("주민 부탁 · 시즌 · 마을  ▶"), Color("#d06f91"), Vector2(520, 55), 19)
+	main.save.refresh_season()
+	lifestyle.disabled = not main.save.home_feature_unlocked("lifestyle") and not main.save.season_premium
 	if lifestyle.disabled:
-		lifestyle.text = "🔒 LEVEL %d · 시즌 생활" % main.save.home_feature_unlock_level("lifestyle")
+		lifestyle.text = L10n.text("🔒 LEVEL %d · 시즌 생활") % main.save.home_feature_unlock_level("lifestyle")
 	lifestyle.pressed.connect(func():
 		_close_daily_mission_popup()
 		_show_lifestyle_popup()
@@ -1512,18 +1503,18 @@ func _show_daily_mission_popup() -> void:
 	content.add_child(lifestyle)
 	var daily_done: bool = bool(main.save.has_completed_daily_challenge())
 	var daily_level: int = int(LiveProgressionCatalogLib.daily_challenge_level())
-	var daily_button := _button("✓ 오늘의 특별 구조 완료" if daily_done else "오늘의 특별 구조  ·  LEVEL %d  ▶" % daily_level, Color("#6e5fc4") if not daily_done else Color("#70aa82"), Vector2(520, 58), 19)
+	var daily_button := _button(L10n.text("✓ 오늘의 특별 구조 완료") if daily_done else L10n.text("오늘의 특별 구조  ·  LEVEL %d  ▶") % daily_level, Color("#6e5fc4") if not daily_done else Color("#70aa82"), Vector2(520, 58), 19)
 	daily_button.disabled = daily_done
-	daily_button.tooltip_text = "하루 한 번, 하트 소모 없이 도전하고 별가루와 시간 부스터를 받아요."
+	daily_button.tooltip_text = L10n.text("하루 한 번, 하트 소모 없이 도전하고 별가루와 시간 부스터를 받아요.")
 	daily_button.pressed.connect(func():
 		_close_daily_mission_popup()
 		main.start_daily_challenge()
 	)
 	content.add_child(daily_button)
 	var expedition_step: int = int(main.save.get_weekly_expedition_step())
-	var expedition_button := _button("✓ 이번 주 5단계 원정 완료" if expedition_step >= 5 else "주간 원정  %d/5  ·  다음 작전 ▶" % expedition_step, Color("#3d9daa") if expedition_step < 5 else Color("#70aa82"), Vector2(520, 58), 19)
+	var expedition_button := _button(L10n.text("✓ 이번 주 5단계 원정 완료") if expedition_step >= 5 else L10n.text("주간 원정  %d/5  ·  다음 작전 ▶") % expedition_step, Color("#3d9daa") if expedition_step < 5 else Color("#70aa82"), Vector2(520, 58), 19)
 	expedition_button.disabled = expedition_step >= 5
-	expedition_button.tooltip_text = "매주 바뀌는 5개 퍼즐을 연속 구조하고 부스터 묶음을 받아요."
+	expedition_button.tooltip_text = L10n.text("매주 바뀌는 5개 퍼즐을 연속 구조하고 부스터 묶음을 받아요.")
 	expedition_button.pressed.connect(func():
 		_close_daily_mission_popup()
 		main.start_weekly_expedition()
@@ -1532,7 +1523,7 @@ func _show_daily_mission_popup() -> void:
 	for mission in DailyMissionCatalogLib.missions():
 		content.add_child(_mission_row(mission))
 	var reward := DailyMissionCatalogLib.reward()
-	var chest := _button("구조 상자  ★ %d  ♥ %d" % [int(reward.get("stardust", 0)), int(reward.get("energy", 0))], Color("#f09a42"), Vector2(420, 72), 22)
+	var chest := _button(L10n.text("구조 상자  ★ %d  ♥ %d") % [int(reward.get("stardust", 0)), int(reward.get("energy", 0))], Color("#f09a42"), Vector2(420, 72), 22)
 	chest.disabled = not main.save.can_claim_daily_mission_chest()
 	chest.pressed.connect(_claim_daily_mission_chest)
 	content.add_child(chest)
@@ -1543,7 +1534,7 @@ func _show_daily_mission_popup() -> void:
 	var chapter := int(chapter_data.chapter)
 	var reward_data: Dictionary = chapter_data.reward
 	var chapter_title := Label.new()
-	chapter_title.text = "CHAPTER %d · %s" % [chapter + 1, Levels.CHAPTER_NAMES[chapter]]
+	chapter_title.text = L10n.text("CHAPTER %d · %s" % [chapter + 1, L10n.text(Levels.CHAPTER_NAMES[chapter])])
 	chapter_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	chapter_title.add_theme_font_size_override("font_size", 24)
 	chapter_title.add_theme_color_override("font_color", ArtDirection.text_color(Levels.CHAPTER_COLORS[chapter].darkened(0.28)))
@@ -1557,7 +1548,7 @@ func _show_daily_mission_popup() -> void:
 	track.add_theme_stylebox_override("fill", ArtDirection.surface(ArtDirection.primary_color(), 15))
 	content.add_child(track)
 	var track_copy := Label.new()
-	track_copy.text = "%d / 10 구조 · 완주 보상: %s" % [int(chapter_data.cleared), String(reward_data.get("title", "기념 가구"))]
+	track_copy.text = L10n.text("%d / 10 구조 · 완주 보상: %s") % [int(chapter_data.cleared), L10n.text(String(reward_data.get("title", L10n.text("기념 가구"))))]
 	track_copy.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	track_copy.add_theme_font_size_override("font_size", 18)
 	track_copy.add_theme_color_override("font_color", ArtDirection.ink())
@@ -1566,7 +1557,7 @@ func _show_daily_mission_popup() -> void:
 	var weekly_parts: Array[String] = []
 	for mission in weekly.get("missions", []):
 		weekly_parts.append("%d/%d" % [main.save.get_weekly_progress(String(mission.get("id", ""))), int(mission.get("target", 0))])
-	var weekly_button := _button("주간 작전  %s" % " · ".join(weekly_parts), Color("#4fa7b4"), Vector2(500, 57), 18)
+	var weekly_button := _button(L10n.text("주간 작전  %s") % " · ".join(weekly_parts), Color("#4fa7b4"), Vector2(500, 57), 18)
 	weekly_button.disabled = not main.save.can_claim_weekly_reward()
 	weekly_button.pressed.connect(_claim_weekly_reward)
 	content.add_child(weekly_button)
@@ -1579,7 +1570,7 @@ func _show_daily_mission_popup() -> void:
 			next_milestone = target
 			break
 	if next_milestone > 0:
-		var season_button := _button("시즌 패스  ★ %d/%d" % [season_stars, next_milestone], Color("#8b64c4"), Vector2(500, 57), 18)
+		var season_button := _button(L10n.text("시즌 패스  ★ %d/%d") % [season_stars, next_milestone], Color("#8b64c4"), Vector2(500, 57), 18)
 		season_button.disabled = season_stars < next_milestone
 		season_button.pressed.connect(func(): _claim_season_reward(next_milestone))
 		content.add_child(season_button)
@@ -1588,8 +1579,27 @@ func _show_daily_mission_popup() -> void:
 	content.add_child(close)
 
 
+func _vip_support_button() -> Button:
+	var button := _button(L10n.text("VIP 오늘의 구조 지원 · 별가루 8 + 시간 젤리 1"), Color("#d7aa39"), Vector2(530, 58), 17)
+	button.set_meta("vip_daily_support", true)
+	button.disabled = not main.save.can_claim_vip_daily_support()
+	if button.disabled:
+		button.text = L10n.text("VIP 오늘의 구조 지원 · 수령 완료")
+	button.pressed.connect(func():
+		var reward: Dictionary = main.save.claim_vip_daily_support()
+		if reward.is_empty(): return
+		button.disabled = true
+		button.text = L10n.text("VIP 오늘의 구조 지원 · 수령 완료")
+		if main.analytics: main.analytics.track("vip_daily_support", {"result":"claimed"})
+		_refresh_billing_ui()
+		_show_toast(L10n.text("VIP 지원 도착! 별가루 8 · 시간 젤리 1"))
+	)
+	return button
+
+
 func _show_lifestyle_popup() -> void:
-	if not main.save.home_feature_unlocked("lifestyle"):
+	main.save.refresh_season()
+	if not main.save.home_feature_unlocked("lifestyle") and not main.save.season_premium:
 		return
 	if lifestyle_popup and is_instance_valid(lifestyle_popup):
 		return
@@ -1612,7 +1622,7 @@ func _show_lifestyle_popup() -> void:
 	outer.add_theme_constant_override("separation", 14)
 	card.add_child(outer)
 	var heading := Label.new()
-	heading.text = tr("마음별 시즌 생활")
+	heading.text = L10n.text(tr("마음별 시즌 생활"))
 	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	heading.add_theme_font_size_override("font_size", 34)
 	heading.add_theme_color_override("font_color", ArtDirection.ink())
@@ -1626,20 +1636,9 @@ func _show_lifestyle_popup() -> void:
 	content.add_theme_constant_override("separation", 13)
 	scroll.add_child(content)
 	if main.save.has_removed_ads():
-		var vip_support := _button("VIP 오늘의 구조 지원 · 별가루 8 + 시간 젤리 1", Color("#d7aa39"), Vector2(530, 58), 17)
-		vip_support.disabled = not main.save.can_claim_vip_daily_support()
-		vip_support.text = "VIP 오늘의 구조 지원 · 수령 완료" if vip_support.disabled else vip_support.text
-		vip_support.pressed.connect(func():
-			var reward: Dictionary = main.save.claim_vip_daily_support()
-			if reward.is_empty(): return
-			if main.analytics: main.analytics.track("vip_daily_support", {"result":"claimed"})
-			_show_toast("VIP 지원 도착! 별가루 8 · 시간 젤리 1")
-			_close_lifestyle_popup()
-			_show_lifestyle_popup()
-		)
-		content.add_child(vip_support)
+		content.add_child(_vip_support_button())
 	var request_title := Label.new()
-	request_title.text = tr("오늘의 주민 부탁")
+	request_title.text = L10n.text(tr("오늘의 주민 부탁"))
 	request_title.add_theme_font_size_override("font_size", 27)
 	request_title.add_theme_color_override("font_color", ArtDirection.danger_color())
 	content.add_child(request_title)
@@ -1662,17 +1661,17 @@ func _show_lifestyle_popup() -> void:
 		copy.add_theme_constant_override("separation", 5)
 		row.add_child(copy)
 		var title := Label.new()
-		title.text = "%s · %s" % [String(request.get("resident_name", "주민")), String(request.get("title", "부탁"))]
+		title.text = L10n.text("%s · %s" % [L10n.text(String(request.get("resident_name", L10n.text("주민")))), L10n.text(String(request.get("title", L10n.text("부탁"))))])
 		title.add_theme_font_size_override("font_size", 22)
 		title.add_theme_color_override("font_color", ArtDirection.ink())
 		copy.add_child(title)
 		var progress := Label.new()
-		progress.text = "%s  %d/%d" % [String(request.get("description", "")), int(request.get("progress", 0)), int(request.get("target", 1))]
+		progress.text = L10n.text("%s  %d/%d" % [L10n.text(String(request.get("description", ""))), int(request.get("progress", 0)), int(request.get("target", 1))])
 		progress.add_theme_font_size_override("font_size", 18)
 		progress.add_theme_color_override("font_color", ArtDirection.ink())
 		copy.add_child(progress)
 		var claimed := bool(request.get("claimed", false))
-		var claim := _button(tr("완료") if claimed else "받기", Color("#70ae7f") if claimed else Color("#e98558"), Vector2(112, 64), 20)
+		var claim := _button(tr("완료") if claimed else L10n.text("받기"), Color("#70ae7f") if claimed else Color("#e98558"), Vector2(112, 64), 20)
 		_style_lifestyle_button(claim, Color("#e7ddd8") if not claimed else Color("#dceade"), Color("#a17b6c") if not claimed else Color("#6a9874"), Color("#68483e") if not claimed else Color("#31563b"), claimed)
 		claim.disabled = claimed or int(request.get("progress", 0)) < int(request.get("target", 1))
 		var request_id := String(request.get("id", ""))
@@ -1681,7 +1680,7 @@ func _show_lifestyle_popup() -> void:
 		content.add_child(panel)
 	var season := RetentionCatalogLib.season()
 	var season_title := Label.new()
-	season_title.text = "%s · %d일 남음\nLV.%d/20 · XP %d" % [String(season.get("title", "시즌")), RetentionCatalogLib.season_days_remaining(), main.save.season_level(), main.save.season_xp]
+	season_title.text = L10n.text("%s · %d일 남음\nLV.%d/20 · XP %d") % [L10n.text(String(season.get("title", L10n.text("시즌")))), RetentionCatalogLib.season_days_remaining(), main.save.season_level(), main.save.season_xp]
 	season_title.add_theme_font_size_override("font_size", 26)
 	season_title.add_theme_color_override("font_color", ArtDirection.ink())
 	content.add_child(season_title)
@@ -1693,7 +1692,7 @@ func _show_lifestyle_popup() -> void:
 			_show_shop_popup()
 		)
 		content.add_child(premium)
-	for level in [5, 10, 15, 20]:
+	for level in RetentionCatalogLib.season_reward_levels():
 		var reward_row := HBoxContainer.new()
 		reward_row.alignment = BoxContainer.ALIGNMENT_CENTER
 		reward_row.add_theme_constant_override("separation", 8)
@@ -1701,17 +1700,23 @@ func _show_lifestyle_popup() -> void:
 		var premium_reward: Dictionary = season.get("premium_rewards", {}).get(str(level), {})
 		var free_button := _button(tr("무료 %d · %s%s") % [level, _compact_reward(free_reward), " ✓" if main.save.claimed_season_free.has(level) else ""], Color("#438f8d"), Vector2(250, 58), 16)
 		_style_lifestyle_button(free_button, Color("#dcebea"), Color("#659492"), Color("#315d5b"), main.save.claimed_season_free.has(level))
-		free_button.disabled = main.save.claimed_season_free.has(level) or level > main.save.season_level()
+		free_button.visible = not free_reward.is_empty()
+		free_button.disabled = free_reward.is_empty() or main.save.claimed_season_free.has(level) or level > main.save.season_level()
 		free_button.pressed.connect(func(): _claim_retention_season(level, false))
+		free_button.set_meta("season_reward_level", level)
+		free_button.set_meta("premium", false)
 		reward_row.add_child(free_button)
 		var premium_button := _button(tr("프리미엄 %d · %s%s") % [level, _compact_reward(premium_reward), " ✓" if main.save.claimed_season_premium.has(level) else ""], Color("#8055ab"), Vector2(280, 58), 16)
 		_style_lifestyle_button(premium_button, Color("#e5deec"), Color("#8c75a3"), Color("#554268"), main.save.claimed_season_premium.has(level))
-		premium_button.disabled = not main.save.season_premium or main.save.claimed_season_premium.has(level) or level > main.save.season_level()
+		premium_button.visible = not premium_reward.is_empty()
+		premium_button.disabled = premium_reward.is_empty() or not main.save.season_premium or main.save.claimed_season_premium.has(level) or level > main.save.season_level()
 		premium_button.pressed.connect(func(): _claim_retention_season(level, true))
+		premium_button.set_meta("season_reward_level", level)
+		premium_button.set_meta("premium", true)
 		reward_row.add_child(premium_button)
 		content.add_child(reward_row)
 	var town_title := Label.new()
-	town_title.text = tr("마을 복구 · 재료 %d") % main.save.restoration_points
+	town_title.text = L10n.text(tr("마을 복구 · 재료 %d") % main.save.restoration_points)
 	town_title.add_theme_font_size_override("font_size", 26)
 	town_title.add_theme_color_override("font_color", ArtDirection.success_color())
 	content.add_child(town_title)
@@ -1719,7 +1724,7 @@ func _show_lifestyle_popup() -> void:
 		var district_level := int(main.save.town_levels.get(String(district.id), 0))
 		var costs: Array = district.costs
 		var unlocked: bool = bool(main.save.get_stars(int(district.unlock_level) - 2) > 0)
-		var town_button := _button("%s · %s\n%s" % [String(district.name), ("복구 %d/3 · 재료 %d" % [district_level, int(costs[district_level])]) if district_level < 3 else "복구 완료", String(district.get("perk", "마을 지원 강화"))], Color("#4d946c") if unlocked else Color("#93899b"), Vector2(530, 80), 17)
+		var town_button := _button("%s · %s\n%s" % [L10n.text(String(district.name)), (L10n.text("복구 %d/3 · 재료 %d") % [district_level, int(costs[district_level])]) if district_level < 3 else L10n.text("복구 완료"), L10n.text(String(district.get("perk", L10n.text("마을 지원 강화"))))], Color("#4d946c") if unlocked else Color("#93899b"), Vector2(530, 80), 17)
 		_style_lifestyle_button(town_button, Color("#e4e1e8"), Color("#8b8293"), Color("#4e4856"))
 		town_button.disabled = not unlocked or district_level >= 3 or main.save.restoration_points < int(costs[district_level])
 		var district_id := String(district.id)
@@ -1729,13 +1734,13 @@ func _show_lifestyle_popup() -> void:
 	share.pressed.connect(func():
 		DisplayServer.clipboard_set(main.save.room_share_code())
 		if main.analytics: main.analytics.track("room_share", {"furniture_count":main.save.room_placements.size(),"town_level":main.save.town_total_level()})
-		_show_toast("친구에게 보낼 방문 코드를 복사했어요!")
+		_show_toast(L10n.text("친구에게 보낼 방문 코드를 복사했어요!"))
 	)
 	content.add_child(share)
 	var visit_row := HBoxContainer.new()
 	visit_row.alignment = BoxContainer.ALIGNMENT_CENTER
 	var visit_code := LineEdit.new()
-	visit_code.placeholder_text = "친구의 JELLY1 방문 코드 붙여넣기"
+	visit_code.placeholder_text = L10n.text("친구의 JELLY1 방문 코드 붙여넣기")
 	visit_code.custom_minimum_size = Vector2(390, 50)
 	visit_code.add_theme_font_size_override("font_size", 15)
 	visit_row.add_child(visit_code)
@@ -1743,9 +1748,9 @@ func _show_lifestyle_popup() -> void:
 	visit.pressed.connect(func():
 		var preview: Dictionary = main.save.parse_room_share_code(visit_code.text)
 		if preview.is_empty():
-			_show_toast("방문 코드를 확인해 주세요.")
+			_show_toast(L10n.text("방문 코드를 확인해 주세요."))
 		else:
-			_show_toast("%s의 아지트 · 별 %d · 가구 %d개 · 복구 %d단계" % [String(preview.get("name", "친구")), int(preview.get("stars", 0)), preview.get("furniture", []).size(), int(preview.get("town", 0))])
+			_show_toast(L10n.text("%s의 아지트 · 별 %d · 가구 %d개 · 복구 %d단계") % [L10n.text(String(preview.get("name", L10n.text("친구")))), int(preview.get("stars", 0)), preview.get("furniture", []).size(), int(preview.get("town", 0))])
 	)
 	visit_row.add_child(visit)
 	content.add_child(visit_row)
@@ -1762,17 +1767,17 @@ func _close_lifestyle_popup() -> void:
 
 func _compact_reward(reward: Dictionary) -> String:
 	if int(reward.get("stardust", 0)) > 0: return "★%d" % int(reward.stardust)
-	if not String(reward.get("furniture", "")).is_empty(): return String(RoomData.item_by_id(String(reward.furniture)).get("name", "한정 가구"))
-	if not String(reward.get("booster", "")).is_empty(): return "%s×%d" % [String(reward.booster), int(reward.get("amount", 1))]
-	return "선물"
+	if not String(reward.get("furniture", "")).is_empty(): return L10n.text(String(RoomData.item_by_id(L10n.text(String(reward.furniture))).get("name", L10n.text("한정 가구"))))
+	if not String(reward.get("booster", "")).is_empty(): return "%s×%d" % [L10n.text(String(reward.booster)), int(reward.get("amount", 1))]
+	return L10n.text("선물")
 
 
 func _claim_resident_request(request_id: String) -> void:
 	var result: Dictionary = main.save.claim_resident_request(request_id)
 	if result.is_empty(): return
-	if main.analytics: main.analytics.track("resident_request", {"request_id":request_id,"resident_id":String(result.get("resident_id", "")),"result":"claimed"})
+	if main.analytics: main.analytics.track("resident_request", {"request_id":request_id,"resident_id":L10n.text(String(result.get("resident_id", ""))),"result":"claimed"})
 	_close_lifestyle_popup()
-	_show_toast("%s: %s" % [String(result.get("resident_name", "주민")), String(result.get("line", "고마워!"))])
+	_show_toast("%s: %s" % [L10n.text(String(result.get("resident_name", L10n.text("주민")))), L10n.text(String(result.get("line", L10n.text("고마워!"))))])
 	_show_lifestyle_popup()
 
 
@@ -1781,7 +1786,7 @@ func _claim_retention_season(level: int, premium: bool) -> void:
 	if reward.is_empty(): return
 	if main.analytics: main.analytics.track("season_reward", {"level":level,"track":"premium" if premium else "free"})
 	_close_lifestyle_popup()
-	_show_toast("시즌 %d단계 보상을 받았어요!" % level)
+	_show_toast(L10n.text("시즌 %d단계 보상을 받았어요!") % level)
 	_show_lifestyle_popup()
 
 
@@ -1790,7 +1795,7 @@ func _upgrade_town(district_id: String) -> void:
 	if result.is_empty(): return
 	if main.analytics: main.analytics.track("town_upgrade", {"district_id":district_id,"level":int(result.level)})
 	_close_lifestyle_popup()
-	_show_toast("%s 복구 %d단계!  ★ %d" % [String(result.name), int(result.level), int(result.reward)])
+	_show_toast(L10n.text("%s 복구 %d단계!  ★ %d") % [L10n.text(String(result.name)), int(result.level), int(result.reward)])
 	_show_lifestyle_popup()
 
 
@@ -1801,10 +1806,10 @@ func _claim_daily_mission_chest() -> void:
 	G.haptic(24)
 	_close_daily_mission_popup()
 	if stardust_label:
-		stardust_label.text = ("%s" if (ArtDirection.is_botanical() or ArtDirection.is_night()) else "★ %s") % _format_number(main.save.get_stardust())
+		stardust_label.text = L10n.text(("%s" if (ArtDirection.is_botanical() or ArtDirection.is_night()) else "★ %s") % _format_number(main.save.get_stardust()))
 	_refresh_home_energy()
 	_refresh_mission_button()
-	_show_toast("구조 상자 획득!  ★ %d  ♥ %d" % [int(reward.get("stardust", 0)), int(reward.get("energy", 0))])
+	_show_toast(L10n.text("구조 상자 획득!  ★ %d  ♥ %d") % [int(reward.get("stardust", 0)), int(reward.get("energy", 0))])
 
 
 func _close_daily_mission_popup() -> void:
@@ -1818,8 +1823,8 @@ func _claim_weekly_reward() -> void:
 	if reward.is_empty():
 		return
 	_close_daily_mission_popup()
-	stardust_label.text = ("%s" if (ArtDirection.is_botanical() or ArtDirection.is_night()) else "★ %s") % _format_number(main.save.get_stardust())
-	_show_toast("주간 구조 작전 완료!  ★ %d" % int(reward.get("stardust", 0)))
+	stardust_label.text = L10n.text(("%s" if (ArtDirection.is_botanical() or ArtDirection.is_night()) else "★ %s") % _format_number(main.save.get_stardust()))
+	_show_toast(L10n.text("주간 구조 작전 완료!  ★ %d") % int(reward.get("stardust", 0)))
 	_show_daily_mission_popup()
 
 
@@ -1828,8 +1833,8 @@ func _claim_season_reward(target: int) -> void:
 	if reward.is_empty():
 		return
 	_close_daily_mission_popup()
-	stardust_label.text = ("%s" if (ArtDirection.is_botanical() or ArtDirection.is_night()) else "★ %s") % _format_number(main.save.get_stardust())
-	_show_toast("시즌 ★ %d 보상 획득!" % target)
+	stardust_label.text = L10n.text(("%s" if (ArtDirection.is_botanical() or ArtDirection.is_night()) else "★ %s") % _format_number(main.save.get_stardust()))
+	_show_toast(L10n.text("시즌 ★ %d 보상 획득!") % target)
 	_show_daily_mission_popup()
 
 
@@ -1855,22 +1860,22 @@ func _dex_entry_card(entry: Dictionary) -> PanelContainer:
 	copy.alignment = BoxContainer.ALIGNMENT_CENTER
 	row.add_child(copy)
 	var name_label := Label.new()
-	name_label.text = String(entry.get("name", "???")) if discovered else "아직 만나지 못했어요"
+	name_label.text = L10n.text(String(entry.get("name", "???"))) if discovered else L10n.text("아직 만나지 못했어요")
 	name_label.add_theme_font_size_override("font_size", 19)
 	name_label.add_theme_color_override("font_color", ArtDirection.text_color(Color("#523764") if discovered else Color("#837b89")))
 	copy.add_child(name_label)
 	var habitat := Label.new()
-	habitat.text = String(entry.get("habitat", "")) if discovered else "모험에서 구조해 주세요"
+	habitat.text = L10n.text(String(entry.get("habitat", ""))) if discovered else L10n.text("모험에서 구조해 주세요")
 	habitat.add_theme_font_size_override("font_size", 14)
 	habitat.add_theme_color_override("font_color", ArtDirection.ink())
 	copy.add_child(habitat)
 	var count := Label.new()
-	count.text = "구조 %d · %s" % [main.save.get_jelly_capture_count(color_id), "샤이니 발견" if main.save.has_discovered_shiny(color_id) else "샤이니 미발견"] if discovered else "???"
+	count.text = L10n.text("구조 %d · %s") % [main.save.get_jelly_capture_count(color_id), L10n.text("샤이니 발견") if main.save.has_discovered_shiny(color_id) else L10n.text("샤이니 미발견")] if discovered else "???"
 	count.add_theme_font_size_override("font_size", 14)
 	count.add_theme_color_override("font_color", ArtDirection.text_color(Color("#b35f75") if discovered else Color("#99929f")))
 	copy.add_child(count)
 	var personality := Label.new()
-	personality.text = String(entry.get("personality", "")) if discovered else ""
+	personality.text = L10n.text(String(entry.get("personality", ""))) if discovered else ""
 	personality.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	personality.add_theme_font_size_override("font_size", 13)
 	personality.add_theme_color_override("font_color", ArtDirection.ink())
@@ -1899,13 +1904,13 @@ func _show_jelly_dex() -> void:
 	content.add_theme_constant_override("separation", 10)
 	card.add_child(content)
 	var title := Label.new()
-	title.text = "젤리몬 구조 도감"
+	title.text = L10n.text("젤리몬 구조 도감")
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", 34)
 	title.add_theme_color_override("font_color", ArtDirection.ink())
 	content.add_child(title)
 	var status := Label.new()
-	status.text = "발견 %d / %d · 초상화를 누르면 언제든 다시 볼 수 있어요" % [main.save.get_discovered_jelly_count(), JellyDexCatalogLib.entries().size()]
+	status.text = L10n.text("발견 %d / %d · 초상화를 누르면 언제든 다시 볼 수 있어요") % [main.save.get_discovered_jelly_count(), JellyDexCatalogLib.entries().size()]
 	status.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	status.add_theme_font_size_override("font_size", 17)
 	status.add_theme_color_override("font_color", ArtDirection.ink())
@@ -1924,7 +1929,7 @@ func _show_jelly_dex() -> void:
 	for milestone in JellyDexCatalogLib.milestones():
 		var needed := int(milestone.get("count", 0))
 		var reward := int(milestone.get("stardust", 0))
-		var button := _button("%d종\n★ %d" % [needed, reward], Color("#5dbb82") if main.save.has_claimed_dex_milestone(needed) else Color("#e49a43"), Vector2(120, 70), 17)
+		var button := _button(L10n.text("%d종\n★ %d") % [needed, reward], Color("#5dbb82") if main.save.has_claimed_dex_milestone(needed) else Color("#e49a43"), Vector2(120, 70), 17)
 		button.disabled = main.save.has_claimed_dex_milestone(needed) or main.save.get_discovered_jelly_count() < needed
 		button.pressed.connect(func(): _claim_dex_reward(needed, reward))
 		rewards.add_child(button)
@@ -1938,8 +1943,8 @@ func _claim_dex_reward(count: int, reward: int) -> void:
 		return
 	_close_jelly_dex()
 	if stardust_label:
-		stardust_label.text = ("%s" if (ArtDirection.is_botanical() or ArtDirection.is_night()) else "★ %s") % _format_number(main.save.get_stardust())
-	_show_toast("도감 %d종 보상!  ★ %d" % [count, reward])
+		stardust_label.text = L10n.text(("%s" if (ArtDirection.is_botanical() or ArtDirection.is_night()) else "★ %s") % _format_number(main.save.get_stardust()))
+	_show_toast(L10n.text("도감 %d종 보상!  ★ %d") % [count, reward])
 	_show_jelly_dex()
 
 
@@ -1970,18 +1975,18 @@ func _build_navigation() -> void:
 	nav_bar.add_child(button_center)
 	button_center.add_child(buttons)
 	var nav_color := ArtDirection.panel_color() if ArtDirection.is_night() else Color("#fff9ee")
-	var adventure := _nav_button("adventure", "지도", nav_color, 146)
+	var adventure := _nav_button("adventure", L10n.text("지도"), nav_color, 146)
 	adventure.pressed.connect(func(): main.show_map())
 	buttons.add_child(adventure)
-	var decorate := _nav_button("decorate", "꾸미기", nav_color, 146)
+	var decorate := _nav_button("decorate", L10n.text("꾸미기"), nav_color, 146)
 	decorate.pressed.connect(_enter_edit_mode)
-	_apply_feature_lock(decorate, "decorate", "꾸미기")
+	_apply_feature_lock(decorate, "decorate", L10n.text("꾸미기"))
 	buttons.add_child(decorate)
-	var shop := _nav_button("shop", "상점", nav_color, 146)
+	var shop := _nav_button("shop", L10n.text("상점"), nav_color, 146)
 	shop.pressed.connect(_show_shop_popup)
-	_apply_feature_lock(shop, "shop", "상점")
+	_apply_feature_lock(shop, "shop", L10n.text("상점"))
 	buttons.add_child(shop)
-	var menu := _nav_button("menu", "메뉴", nav_color, 146)
+	var menu := _nav_button("menu", L10n.text("메뉴"), nav_color, 146)
 	menu.pressed.connect(_show_home_menu)
 	buttons.add_child(menu)
 
@@ -1991,10 +1996,10 @@ func _apply_feature_lock(button: Button, feature_id: String, label_text: String)
 		return
 	var unlock_level: int = main.save.home_feature_unlock_level(feature_id)
 	button.disabled = true
-	button.tooltip_text = "LEVEL %d 클리어 후 %s 기능이 열려요" % [unlock_level, label_text]
+	button.tooltip_text = L10n.text("LEVEL %d 클리어 후 %s 기능이 열려요") % [unlock_level, label_text]
 	button.modulate = Color(0.68, 0.72, 0.82, 0.92)
 	var badge := Label.new()
-	badge.text = "🔒 LEVEL %d" % unlock_level
+	badge.text = L10n.text("🔒 LEVEL %d" % unlock_level)
 	badge.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	badge.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
@@ -2008,7 +2013,7 @@ func _apply_feature_lock(button: Button, feature_id: String, label_text: String)
 
 
 func _set_preference_switch_style(toggle: Button, enabled: bool, accent: Color) -> void:
-	toggle.text = "ON   ●" if enabled else "●   OFF"
+	toggle.text = L10n.text("ON   ●" if enabled else "●   OFF")
 	var fill := ArtDirection.selected_color() if enabled else ArtDirection.disabled_color()
 	var border := accent.darkened(0.28) if enabled else Color("#756b80")
 	var normal := _panel_style(fill, border, 24)
@@ -2042,7 +2047,7 @@ func _preference_row(label_text: String, enabled: bool, accent: Color) -> Dictio
 	row.add_theme_constant_override("separation", 12)
 	row_panel.add_child(row)
 	var label := Label.new()
-	label.text = tr(label_text)
+	label.text = L10n.text(tr(label_text))
 	label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	label.add_theme_font_size_override("font_size", 21)
@@ -2070,7 +2075,7 @@ func _language_preference_row() -> Dictionary:
 	row.add_theme_constant_override("separation", 12)
 	row_panel.add_child(row)
 	var label := Label.new()
-	label.text = tr("언어")
+	label.text = L10n.text(tr("언어"))
 	label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	label.add_theme_font_size_override("font_size", 21)
@@ -2122,13 +2127,13 @@ func _show_home_menu() -> void:
 	content.add_theme_constant_override("separation", 10)
 	card.add_child(content)
 	var heading := Label.new()
-	heading.text = tr("젤리 메뉴")
+	heading.text = L10n.text(tr("젤리 메뉴"))
 	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	heading.add_theme_font_size_override("font_size", 35)
 	heading.add_theme_color_override("font_color", ArtDirection.ink())
 	content.add_child(heading)
 	var settings_title := Label.new()
-	settings_title.text = tr("환경 설정")
+	settings_title.text = L10n.text(tr("환경 설정"))
 	settings_title.add_theme_font_size_override("font_size", 23)
 	settings_title.add_theme_color_override("font_color", ArtDirection.danger_color())
 	content.add_child(settings_title)
@@ -2140,9 +2145,9 @@ func _show_home_menu() -> void:
 	settings_rows.alignment = BoxContainer.ALIGNMENT_CENTER
 	settings_rows.add_theme_constant_override("separation", 7)
 	settings_panel.add_child(settings_rows)
-	var sound_data := _preference_row("효과음", main.save.sound_enabled, Color("#e16388"))
-	var haptics_data := _preference_row("진동", main.save.haptics_enabled, Color("#6f9ed7"))
-	var notifications_data := _preference_row("알림", main.save.notifications_enabled, Color("#8c68c7"))
+	var sound_data := _preference_row(L10n.text("효과음"), main.save.sound_enabled, Color("#e16388"))
+	var haptics_data := _preference_row(L10n.text("진동"), main.save.haptics_enabled, Color("#6f9ed7"))
+	var notifications_data := _preference_row(L10n.text("알림"), main.save.notifications_enabled, Color("#8c68c7"))
 	var language_data := _language_preference_row()
 	var sound: Button = sound_data.toggle
 	var haptics: Button = haptics_data.toggle
@@ -2181,14 +2186,14 @@ func _show_home_menu() -> void:
 	account_row.add_theme_constant_override("separation", 10)
 	account_box.add_child(account_row)
 	var account_status := Label.new()
-	account_status.text = main.platform.status_text() if main.platform else "플랫폼 연결 대기"
+	account_status.text = L10n.text(main.platform.status_text() if main.platform else L10n.text("플랫폼 연결 대기"))
 	account_status.custom_minimum_size = Vector2(320, 48)
 	account_status.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	account_status.add_theme_font_size_override("font_size", 17)
 	account_status.add_theme_color_override("font_color", ArtDirection.ink())
 	account_row.add_child(account_status)
 	var service_detail := Label.new()
-	service_detail.text = main.platform.service_detail_text() if main.platform else "플랫폼 서비스 준비 중"
+	service_detail.text = L10n.text(main.platform.service_detail_text() if main.platform else L10n.text("플랫폼 서비스 준비 중"))
 	service_detail.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	service_detail.add_theme_font_size_override("font_size", 14)
 	service_detail.add_theme_color_override("font_color", ArtDirection.ink())
@@ -2196,17 +2201,17 @@ func _show_home_menu() -> void:
 	login.name = "AccountConnectionButton"
 	login.disabled = not main.platform.native_available if main.platform else true
 	if main.platform and not main.platform.native_available:
-		login.text = "Hive 미포함"
+		login.text = L10n.text("Hive 미포함")
 	var refresh_account := func(_connected: bool, _id: String):
 		if not is_instance_valid(login): return
-		login.text = tr("연결 해제") if main.platform.logged_in else tr("계정 연결")
+		login.text = L10n.text(tr("연결 해제") if main.platform.logged_in else tr("계정 연결"))
 		login.disabled = main.platform.account_disconnect_pending
-		account_status.text = main.platform.status_text()
-		service_detail.text = main.platform.service_detail_text()
+		account_status.text = L10n.text(main.platform.status_text())
+		service_detail.text = L10n.text(main.platform.service_detail_text())
 	var login_error := func(message: String):
 		if not is_instance_valid(login): return
-		account_status.text = message
-		login.text = tr("계정 연결")
+		account_status.text = L10n.text(message)
+		login.text = L10n.text(tr("계정 연결"))
 		login.disabled = false
 	if main.platform:
 		main.platform.login_changed.connect(refresh_account)
@@ -2222,9 +2227,9 @@ func _show_home_menu() -> void:
 			_show_account_disconnect()
 			return
 		login.disabled = true
-		login.text = tr("연결 중...")
-		account_status.text = "HIVE 로그인 화면을 준비하고 있어요"
-		if not main.platform.login(): login_error.call("로그인을 시작하지 못했습니다.")
+		login.text = L10n.text(tr("연결 중..."))
+		account_status.text = L10n.text("HIVE 로그인 화면을 준비하고 있어요")
+		if not main.platform.login(): login_error.call(L10n.text("로그인을 시작하지 못했습니다."))
 	)
 	account_row.add_child(login)
 	if main.platform:
@@ -2236,14 +2241,14 @@ func _show_home_menu() -> void:
 				main.platform.cloud_state_changed.disconnect(refresh_cloud)
 		)
 	account_box.add_child(service_detail)
-	var cloud_button := _button("클라우드 저장 / 복원", ArtDirection.panel_color(), Vector2(300, 44), 17)
+	var cloud_button := _button(L10n.text("클라우드 저장 / 복원"), ArtDirection.panel_color(), Vector2(300, 44), 17)
 	cloud_button.pressed.connect(func(): main.adventure_cloud.request_sync())
 	account_box.add_child(cloud_button)
 	var divider := HSeparator.new()
 	divider.custom_minimum_size.y = 5
 	content.add_child(divider)
 	var mail_title := Label.new()
-	mail_title.text = tr("우편함")
+	mail_title.text = L10n.text(tr("우편함"))
 	mail_title.add_theme_font_size_override("font_size", 23)
 	mail_title.add_theme_color_override("font_color", ArtDirection.danger_color())
 	content.add_child(mail_title)
@@ -2258,25 +2263,25 @@ func _show_home_menu() -> void:
 		copy.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		row.add_child(copy)
 		var mail_name := Label.new()
-		mail_name.text = String(mail.get("title", "선물 우편"))
+		mail_name.text = L10n.text(String(mail.get("title", L10n.text("선물 우편"))))
 		mail_name.add_theme_font_size_override("font_size", 19)
 		mail_name.add_theme_color_override("font_color", ArtDirection.ink())
 		copy.add_child(mail_name)
 		var mail_body := Label.new()
-		mail_body.text = "%s  ·  ★ %d  ♥ %d" % [String(mail.get("body", "")), int(mail.get("stardust", 0)), int(mail.get("energy", 0))]
+		mail_body.text = L10n.text("%s  ·  ★ %d  ♥ %d" % [L10n.text(String(mail.get("body", ""))), int(mail.get("stardust", 0)), int(mail.get("energy", 0))])
 		mail_body.add_theme_font_size_override("font_size", 14)
 		mail_body.add_theme_color_override("font_color", ArtDirection.ink())
 		mail_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		copy.add_child(mail_body)
 		var mail_id := String(mail.get("id", ""))
 		var claimed: bool = main.save.has_claimed_mail(mail_id)
-		var receive := _button(tr("수령 완료") if claimed else "받기", Color("#76ae7d") if claimed else Color("#e98948"), Vector2(118, 58), 19)
+		var receive := _button(tr("수령 완료") if claimed else L10n.text("받기"), Color("#76ae7d") if claimed else Color("#e98948"), Vector2(118, 58), 19)
 		receive.disabled = claimed
 		receive.pressed.connect(func(): _claim_home_mail(mail))
 		row.add_child(receive)
 		content.add_child(mail_row)
 	var notice_title := Label.new()
-	notice_title.text = "공지"
+	notice_title.text = L10n.text("공지")
 	notice_title.add_theme_font_size_override("font_size", 23)
 	notice_title.add_theme_color_override("font_color", ArtDirection.ink())
 	content.add_child(notice_title)
@@ -2287,12 +2292,12 @@ func _show_home_menu() -> void:
 		var notice_copy := VBoxContainer.new()
 		notice_card.add_child(notice_copy)
 		var notice_name := Label.new()
-		notice_name.text = "%s  ·  %s" % [String(notice.get("title", "공지")), String(notice.get("date", ""))]
+		notice_name.text = L10n.text("%s  ·  %s" % [L10n.text(String(notice.get("title", L10n.text("공지")))), L10n.text(String(notice.get("date", "")))])
 		notice_name.add_theme_font_size_override("font_size", 17)
 		notice_name.add_theme_color_override("font_color", ArtDirection.ink())
 		notice_copy.add_child(notice_name)
 		var notice_body := Label.new()
-		notice_body.text = String(notice.get("body", ""))
+		notice_body.text = L10n.text(String(notice.get("body", "")))
 		notice_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		notice_body.add_theme_font_size_override("font_size", 14)
 		notice_body.add_theme_color_override("font_color", ArtDirection.ink())
@@ -2309,9 +2314,9 @@ func _claim_home_mail(mail: Dictionary) -> void:
 	G.haptic(20)
 	_close_home_menu()
 	if stardust_label:
-		stardust_label.text = ("%s" if (ArtDirection.is_botanical() or ArtDirection.is_night()) else "★ %s") % _format_number(main.save.get_stardust())
+		stardust_label.text = L10n.text(("%s" if (ArtDirection.is_botanical() or ArtDirection.is_night()) else "★ %s") % _format_number(main.save.get_stardust()))
 	_refresh_home_energy()
-	_show_toast("우편 선물 수령!  ★ %d  ♥ %d" % [int(mail.get("stardust", 0)), int(mail.get("energy", 0))])
+	_show_toast(L10n.text("우편 선물 수령!  ★ %d  ♥ %d") % [int(mail.get("stardust", 0)), int(mail.get("energy", 0))])
 	_show_home_menu()
 
 
@@ -2319,11 +2324,11 @@ func _show_account_disconnect() -> void:
 	if ui_layer.has_node("AccountDisconnectDialog"): return
 	var dialog := preload("res://scripts/AccountResetDialog.gd").new()
 	dialog.name = "AccountDisconnectDialog"
-	dialog.heading_text = "계정 연결 해제"
-	dialog.action_text = "연결 해제"
+	dialog.heading_text = L10n.text("계정 연결 해제")
+	dialog.action_text = L10n.text("연결 해제")
 	var is_guest: bool = main.platform.is_guest_account()
-	dialog.scope_text = ("게스트 Hive 계정을 삭제하고 연결을 해제합니다. 기존 게스트 계정으로 다시 로그인할 수 없습니다." if is_guest else "현재 Hive 계정에서 로그아웃합니다. 연결된 Google 등의 계정은 삭제되지 않습니다.")
-	dialog.scope_text += "\n연결 해제가 완료되면 이 기기의 진행도, 재화, 가구, 닉네임과 설정이 모두 초기화됩니다. 이 작업은 되돌릴 수 없습니다. Hive 클라우드와 랭킹 서버에 저장된 기록은 삭제하지 않습니다."
+	dialog.scope_text = (L10n.text("게스트 Hive 계정을 삭제하고 연결을 해제합니다. 기존 게스트 계정으로 다시 로그인할 수 없습니다.") if is_guest else L10n.text("현재 Hive 계정에서 로그아웃합니다. 연결된 Google 등의 계정은 삭제되지 않습니다."))
+	dialog.scope_text += L10n.text("\n연결 해제가 완료되면 이 기기의 진행도, 재화, 가구, 닉네임과 설정이 모두 초기화됩니다. 이 작업은 되돌릴 수 없습니다. Hive 클라우드와 랭킹 서버에 저장된 기록은 삭제하지 않습니다.")
 	ui_layer.add_child(dialog)
 	var completed := func(success: bool, message: String):
 		if not is_instance_valid(dialog): return
@@ -2341,7 +2346,7 @@ func _show_account_disconnect() -> void:
 		if DisplayServer.has_feature(DisplayServer.FEATURE_VIRTUAL_KEYBOARD):
 			DisplayServer.virtual_keyboard_hide()
 		if not main.platform.disconnect_account(dialog.input.text, is_guest):
-			dialog.show_error("연결 해제를 시작하지 못했습니다. 로그인 상태와 앱 버전을 확인해 주세요.")
+			dialog.show_error(L10n.text("연결 해제를 시작하지 못했습니다. 로그인 상태와 앱 버전을 확인해 주세요."))
 	)
 
 
@@ -2361,25 +2366,16 @@ func _next_level_index() -> int:
 func _next_resident_text() -> String:
 	var count: int = main.save.get_rescued_jellies().size()
 	if count >= 6:
-		return "주민 6/6 · 모두 구조했어요"
+		return L10n.text("주민 6/6 · 모두 구조했어요")
 	var target_level := count * 10 + 1
-	return "다음 친구 · LEVEL %d에서 만나요" % target_level
-
-
-func _growth_goal_text() -> String:
-	var stage := RoomData.growth_stage(main.save)
-	var stars := RoomData.total_stars(main.save)
-	if stage >= RoomData.max_growth_stage():
-		return "최종 성장 완료 · 별 %d" % stars
-	var target := RoomData.next_growth_stars(stage)
-	return "다음 성장까지 ★ %d" % maxi(0, target - stars)
+	return L10n.text("다음 친구 · LEVEL %d에서 만나요") % target_level
 
 
 func _build_next_adventure_card() -> void:
 	var idx := _next_level_index()
 	var level: Dictionary = Levels.get_level(idx)
 	var chapter := clampi(idx / 10, 0, Levels.CHAPTER_NAMES.size() - 1)
-	var chapter_name := String(Levels.CHAPTER_NAMES[chapter])
+	var chapter_name := L10n.text(String(L10n.text(Levels.CHAPTER_NAMES[chapter])))
 	var card := Control.new()
 	card.name = "NextAdventureCard"
 	card.position = Vector2(24, 920)
@@ -2391,7 +2387,7 @@ func _build_next_adventure_card() -> void:
 	strip.add_theme_stylebox_override("panel", _home_surface())
 	strip.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	card.add_child(strip)
-	var level_name := String(level.get("name", "다음 구조")).trim_prefix(chapter_name + " · ")
+	var level_name := L10n.text(String(level.get("name", L10n.text("다음 구조")))).trim_prefix(chapter_name + " · ")
 	strip.add_child(_home_label(tr("LEVEL %d  ·  %s") % [idx + 1, tr(level_name)], Vector2(18, 6), Vector2(470, 42), 24))
 	var stars := 0
 	for level_index in range(chapter * 10, mini(chapter * 10 + 10, Levels.level_count())):
@@ -2399,7 +2395,7 @@ func _build_next_adventure_card() -> void:
 	strip.add_child(_home_label("★ %d/30" % stars, Vector2(526, 6), Vector2(128, 42), 23))
 	adventure_button = _home_button(tr("모험 시작  ▶"), Vector2(672, 100), 36)
 	adventure_button.position = Vector2(0, 66)
-	adventure_button.tooltip_text = "LEVEL %d 바로 시작" % (idx + 1)
+	adventure_button.tooltip_text = L10n.text("LEVEL %d 바로 시작") % (idx + 1)
 	for state in ["normal", "hover", "pressed", "focus"]:
 		adventure_button.add_theme_stylebox_override(state, _home_surface(ArtDirection.primary_pressed() if state == "pressed" else ArtDirection.primary_color(), 36))
 	for state in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]:
@@ -2430,7 +2426,7 @@ func _refresh_room() -> void:
 	_refresh_characters()
 	var info := ui_layer.find_child("ResidentInfo", true, false) as Label
 	if info:
-		info.text = _next_resident_text()
+		info.text = L10n.text(_next_resident_text())
 
 
 func _refresh_furniture() -> void:
@@ -2475,7 +2471,7 @@ func _refresh_characters() -> void:
 	var growth_badge := RoomData.growth_badge(stage)
 	if not growth_badge.is_empty():
 		var badge := Label.new()
-		badge.text = growth_badge
+		badge.text = L10n.text(growth_badge)
 		badge.position = Vector2(329, 492 - mini(stage, 7) * 4)
 		badge.size = Vector2(64, 64)
 		badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -2504,7 +2500,7 @@ func _refresh_characters() -> void:
 		resident_home_positions[resident.get_instance_id()] = resident.position
 		if bond_level >= 3:
 			var bond_badge := Label.new()
-			bond_badge.text = "♥%d" % bond_level
+			bond_badge.text = L10n.text("♥%d" % bond_level)
 			bond_badge.position = resident.position + Vector2(-34, -64)
 			bond_badge.size = Vector2(68, 28)
 			bond_badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -2515,7 +2511,7 @@ func _refresh_characters() -> void:
 			bond_badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			bond_badge.z_index = resident.z_index + 1
 			character_layer.add_child(bond_badge)
-		_play_resident_idle(resident, String(record.get("trait", "kind")), i % 3)
+		_play_resident_idle(resident, L10n.text(String(record.get("trait", "kind"))), i % 3)
 
 
 func _start_resident_life() -> void:
@@ -2557,7 +2553,7 @@ func _play_resident_idle(resident: Sprite2D, trait_id: String, variant_index: in
 
 func _speech_bubble(text: String, position_at: Vector2) -> void:
 	var bubble := Label.new()
-	bubble.text = text
+	bubble.text = L10n.text(text)
 	bubble.position = position_at - Vector2(105, 78)
 	bubble.size = Vector2(210, 58)
 	bubble.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -2583,12 +2579,12 @@ func _play_random_resident_interaction() -> void:
 		return
 	if randf() < 0.34:
 		var solo: Sprite2D = resident_nodes.pick_random()
-		_play_resident_idle(solo, String((solo.get_meta("record") as Dictionary).get("trait", "kind")), randi_range(0, 2))
+		_play_resident_idle(solo, L10n.text(String((solo.get_meta("record") as Dictionary).get("trait", "kind"))), randi_range(0, 2))
 		return
 	if resident_nodes.size() == 1:
 		var only: Sprite2D = resident_nodes[0]
 		var record: Dictionary = only.get_meta("record")
-		_speech_bubble(String(CharacterCatalog.profile(String(record.color)).get("greeting", "말랑!")), only.position)
+		_speech_bubble(String(CharacterCatalog.profile(String(record.color)).get("greeting", L10n.text("말랑!"))), only.position)
 		return
 	var first: Sprite2D = resident_nodes.pick_random()
 	var second: Sprite2D = resident_nodes.pick_random()
@@ -2599,7 +2595,7 @@ func _play_random_resident_interaction() -> void:
 	var chosen: Dictionary = CharacterCatalog.interactions()[0]
 	for interaction in CharacterCatalog.interactions():
 		var traits: Array = interaction.get("traits", [])
-		if traits.is_empty() or (traits.has(String(a.trait)) and traits.has(String(b.trait))):
+		if traits.is_empty() or (traits.has(L10n.text(String(a.trait))) and traits.has(L10n.text(String(b.trait)))):
 			chosen = interaction
 			if not traits.is_empty():
 				break
@@ -2614,15 +2610,15 @@ func _play_random_resident_interaction() -> void:
 	tw2.tween_property(second, "position", midpoint + Vector2(28, 0), 0.45).set_trans(Tween.TRANS_BACK)
 	tw2.tween_interval(1.7)
 	tw2.tween_property(second, "position", second_home, 0.42).set_trans(Tween.TRANS_SINE)
-	_speech_bubble(String(chosen.get("text", "친구와 함께 놀아요!")), midpoint)
+	_speech_bubble(L10n.text(String(chosen.get("text", L10n.text("친구와 함께 놀아요!")))), midpoint)
 	main.save.record_resident_interaction(String(a.id), String(b.id), String(chosen.get("id", "greeting")))
-	main.save.add_album_memory("interaction", String(chosen.get("text", "친구와 함께 놀아요!")), [String(a.id), String(b.id)])
+	main.save.add_album_memory("interaction", L10n.text(String(chosen.get("text", "친구와 함께 놀아요!"))), [String(a.id), String(b.id)])
 
 
 func _play_furniture_behavior() -> void:
 	var resident: Sprite2D = resident_nodes.pick_random()
 	var record: Dictionary = resident.get_meta("record")
-	var favorite := String(record.get("favorite_furniture", ""))
+	var favorite := L10n.text(String(record.get("favorite_furniture", "")))
 	var furniture: RoomFurniture = null
 	for candidate in furniture_nodes:
 		if favorite != "" and String(candidate.item.get("id", "")) == favorite:
@@ -2635,20 +2631,20 @@ func _play_furniture_behavior() -> void:
 				exclusive_furniture.append(candidate)
 		furniture = exclusive_furniture.pick_random() if not exclusive_furniture.is_empty() and randf() < 0.68 else furniture_nodes.pick_random()
 	var item_id := String(furniture.item.get("id", "furniture"))
-	var item_name := String(furniture.item.get("name", "가구"))
+	var item_name := L10n.text(String(furniture.item.get("name", L10n.text("가구"))))
 	var lines := {
-		"cushion_r": "폭신폭신, 구름 같아!",
-		"lamp_y": "별빛을 세어 볼까?",
-		"table_b": "소다 한 모금, 톡톡!",
-		"shelf_g": "새싹에게 인사했어!",
-		"sofa_p": "소파에서 말랑 휴식!",
-		"bench_o": "귤 향기가 솔솔 나!",
-		"ach_first": "우리의 첫 만남이야!",
+		"cushion_r": L10n.text("폭신폭신, 구름 같아!"),
+		"lamp_y": L10n.text("별빛을 세어 볼까?"),
+		"table_b": L10n.text("소다 한 모금, 톡톡!"),
+		"shelf_g": L10n.text("새싹에게 인사했어!"),
+		"sofa_p": L10n.text("소파에서 말랑 휴식!"),
+		"bench_o": L10n.text("귤 향기가 솔솔 나!"),
+		"ach_first": L10n.text("우리의 첫 만남이야!"),
 	}
-	var line := String(furniture.item.get("reaction", lines.get(item_id, "%s이(가) 마음에 들어!" % item_name)))
+	var line := L10n.text(String(furniture.item.get("reaction", lines.get(item_id, L10n.text("%s이(가) 마음에 들어!") % item_name))))
 	var bond_level: int = main.save.get_resident_bond_level(record)
 	if bond_level >= 5 and bool(furniture.item.get("package_exclusive", false)):
-		line = "우리만의 추억이 또 생겼어! " + line
+		line = L10n.text("우리만의 추억이 또 생겼어! ") + line
 	var home: Vector2 = resident_home_positions.get(resident.get_instance_id(), resident.position)
 	var destination := furniture.interaction_point() + Vector2(0, 42)
 	var tw := resident.create_tween()
@@ -2694,7 +2690,7 @@ func _placement_valid(candidate: Dictionary, ignored_index: int) -> bool:
 
 func _enter_edit_mode() -> void:
 	if not main.save.home_feature_unlocked("decorate"):
-		_show_toast("LEVEL %d 클리어 후 꾸미기가 열려요" % main.save.home_feature_unlock_level("decorate"))
+		_show_toast(L10n.text("LEVEL %d 클리어 후 꾸미기가 열려요") % main.save.home_feature_unlock_level("decorate"))
 		return
 	if edit_mode:
 		return
@@ -2749,28 +2745,28 @@ func _build_palette() -> void:
 	tools.add_theme_constant_override("separation", 8)
 	box.add_child(tools)
 	var guide := Label.new()
-	guide.text = "가구 배치"
+	guide.text = L10n.text("가구 배치")
 	guide.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	guide.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	guide.add_theme_font_size_override("font_size", 21)
 	guide.add_theme_color_override("font_color", ArtDirection.ink())
 	tools.add_child(guide)
-	var rotate := _button("회전", Color("#6daed5"), Vector2(70, 54), 18)
+	var rotate := _button(L10n.text("회전"), Color("#6daed5"), Vector2(70, 54), 18)
 	rotate.disabled = selected_index < 0
 	rotate.pressed.connect(_rotate_selected)
 	tools.add_child(rotate)
-	var remove := _button("치우기", Color("#b883a5"), Vector2(78, 54), 17)
+	var remove := _button(L10n.text("치우기"), Color("#b883a5"), Vector2(78, 54), 17)
 	remove.disabled = selected_index < 0
 	remove.pressed.connect(_remove_selected)
 	tools.add_child(remove)
-	var album := _button("앨범", Color("#7454aa"), Vector2(78, 54), 18)
+	var album := _button(L10n.text("앨범"), Color("#7454aa"), Vector2(78, 54), 18)
 	album.pressed.connect(_show_album)
 	if not main.save.home_feature_unlocked("album"):
 		album.disabled = true
-		album.text = "🔒L%d" % main.save.home_feature_unlock_level("album")
-		album.tooltip_text = "LEVEL %d 클리어 후 첫 추억 앨범이 열려요" % main.save.home_feature_unlock_level("album")
+		album.text = L10n.text("🔒L%d" % main.save.home_feature_unlock_level("album"))
+		album.tooltip_text = L10n.text("LEVEL %d 클리어 후 첫 추억 앨범이 열려요") % main.save.home_feature_unlock_level("album")
 	tools.add_child(album)
-	var photo := _button("촬영", Color("#d65e91"), Vector2(78, 54), 18)
+	var photo := _button(L10n.text("촬영"), Color("#d65e91"), Vector2(78, 54), 18)
 	photo.pressed.connect(_enter_photo_mode)
 	tools.add_child(photo)
 	var done := _button(tr("완료"), Color("#65bd77"), Vector2(70, 54), 19)
@@ -2780,12 +2776,12 @@ func _build_palette() -> void:
 	themes.add_theme_constant_override("separation", 8)
 	box.add_child(themes)
 	for theme in RoomData.ROOM_THEMES:
-		var theme_button := _home_button(tr(String(theme.name)), Vector2(208, 44), 18)
+		var theme_button := _home_button(tr(L10n.text(String(theme.name))), Vector2(208, 44), 18)
 		theme_button.name = "EditorTheme_" + String(theme.id)
 		var unlocked: bool = main.save.is_room_theme_unlocked(String(theme.id))
 		theme_button.disabled = not unlocked or main.save.get_room_theme() == theme.id
 		if not unlocked:
-			theme_button.text = tr(String(theme.name)) + "\n%d레벨 클리어 후 해금" % int(theme.unlock_level)
+			theme_button.text = L10n.text(tr(L10n.text(String(theme.name))) + L10n.text("\n%d레벨 클리어 후 해금") % int(theme.unlock_level))
 			theme_button.add_theme_font_size_override("font_size", 15)
 		theme_button.pressed.connect(_select_room_theme.bind(String(theme.id)))
 		themes.add_child(theme_button)
@@ -2811,9 +2807,9 @@ func _build_palette() -> void:
 			if placement.id == item.id:
 				already_placed = true
 				break
-		var label := String(item.name)
+		var label := L10n.text(String(item.name))
 		var button := _home_button("", Vector2(126, 100), 16)
-		button.tooltip_text = tr(label)
+		button.tooltip_text = L10n.text(tr(label))
 		var preview := TextureRect.new()
 		preview.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		preview.texture = FurnitureArtLib.texture(String(item.id))
@@ -2851,7 +2847,7 @@ func _add_furniture(id: String) -> void:
 				_refresh_furniture()
 				_build_palette()
 				return
-	_show_toast("놓을 공간이 부족해요")
+	_show_toast(L10n.text("놓을 공간이 부족해요"))
 
 
 func _rotate_selected() -> void:
@@ -2865,7 +2861,7 @@ func _rotate_selected() -> void:
 		main.save.set_room_placements(placements)
 		_refresh_furniture()
 	else:
-		_show_toast("회전할 공간이 없어요")
+		_show_toast(L10n.text("회전할 공간이 없어요"))
 
 
 func _remove_selected() -> void:
@@ -2907,7 +2903,7 @@ func _resident_touch_react(resident: Sprite2D) -> void:
 	var record: Dictionary = resident.get_meta("record")
 	var profile := CharacterCatalog.profile(String(record.get("color", "R")))
 	var reactions: Array = profile.get("touch", ["smile"])
-	var reaction := String(reactions[randi() % reactions.size()])
+	var reaction := L10n.text(String(reactions[randi() % reactions.size()]))
 	var resident_id := resident.get_instance_id()
 	var previous = _resident_touch_tweens.get(resident_id)
 	if previous is Tween and previous.is_valid():
@@ -2925,7 +2921,7 @@ func _resident_touch_react(resident: Sprite2D) -> void:
 	else:
 		tw.tween_property(resident, "position", home + Vector2(0, -25), 0.16).set_trans(Tween.TRANS_QUAD)
 		tw.tween_property(resident, "position", home, 0.28).set_trans(Tween.TRANS_BOUNCE)
-	_speech_bubble(String(profile.get("greeting", "반가워요!")), home)
+	_speech_bubble(L10n.text(String(profile.get("greeting", L10n.text("반가워요!")))), home)
 	var bond_gain: Dictionary = main.save.add_resident_affection(String(record.get("id", "")), 1)
 	_record_bond_analytics(record, bond_gain)
 	main.audio.play("pop", 1.12)
@@ -3000,7 +2996,7 @@ func _hero_react() -> void:
 	if hero.texture:
 		hero_half_height = float(hero.texture.get_height()) * absf(hero.scale.y) * 0.5
 	var speech_anchor := home - Vector2(0, hero_half_height + 14.0)
-	_speech_bubble(["말랑!", "오늘도 같이 모험해요!", "방이 정말 포근해요!"][randi() % 3], speech_anchor)
+	_speech_bubble([L10n.text("말랑!"), L10n.text("오늘도 같이 모험해요!"), L10n.text("방이 정말 포근해요!")][randi() % 3], speech_anchor)
 
 
 func _show_album() -> void:
@@ -3023,14 +3019,14 @@ func _show_album() -> void:
 	box.add_theme_constant_override("separation", 10)
 	panel.add_child(box)
 	var title := Label.new()
-	title.text = tr("젤리 아지트 앨범")
+	title.text = L10n.text(tr("젤리 아지트 앨범"))
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", 38)
 	title.add_theme_color_override("font_color", ArtDirection.ink())
 	box.add_child(title)
 	var residents: Array = main.save.get_resident_records()
 	var summary := Label.new()
-	summary.text = tr("구출 주민 %d/6 · 추억 %d개") % [residents.size(), main.save.album_memories.size()]
+	summary.text = L10n.text(tr("구출 주민 %d/6 · 추억 %d개") % [residents.size(), main.save.album_memories.size()])
 	summary.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	summary.add_theme_font_size_override("font_size", 20)
 	summary.add_theme_color_override("font_color", ArtDirection.ink())
@@ -3044,7 +3040,7 @@ func _show_album() -> void:
 	list.add_theme_constant_override("separation", 12)
 	scroll.add_child(list)
 	var resident_heading := Label.new()
-	resident_heading.text = tr("함께 사는 친구들")
+	resident_heading.text = L10n.text(tr("함께 사는 친구들"))
 	resident_heading.add_theme_font_size_override("font_size", 23)
 	resident_heading.add_theme_color_override("font_color", ArtDirection.ink())
 	list.add_child(resident_heading)
@@ -3055,7 +3051,7 @@ func _show_album() -> void:
 	list.add_child(resident_grid)
 	if residents.is_empty():
 		var empty := Label.new()
-		empty.text = tr("모험에서 첫 주민을 구조하면 사진 카드가 열려요.")
+		empty.text = L10n.text(tr("모험에서 첫 주민을 구조하면 사진 카드가 열려요."))
 		empty.custom_minimum_size = Vector2(570, 110)
 		empty.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		empty.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -3066,7 +3062,7 @@ func _show_album() -> void:
 		for resident in residents:
 			resident_grid.add_child(_album_resident_card(resident))
 	var memory_heading := Label.new()
-	memory_heading.text = tr("최근 말랑 추억")
+	memory_heading.text = L10n.text(tr("최근 말랑 추억"))
 	memory_heading.add_theme_font_size_override("font_size", 23)
 	memory_heading.add_theme_color_override("font_color", ArtDirection.danger_color())
 	list.add_child(memory_heading)
@@ -3081,7 +3077,7 @@ func _show_album() -> void:
 	for memory in memories:
 		memory_grid.add_child(_album_memory_card(memory))
 	var achievement_heading := Label.new()
-	achievement_heading.text = tr("구조대 배지")
+	achievement_heading.text = L10n.text(tr("구조대 배지"))
 	achievement_heading.add_theme_font_size_override("font_size", 23)
 	achievement_heading.add_theme_color_override("font_color", ArtDirection.success_color())
 	list.add_child(achievement_heading)
@@ -3091,7 +3087,7 @@ func _show_album() -> void:
 		badge.custom_minimum_size = Vector2(570, 52)
 		badge.add_theme_stylebox_override("panel", _panel_style(Color("#eaf8ed") if unlocked else Color("#eeeaf0"), Color("#65a878") if unlocked else Color("#a29aa6"), 17))
 		var row := Label.new()
-		row.text = ("★  " if unlocked else "◇  ") + tr(RoomData.ACHIEVEMENT_NAMES[i]) + ("  · " + tr("달성") if unlocked else "")
+		row.text = L10n.text(("★  " if unlocked else "◇  ") + tr(RoomData.ACHIEVEMENT_NAMES[i]) + ("  · " + tr("달성") if unlocked else ""))
 		row.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		row.add_theme_font_size_override("font_size", 19)
 		row.add_theme_color_override("font_color", ArtDirection.text_color(Color("#4f805e") if unlocked else Color("#8c838f")))
@@ -3120,13 +3116,13 @@ func _album_resident_card(resident: Dictionary) -> PanelContainer:
 	portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	content.add_child(portrait)
 	var name := Label.new()
-	name.text = "%s · Lv.%d" % [String(resident.get("name", tr("젤리몬"))), int(bond.level)]
+	name.text = L10n.text("%s · Lv.%d" % [L10n.text(String(resident.get("name", tr("젤리몬")))), int(bond.level)])
 	name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	name.add_theme_font_size_override("font_size", 18)
 	name.add_theme_color_override("font_color", ArtDirection.text_color(tint.darkened(0.42)))
 	content.add_child(name)
 	var relation := Label.new()
-	relation.text = tr(String(bond.title))
+	relation.text = L10n.text(tr(L10n.text(String(bond.title))))
 	relation.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	relation.add_theme_font_size_override("font_size", 15)
 	relation.add_theme_color_override("font_color", ArtDirection.ink())
@@ -3151,7 +3147,7 @@ func _album_memory_card(memory: Dictionary) -> PanelContainer:
 	icon.add_theme_color_override("font_color", ArtDirection.danger_color())
 	row.add_child(icon)
 	var caption := Label.new()
-	caption.text = tr(String(memory.get("caption", "함께 보낸 포근한 순간")))
+	caption.text = L10n.text(tr(L10n.text(String(memory.get("caption", L10n.text("함께 보낸 포근한 순간"))))))
 	caption.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	caption.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	caption.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -3181,7 +3177,7 @@ func _enter_photo_mode() -> void:
 		line.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		photo_layer.add_child(line)
 	var title := Label.new()
-	title.text = "PHOTO  ·  MY JELLY HIDEOUT"
+	title.text = L10n.text("PHOTO  ·  MY JELLY HIDEOUT")
 	title.position = Vector2(60, 45)
 	title.size = Vector2(600, 50)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -3196,10 +3192,10 @@ func _enter_photo_mode() -> void:
 	controls.position = Vector2(65, 1150)
 	controls.add_theme_constant_override("separation", 16)
 	photo_layer.add_child(controls)
-	var pose := _button("포즈", Color("#66a9d8"), Vector2(160, 78), 24)
+	var pose := _button(L10n.text("포즈"), Color("#66a9d8"), Vector2(160, 78), 24)
 	pose.pressed.connect(_photo_pose)
 	controls.add_child(pose)
-	var save_button := _button("사진 저장", Color("#e580a7"), Vector2(190, 78), 27)
+	var save_button := _button(L10n.text("사진 저장"), Color("#e580a7"), Vector2(190, 78), 27)
 	save_button.pressed.connect(_save_photo)
 	controls.add_child(save_button)
 	var close := _button(tr("닫기"), Color("#7d6a9e"), Vector2(190, 78), 27)
@@ -3217,7 +3213,7 @@ func _photo_pose() -> void:
 		var angle := -PI * 0.85 + PI * 0.7 * float(i) / maxf(1.0, resident_nodes.size() - 1.0)
 		var target := center + Vector2(cos(angle) * 155, sin(angle) * 78)
 		resident.create_tween().tween_property(resident, "position", target, 0.42).set_trans(Tween.TRANS_BACK)
-	_speech_bubble("다 같이 말랑~!", center - Vector2(0, 95))
+	_speech_bubble(L10n.text("다 같이 말랑~!"), center - Vector2(0, 95))
 	main.save.add_album_memory("pose", "모두 함께 기념사진 포즈!", main.save.get_resident_records().map(func(r): return String(r.id)))
 
 
@@ -3248,12 +3244,12 @@ func _save_photo() -> void:
 	if error == OK:
 		main.save.add_album_memory("photo", "아지트 사진을 남겼어요", main.save.get_resident_records().map(func(r): return String(r.id)))
 	photo_layer.visible = true
-	_show_toast("사진을 저장했어요!\n%s" % folder if error == OK else "사진 저장에 실패했어요")
+	_show_toast(L10n.text("사진을 저장했어요!\n%s") % folder if error == OK else L10n.text("사진 저장에 실패했어요"))
 
 
 func _show_toast(text: String) -> void:
 	var label := Label.new()
-	label.text = text
+	label.text = L10n.text(text)
 	label.position = Vector2(110, 960)
 	label.size = Vector2(500, 80)
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER

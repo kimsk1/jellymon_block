@@ -2,6 +2,7 @@ extends CanvasLayer
 class_name HUD
 ## 인게임 HUD + 팝업 (04 문서 5/6/7장)
 
+const L10n = preload("res://scripts/LocalizedText.gd")
 const TutorialGuideScene = preload("res://scripts/TutorialGuide.gd")
 const BattleHUDIconScene = preload("res://scripts/BattleHUDIcon.gd")
 
@@ -11,6 +12,10 @@ var time_label: Label
 var name_label: Label
 var timer_caption: Label
 var timer_bar: ProgressBar
+var _timer_fill: StyleBoxFlat
+var _timer_normal_color: Color
+var _timer_second := -1
+var _timer_state := -1
 var goal_items := {}
 var star_tex: Texture2D
 var clear_base_reward := 0
@@ -66,17 +71,17 @@ func _ready() -> void:
 	hb.add_child(mascot)
 
 	var quit_btn := _small_button("home", Color("#9c8bc4"))
-	quit_btn.tooltip_text = tr("레벨 선택")
+	quit_btn.tooltip_text = L10n.text(tr("레벨 선택"))
 	quit_btn.pressed.connect(_on_quit_pressed)
 	hb.add_child(quit_btn)
 
 	var retry_btn := _small_button("retry", Color("#f5a255"))
-	retry_btn.tooltip_text = tr("다시 시작")
+	retry_btn.tooltip_text = L10n.text(tr("다시 시작"))
 	retry_btn.pressed.connect(_on_retry_pressed)
 	hb.add_child(retry_btn)
 
 	var pause_btn := _small_button("pause", Color("#6c91c8"))
-	pause_btn.tooltip_text = tr("일시정지")
+	pause_btn.tooltip_text = L10n.text(tr("일시정지"))
 	pause_btn.pressed.connect(func(): game.set_paused(true))
 	hb.add_child(pause_btn)
 
@@ -92,7 +97,7 @@ func _ready() -> void:
 	name_label.add_theme_constant_override("outline_size", 0)
 	mid.add_child(name_label)
 	timer_caption = Label.new()
-	timer_caption.text = "TIME"
+	timer_caption.text = L10n.text("TIME")
 	timer_caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	timer_caption.add_theme_font_size_override("font_size", 15)
 	timer_caption.add_theme_color_override("font_color", ArtDirection.ink())
@@ -119,6 +124,8 @@ func _ready() -> void:
 	timer_fill.border_color = ArtDirection.border_color()
 	timer_fill.set_border_width_all(1)
 	timer_fill.set_corner_radius_all(6)
+	_timer_fill = timer_fill
+	_timer_normal_color = timer_fill.bg_color
 	timer_bar.add_theme_stylebox_override("fill", timer_fill)
 	mid.add_child(timer_bar)
 	_build_objective_bar()
@@ -160,22 +167,22 @@ func refresh_objectives() -> void:
 		return
 	var parts: Array[String] = []
 	if not game.boss_data.is_empty() and not game.boss_defeated:
-		var marks := {"king": "👑 왕젤리", "splitter": "🌀 분열 젤리", "thief": "⏳ 시간 도둑"}
-		parts.append(String(marks.get(String(game.boss_data.get("type", "")), "보스")))
+		var marks := {"king": L10n.text("👑 왕젤리"), "splitter": L10n.text("🌀 분열 젤리"), "thief": L10n.text("⏳ 시간 도둑")}
+		parts.append(L10n.text(String(marks.get(L10n.text(String(game.boss_data.get("type", ""))), L10n.text("보스")))))
 	if game.move_limit > 0:
-		parts.append("이동 %d/%d" % [game.moves_used, game.move_limit])
+		parts.append(L10n.text("이동 %d/%d") % [game.moves_used, game.move_limit])
 	if not game.color_order.is_empty():
 		game._advance_color_order()
 		if game.color_order_index < game.color_order.size():
-			var current := String(game.color_order[game.color_order_index])
-			parts.append("순서 ▶ %s" % String(G.COLOR_NAMES.get(current, current)))
+			var current := L10n.text(String(game.color_order[game.color_order_index]))
+			parts.append(L10n.text("순서 ▶ %s") % L10n.text(String(G.COLOR_NAMES.get(current, current))))
 	if game.escort_catcher >= 0:
-		parts.append("🛡 호위")
+		parts.append(L10n.text("🛡 호위"))
 	if parts.is_empty():
 		objective_card.visible = false
 		return
 	objective_card.visible = true
-	objective_label.text = "   ·   ".join(parts)
+	objective_label.text = L10n.text("   ·   ".join(parts))
 	if game.move_limit > 0 and game.moves_used >= int(float(game.move_limit) * 0.8):
 		objective_label.add_theme_color_override("font_color", ArtDirection.ink())
 	else:
@@ -200,18 +207,18 @@ func _build_booster_tray() -> void:
 	row.add_theme_constant_override("separation", 7)
 	tray.add_child(row)
 	var specs := [
-		["time", "시간 젤리"],
-		["compass", "구조 나침반"],
-		["ice", "햇살 스푼"],
-		["space", "공간 캔디"],
-		["rescue", "구조 호루라기"],
+		["time", L10n.text("시간 젤리")],
+		["compass", L10n.text("구조 나침반")],
+		["ice", L10n.text("햇살 스푼")],
+		["space", L10n.text("공간 캔디")],
+		["rescue", L10n.text("구조 호루라기")],
 	]
 	for spec in specs:
-		var id := String(spec[0])
+		var id := L10n.text(String(spec[0]))
 		var count: int = game.main.save.get_booster_count(id)
 		var button := Button.new()
-		button.text = "×%d" % count
-		button.tooltip_text = String(spec[1])
+		button.text = L10n.text("×%d" % count)
+		button.tooltip_text = L10n.text(String(spec[1]))
 		button.custom_minimum_size = Vector2(119, 62)
 		button.add_theme_font_size_override("font_size", 19)
 		button.icon = load("res://assets/ui/boosters/%s_v1.png" % id)
@@ -229,12 +236,12 @@ func _build_booster_tray() -> void:
 
 func _build_tutorial_help() -> void:
 	tutorial_help_button = Button.new()
-	tutorial_help_button.text = "?"
+	tutorial_help_button.text = L10n.text("?")
 	tutorial_help_button.position = Vector2(648, 154)
 	tutorial_help_button.size = Vector2(52, 52)
 	tutorial_help_button.add_theme_font_size_override("font_size", 27)
 	ArtDirection.apply_button(tutorial_help_button, Color("#8d70bc"), 18)
-	tutorial_help_button.tooltip_text = "조작 안내 다시 보기"
+	tutorial_help_button.tooltip_text = L10n.text("조작 안내 다시 보기")
 	tutorial_help_button.visible = false
 	tutorial_help_button.pressed.connect(func(): game.replay_tutorial())
 	root.add_child(tutorial_help_button)
@@ -270,7 +277,7 @@ func show_signature_intro(signature: Dictionary, on_start: Callable) -> void:
 	dim.add_child(center)
 	var panel := PanelContainer.new()
 	panel.custom_minimum_size = Vector2(570, 0)
-	var accent := Color(String(signature.get("accent", "#ff7f94")))
+	var accent := Color(L10n.text(String(signature.get("accent", "#ff7f94"))))
 	var style := ArtDirection.glass_panel(accent.lightened(0.42), 0.99, 36)
 	style.border_color = ArtDirection.border_color()
 	style.set_border_width_all(1)
@@ -286,13 +293,13 @@ func show_signature_intro(signature: Dictionary, on_start: Callable) -> void:
 	content.add_theme_constant_override("separation", 18)
 	panel.add_child(content)
 	var eyebrow := Label.new()
-	eyebrow.text = String(signature.get("eyebrow", "특별 구조 작전"))
+	eyebrow.text = L10n.text(String(signature.get("eyebrow", L10n.text("특별 구조 작전"))))
 	eyebrow.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	eyebrow.add_theme_font_size_override("font_size", 19)
 	eyebrow.add_theme_color_override("font_color", ArtDirection.text_color(accent.darkened(0.28)))
 	content.add_child(eyebrow)
 	var title := Label.new()
-	title.text = String(signature.get("title", "특별 구조"))
+	title.text = L10n.text(String(signature.get("title", L10n.text("특별 구조"))))
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", 42)
 	title.add_theme_color_override("font_color", ArtDirection.ink())
@@ -304,7 +311,7 @@ func show_signature_intro(signature: Dictionary, on_start: Callable) -> void:
 	mascot.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	content.add_child(mascot)
 	var objective := Label.new()
-	objective.text = String(signature.get("objective", "모든 젤리몬을 구조해요"))
+	objective.text = L10n.text(String(signature.get("objective", L10n.text("모든 젤리몬을 구조해요"))))
 	objective.custom_minimum_size = Vector2(480, 0)
 	objective.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	objective.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -312,7 +319,7 @@ func show_signature_intro(signature: Dictionary, on_start: Callable) -> void:
 	objective.add_theme_color_override("font_color", ArtDirection.ink())
 	content.add_child(objective)
 	var start := Button.new()
-	start.text = tr("구조 작전 시작")
+	start.text = L10n.text(tr("구조 작전 시작"))
 	start.custom_minimum_size = Vector2(390, 76)
 	start.add_theme_font_size_override("font_size", 28)
 	ArtDirection.apply_button(start, accent, 23)
@@ -327,10 +334,10 @@ func refresh_boosters() -> void:
 	var activity_blocks_boosters: bool = not game.main.active_activity.is_empty() and String(game.main.active_activity.get("modifier", {}).get("id", "")) == "no_boosters"
 	for id in booster_buttons:
 		var button: Button = booster_buttons[id]
-		var count: int = game.main.save.get_booster_count(String(id))
-		button.text = "×%d" % count
+		var count: int = game.main.save.get_booster_count(L10n.text(String(id)))
+		button.text = L10n.text("×%d" % count)
 		button.disabled = count <= 0 or game.state != "play" or activity_blocks_boosters
-		button.tooltip_text = "맨손 구조 규칙에서는 사용할 수 없어요" if activity_blocks_boosters else ""
+		button.tooltip_text = L10n.text("맨손 구조 규칙에서는 사용할 수 없어요") if activity_blocks_boosters else ""
 
 
 func _apply_responsive_layout() -> void:
@@ -391,13 +398,13 @@ func confirm_retry(on_confirm: Callable) -> void:
 	box.add_theme_constant_override("separation", 24)
 	panel.add_child(box)
 	var title := Label.new()
-	title.text = tr("모험을 다시 시작할까요?")
+	title.text = L10n.text(tr("모험을 다시 시작할까요?"))
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", 32)
 	title.add_theme_color_override("font_color", ArtDirection.ink())
 	box.add_child(title)
 	var message := Label.new()
-	message.text = tr("현재 모험을 처음부터 다시 시작합니다.")
+	message.text = L10n.text(tr("현재 모험을 처음부터 다시 시작합니다."))
 	message.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	message.add_theme_font_size_override("font_size", 22)
 	message.add_theme_color_override("font_color", ArtDirection.ink())
@@ -441,8 +448,8 @@ func _input(event: InputEvent) -> void:
 
 
 func setup(goals: Dictionary, level: Dictionary, level_idx: int) -> void:
-	var activity_title: String = String(game.main.active_activity_title())
-	name_label.text = "%s  ·  %s" % [activity_title, String(level.name)] if not activity_title.is_empty() else "LEVEL %d  %s" % [level_idx + 1, level.name]
+	var activity_title: String = L10n.text(String(game.main.active_activity_title()))
+	name_label.text = L10n.text("%s  ·  %s" % [activity_title, L10n.text(String(level.name))] if not activity_title.is_empty() else "LEVEL %d  %s" % [level_idx + 1, L10n.text(level.name)])
 	# 실제 빠지냥처럼 목표 카운터 대신 각 홀의 용량 숫자 자체가 목표를 표시한다.
 	if not goal_items.has("_box"):
 		return
@@ -460,7 +467,7 @@ func setup(goals: Dictionary, level: Dictionary, level_idx: int) -> void:
 		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		l.add_theme_font_size_override("font_size", 26)
 		l.add_theme_color_override("font_color", ArtDirection.ink())
-		l.text = str(goals[k])
+		l.text = L10n.text(str(goals[k]))
 		v.add_child(l)
 		box.add_child(v)
 		goal_items[k] = l
@@ -471,28 +478,32 @@ func set_goals(goals: Dictionary) -> void:
 		if goal_items.has(k):
 			var l: Label = goal_items[k]
 			var n: int = goals[k]
-			l.text = str(n)
+			l.text = L10n.text(str(n))
 			if n <= 0:
-				l.text = "OK!"
+				l.text = L10n.text("OK!")
 				l.add_theme_color_override("font_color", ArtDirection.text_color(Color(0.2, 0.7, 0.3)))
 
 
 func set_time(t: float, total: float) -> void:
-	var m := int(t) / 60
-	var s := int(t) % 60
-	time_label.text = "%d:%02d" % [m, s]
+	var seconds := maxi(0, int(t))
+	if seconds != _timer_second:
+		_timer_second = seconds
+		time_label.text = L10n.text("%d:%02d" % [seconds / 60, seconds % 60])
 	if timer_bar:
 		timer_bar.value = clampf(t / maxf(total, 0.01) * 100.0, 0.0, 100.0)
-	if t <= 10.0:
-		time_label.add_theme_color_override("font_color", ArtDirection.text_color(Color(0.95, 0.25, 0.3)))
-		if timer_bar:
-			var danger: StyleBoxFlat = timer_bar.get_theme_stylebox("fill").duplicate()
-			danger.bg_color = ArtDirection.danger_color()
-			timer_bar.add_theme_stylebox_override("fill", danger)
-	elif t <= total * 0.2:
-		time_label.add_theme_color_override("font_color", ArtDirection.text_color(Color(1.0, 0.55, 0.15)))
-	else:
-		time_label.add_theme_color_override("font_color", ArtDirection.ink())
+	var next_state := 2 if t <= 10.0 else (1 if t <= total * 0.2 else 0)
+	if next_state == _timer_state:
+		return
+	_timer_state = next_state
+	var text_color := ArtDirection.ink()
+	if next_state == 2:
+		text_color = ArtDirection.text_color(Color(0.95, 0.25, 0.3))
+	elif next_state == 1:
+		text_color = ArtDirection.text_color(Color(1.0, 0.55, 0.15))
+	time_label.add_theme_color_override("font_color", text_color)
+	if _timer_fill:
+		# 시간 추가/이어하기로 위험 구간을 벗어나면 원래 색도 복원한다.
+		_timer_fill.bg_color = ArtDirection.danger_color() if next_state == 2 else _timer_normal_color
 
 
 func show_hint(text: String) -> void:
@@ -523,7 +534,7 @@ func show_hint(text: String) -> void:
 	hint_card.add_theme_stylebox_override("panel", hint_style)
 	root.add_child(hint_card)
 	var l := Label.new()
-	l.text = text
+	l.text = L10n.text(text)
 	l.add_theme_font_size_override("font_size", 19 if game.level_idx >= 100 else 20)
 	l.add_theme_color_override("font_color", ArtDirection.ink())
 	l.add_theme_color_override("font_outline_color", Color(0.08, 0.05, 0.18, 0.92))
@@ -561,13 +572,13 @@ func show_pause() -> void:
 	box.add_theme_constant_override("separation", 18)
 	panel.add_child(box)
 	var title := Label.new()
-	title.text = tr("잠깐 쉬어갈까요?")
+	title.text = L10n.text(tr("잠깐 쉬어갈까요?"))
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", 38)
 	title.add_theme_color_override("font_color", ArtDirection.ink())
 	box.add_child(title)
 	var rule := Label.new()
-	rule.text = tr(String(game.L.get("hint", "같은 색 젤리몬부터 차례로 구조해요.")))
+	rule.text = L10n.text(tr(L10n.text(String(game.L.get("hint", L10n.text("같은 색 젤리몬부터 차례로 구조해요."))))))
 	rule.custom_minimum_size = Vector2(470, 100)
 	rule.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	rule.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -614,7 +625,7 @@ func _small_button(icon_kind: String, col: Color) -> Button:
 
 func _big_button(text: String, col: Color) -> Button:
 	var b := Button.new()
-	b.text = tr(text)
+	b.text = L10n.text(tr(text))
 	b.custom_minimum_size = Vector2(210, 80)
 	b.add_theme_font_size_override("font_size", 32)
 	_style_button(b, col)
@@ -623,7 +634,7 @@ func _big_button(text: String, col: Color) -> Button:
 
 func _result_button(text: String, col: Color) -> Button:
 	var b := Button.new()
-	b.text = tr(text)
+	b.text = L10n.text(tr(text))
 	b.custom_minimum_size = Vector2(142, 76)
 	b.add_theme_font_size_override("font_size", 27)
 	_style_button(b, col)
@@ -687,7 +698,7 @@ func _popup_frame() -> VBoxContainer:
 
 func _title_label(text: String, col: Color) -> Label:
 	var l := Label.new()
-	l.text = tr(text)
+	l.text = L10n.text(tr(text))
 	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	l.add_theme_font_size_override("font_size", 56)
 	l.add_theme_color_override("font_color", ArtDirection.text_color(col))
@@ -728,17 +739,17 @@ func show_result(stars_n: int, score: int, stardust_reward: int, stardust_total:
 		reveal.alignment = BoxContainer.ALIGNMENT_CENTER
 		resident_row.add_child(reveal)
 		var joined := Label.new()
-		joined.text = "새 주민이 찾아왔어요!"
+		joined.text = L10n.text("새 주민이 찾아왔어요!")
 		joined.add_theme_font_size_override("font_size", 18)
 		joined.add_theme_color_override("font_color", ArtDirection.danger_color())
 		reveal.add_child(joined)
 		var resident_name := Label.new()
-		resident_name.text = "%s · %s" % [String(new_resident.get("name", "젤리몬")), String(new_resident.get("personality", "다정한 친구"))]
+		resident_name.text = L10n.text("%s · %s" % [L10n.text(String(new_resident.get("name", L10n.text("젤리몬")))), L10n.text(String(new_resident.get("personality", L10n.text("다정한 친구"))))])
 		resident_name.add_theme_font_size_override("font_size", 23)
 		resident_name.add_theme_color_override("font_color", ArtDirection.ink())
 		reveal.add_child(resident_name)
 		var origin := Label.new()
-		origin.text = "LEVEL %d에서 구조 · 아지트 입주 완료" % int(new_resident.get("rescued_level", game.level_idx + 1))
+		origin.text = L10n.text("LEVEL %d에서 구조 · 아지트 입주 완료") % int(new_resident.get("rescued_level", game.level_idx + 1))
 		origin.add_theme_font_size_override("font_size", 15)
 		origin.add_theme_color_override("font_color", ArtDirection.ink())
 		reveal.add_child(origin)
@@ -746,12 +757,12 @@ func show_result(stars_n: int, score: int, stardust_reward: int, stardust_total:
 	var signature: Dictionary = game.L.get("signature", {})
 	if not signature.is_empty():
 		var finale := Label.new()
-		finale.text = "✦  %s" % String(signature.get("reward_line", "특별 구조를 완수했어요!"))
+		finale.text = L10n.text("✦  %s" % L10n.text(String(signature.get("reward_line", L10n.text("특별 구조를 완수했어요!")))))
 		finale.custom_minimum_size = Vector2(470, 0)
 		finale.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		finale.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		finale.add_theme_font_size_override("font_size", 21)
-		finale.add_theme_color_override("font_color", ArtDirection.text_color(Color(String(signature.get("accent", "#db6f88"))).darkened(0.2)))
+		finale.add_theme_color_override("font_color", ArtDirection.text_color(Color(L10n.text(String(signature.get("accent", "#db6f88")))).darkened(0.2)))
 		v.add_child(finale)
 	# 별 3개 (순차 팝)
 	var row := HBoxContainer.new()
@@ -778,29 +789,29 @@ func show_result(stars_n: int, score: int, stardust_reward: int, stardust_total:
 			tr.modulate = Color(0.45, 0.42, 0.5, 0.55)
 		row.add_child(tr)
 	var sc := Label.new()
-	sc.text = tr("점수  %d") % score
+	sc.text = L10n.text(tr("점수  %d") % score)
 	sc.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	sc.add_theme_font_size_override("font_size", 34)
 	sc.add_theme_color_override("font_color", ArtDirection.ink())
 	v.add_child(sc)
 	var record := Label.new()
-	record.text = tr("클리어  %s   ·   최고 기록  %s") % [_format_clear_time(clear_time), _format_clear_time(best_time)]
+	record.text = L10n.text(tr("클리어  %s   ·   최고 기록  %s") % [_format_clear_time(clear_time), _format_clear_time(best_time)])
 	record.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	record.add_theme_font_size_override("font_size", 23)
 	record.add_theme_color_override("font_color", ArtDirection.ink())
 	v.add_child(record)
 	var dust := Label.new()
 	clear_reward_label = dust
-	dust.text = "★ 별가루 +%d   보유 %d" % [stardust_reward, stardust_total] if stardust_reward > 0 else "★ 이미 받은 별 보상이에요   보유 %d" % stardust_total
+	dust.text = L10n.text("★ 별가루 +%d   보유 %d") % [stardust_reward, stardust_total] if stardust_reward > 0 else L10n.text("★ 이미 받은 별 보상이에요   보유 %d") % stardust_total
 	dust.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	dust.add_theme_font_size_override("font_size", 25)
 	dust.add_theme_color_override("font_color", ArtDirection.ink())
 	v.add_child(dust)
 	var furniture_reward: Dictionary = game.main.last_furniture_reward
 	if not furniture_reward.is_empty():
-		var furniture := RoomData.item_by_id(String(furniture_reward.get("furniture_id", "")))
+		var furniture := RoomData.item_by_id(L10n.text(String(furniture_reward.get("furniture_id", ""))))
 		var reward_label := Label.new()
-		reward_label.text = "🎁 %d레벨 기념 가구 · %s 획득!" % [int(furniture_reward.get("level", game.level_idx + 1)), String(furniture.get("name", furniture_reward.get("title", "기념 가구")))]
+		reward_label.text = L10n.text("🎁 %d레벨 기념 가구 · %s 획득!") % [int(furniture_reward.get("level", game.level_idx + 1)), L10n.text(String(furniture.get("name", furniture_reward.get("title", L10n.text("기념 가구")))))]
 		reward_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		reward_label.add_theme_font_size_override("font_size", 23)
 		reward_label.add_theme_color_override("font_color", ArtDirection.ink())
@@ -808,7 +819,7 @@ func show_result(stars_n: int, score: int, stardust_reward: int, stardust_total:
 		reward_label.add_theme_constant_override("outline_size", 0)
 		v.add_child(reward_label)
 	if stardust_reward > 0:
-		clear_double_button = _big_button(tr("VIP 오늘의 무료 2배") if game.main.save.can_skip_rewarded_ad("clear_reward_double") else "광고 보고 보상 2배", Color("#8e64c8"))
+		clear_double_button = _big_button(tr("VIP 오늘의 무료 2배") if game.main.save.can_skip_rewarded_ad("clear_reward_double") else L10n.text("광고 보고 보상 2배"), Color("#8e64c8"))
 		clear_double_button.custom_minimum_size = Vector2(430, 72)
 		clear_double_button.pressed.connect(_request_clear_double_reward)
 		v.add_child(clear_double_button)
@@ -816,8 +827,8 @@ func show_result(stars_n: int, score: int, stardust_reward: int, stardust_total:
 	btns.alignment = BoxContainer.ALIGNMENT_CENTER
 	btns.add_theme_constant_override("separation", 12)
 	v.add_child(btns)
-	var b_home := _result_button("모험", Color("#55a9d8"))
-	b_home.tooltip_text = "모험 레벨 선택으로"
+	var b_home := _result_button(L10n.text("모험"), Color("#55a9d8"))
+	b_home.tooltip_text = L10n.text("모험 레벨 선택으로")
 	b_home.pressed.connect(on_map)
 	btns.add_child(b_home)
 	var b_retry := _result_button(tr("다시"), Color(0.62, 0.56, 0.72))
@@ -838,7 +849,7 @@ func _request_clear_double_reward() -> void:
 	if clear_bonus_claimed or clear_base_reward <= 0 or not clear_double_button:
 		return
 	clear_double_button.disabled = true
-	clear_double_button.text = tr("2배 보상 지급 중...") if game.main.save.can_skip_rewarded_ad("clear_reward_double") else "광고 재생 중..."
+	clear_double_button.text = L10n.text(tr("2배 보상 지급 중...") if game.main.save.can_skip_rewarded_ad("clear_reward_double") else L10n.text("광고 재생 중..."))
 	game.main.request_rewarded_ad(_finish_clear_double_reward, _restore_clear_double_button, "clear_reward_double")
 
 
@@ -851,10 +862,10 @@ func _finish_clear_double_reward() -> void:
 	if game.main.analytics:
 		game.main.analytics.track("currency_source", {"currency": "stardust", "amount": clear_base_reward, "source": "clear_reward_double"})
 	clear_bonus_claimed = true
-	clear_double_button.text = tr("✓ 2배 보상 받음")
+	clear_double_button.text = L10n.text(tr("✓ 2배 보상 받음"))
 	_set_reward_complete_style(clear_double_button)
 	clear_double_button.disabled = true
-	clear_reward_label.text = "★ 별가루 +%d  · 2배 완료!   보유 %d" % [clear_base_reward * 2, game.main.save.get_stardust()]
+	clear_reward_label.text = L10n.text("★ 별가루 +%d  · 2배 완료!   보유 %d") % [clear_base_reward * 2, game.main.save.get_stardust()]
 	clear_reward_label.add_theme_color_override("font_color", ArtDirection.danger_color())
 	game.audio.play("shiny", 1.12)
 	game.fx.sparkle(Vector2(G.W * 0.5, 470), 22)
@@ -865,25 +876,25 @@ func _restore_clear_double_button() -> void:
 	if not is_instance_valid(clear_double_button) or clear_bonus_claimed:
 		return
 	clear_double_button.disabled = false
-	clear_double_button.text = tr("VIP 오늘의 무료 2배") if game.main.save.can_skip_rewarded_ad("clear_reward_double") else "광고 보고 보상 2배"
+	clear_double_button.text = L10n.text(tr("VIP 오늘의 무료 2배") if game.main.save.can_skip_rewarded_ad("clear_reward_double") else L10n.text("광고 보고 보상 2배"))
 	if clear_reward_label:
-		var reason := String(game.main.platform.rewarded_ad_message) if game.main.platform else ""
-		clear_reward_label.text = "광고를 끝까지 시청해야 2배 보상을 받을 수 있어요." if reason.contains("완료되지") else "광고를 불러오지 못했어요. 잠시 후 다시 시도해 주세요."
+		var reason := L10n.text(String(game.main.platform.rewarded_ad_message)) if game.main.platform else ""
+		clear_reward_label.text = L10n.text("광고를 끝까지 시청해야 2배 보상을 받을 수 있어요.") if reason.contains("완료되지") else L10n.text("광고를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.")
 
 
 func show_fail(reason: String, stardust_total: int, continue_available: bool, on_continue: Callable, on_retry: Callable, on_map: Callable) -> void:
 	var v := _popup_frame()
 	var dim: Control = v.get_parent().get_parent().get_parent()
-	v.add_child(_title_label("아쉬워요!", Color(0.55, 0.48, 0.68)))
+	v.add_child(_title_label(L10n.text("아쉬워요!"), Color(0.55, 0.48, 0.68)))
 	var l := Label.new()
-	l.text = reason
+	l.text = L10n.text(reason)
 	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	l.add_theme_font_size_override("font_size", 30)
 	l.add_theme_color_override("font_color", ArtDirection.ink())
 	v.add_child(l)
 	var tip := Label.new()
-	tip.text = ("현재 보드 그대로, 시간만 처음부터 다시 시작해요.\n보유 별가루  ★ %d" % stardust_total
-		if continue_available else "이번 도전의 재시도 기회를 이미 사용했어요.\n처음부터 다시 도전하거나 모험으로 돌아가 주세요.")
+	tip.text = (L10n.text("현재 보드 그대로, 시간만 처음부터 다시 시작해요.\n보유 별가루  ★ %d") % stardust_total
+		if continue_available else L10n.text("이번 도전의 재시도 기회를 이미 사용했어요.\n처음부터 다시 도전하거나 모험으로 돌아가 주세요."))
 	tip.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	tip.add_theme_font_size_override("font_size", 24)
 	tip.add_theme_color_override("font_color", ArtDirection.text_color(Color(0.6, 0.55, 0.7)))
@@ -892,9 +903,9 @@ func show_fail(reason: String, stardust_total: int, continue_available: bool, on
 	b_continue.custom_minimum_size = Vector2(430, 78)
 	b_continue.disabled = not continue_available or stardust_total < 20
 	if not continue_available:
-		b_continue.text = "✓ 재시도 사용 완료"
+		b_continue.text = L10n.text("✓ 재시도 사용 완료")
 	elif b_continue.disabled:
-		b_continue.text = "별가루가 부족해요  (%d/20)" % stardust_total
+		b_continue.text = L10n.text("별가루가 부족해요  (%d/20)") % stardust_total
 	b_continue.pressed.connect(func():
 		if bool(on_continue.call()):
 			dim.queue_free()

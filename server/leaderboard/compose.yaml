@@ -1,11 +1,19 @@
 services:
   ranking:
-    build: .
+    build:
+      context: ../..
+      dockerfile: server/leaderboard/Dockerfile
     restart: unless-stopped
     environment:
       HIVE_APP_ID: ${HIVE_APP_ID:?Set HIVE_APP_ID in .env}
       HIVE_LEADERBOARD_ID: ${HIVE_LEADERBOARD_ID:-163}
       HIVE_CERTIFICATION_KEY: ${HIVE_CERTIFICATION_KEY:?Set HIVE_CERTIFICATION_KEY in .env}
+      HIVE_ALLOWED_APP_IDS: ${HIVE_ALLOWED_APP_IDS:-}
+      HIVE_IAP_ENABLED: ${HIVE_IAP_ENABLED:-false}
+      HIVE_IAP_AUTH_KEY: ${HIVE_IAP_AUTH_KEY:-}
+      HIVE_IAP_ALLOW_REAL: ${HIVE_IAP_ALLOW_REAL:-false}
+      HIVE_IAP_IOS_APP_ID: ${HIVE_IAP_IOS_APP_ID:-}
+      HIVE_IAP_IOS_BUNDLE_ID: ${HIVE_IAP_IOS_BUNDLE_ID:-}
       HIVE_ZONE: ${HIVE_ZONE:-sandbox}
       RANKING_DB_PATH: /data/ranking.sqlite3
     ports:

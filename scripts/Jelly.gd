@@ -3,6 +3,7 @@ class_name Jelly
 ## 보드 위의 고정 젤리몬 (1×1). 같은 색 캐처가 지나가면 흡수된다.
 ## 다른 색 캐처에게는 장애물(통과 불가)이 된다 — 코어 룰.
 
+const L10n = preload("res://scripts/LocalizedText.gd")
 var color_id := "R"
 var cell := Vector2i.ZERO
 var shiny := false
@@ -105,7 +106,7 @@ func _build_frost_shell() -> void:
 	frost_label.add_theme_color_override("font_outline_color", Color("#4388b6"))
 	frost_label.add_theme_constant_override("outline_size", 5)
 	frost_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	frost_label.text = "❄" if frost_layers == 1 else "❄%d" % frost_layers
+	frost_label.text = L10n.text("❄" if frost_layers == 1 else "❄%d" % frost_layers)
 	frost_panel.add_child(frost_label)
 
 
@@ -119,7 +120,7 @@ func hit_frost() -> bool:
 		pulse.tween_property(frost_panel, "scale", Vector2(1.13, 0.88), 0.08).set_trans(Tween.TRANS_BACK)
 		pulse.tween_property(frost_panel, "scale", Vector2.ONE, 0.13).set_trans(Tween.TRANS_BOUNCE)
 		if frost_layers > 0:
-			frost_label.text = "❄%d" % frost_layers
+			frost_label.text = L10n.text("❄%d" % frost_layers)
 		else:
 			pulse.parallel().tween_property(frost_panel, "modulate:a", 0.0, 0.18)
 			pulse.tween_callback(frost_panel.queue_free)
@@ -142,7 +143,7 @@ func _status_badge(text: String, color: Color, position_offset: Vector2) -> Pane
 	panel.add_theme_stylebox_override("panel", style)
 	add_child(panel)
 	var label := Label.new()
-	label.text = text
+	label.text = L10n.text(text)
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	label.add_theme_font_size_override("font_size", 19)
@@ -185,7 +186,7 @@ func set_rescue_sealed(value: bool) -> void:
 	seal_panel.add_theme_stylebox_override("panel", style)
 	add_child(seal_panel)
 	var lock := Label.new()
-	lock.text = "◆"
+	lock.text = L10n.text("◆")
 	lock.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lock.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	lock.add_theme_font_size_override("font_size", 22)
@@ -227,7 +228,7 @@ func set_boss(type_id: String, hp: int) -> void:
 	boss_hp = hp
 	var marks := {"king": "👑", "splitter": "🌀", "thief": "⏳"}
 	var tints := {"king": Color("#d8a12f"), "splitter": Color("#7b5fd0"), "thief": Color("#3f8fbf")}
-	_status_badge(String(marks.get(type_id, "★")), Color(tints.get(type_id, Color("#d8a12f"))), Vector2(-42, -43))
+	_status_badge(L10n.text(String(marks.get(type_id, "★"))), Color(tints.get(type_id, Color("#d8a12f"))), Vector2(-42, -43))
 	sprite.scale = Vector2.ONE * base_scale * 1.06
 	if type_id == "king":
 		boss_panel = PanelContainer.new()
@@ -243,7 +244,7 @@ func set_boss(type_id: String, hp: int) -> void:
 		boss_panel.add_theme_stylebox_override("panel", style)
 		add_child(boss_panel)
 		boss_label = Label.new()
-		boss_label.text = "♥%d" % boss_hp
+		boss_label.text = L10n.text("♥%d" % boss_hp)
 		boss_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		boss_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		boss_label.add_theme_font_size_override("font_size", 17)
@@ -261,7 +262,7 @@ func hit_boss() -> bool:
 		return false
 	boss_hp -= 1
 	if boss_label:
-		boss_label.text = "♥%d" % boss_hp
+		boss_label.text = L10n.text("♥%d" % boss_hp)
 	# _process가 매 프레임 sprite.scale을 갱신하므로 흔들림은 회전으로 표현한다.
 	var tw := create_tween()
 	tw.tween_property(sprite, "rotation", 0.18, 0.06)
@@ -269,7 +270,7 @@ func hit_boss() -> bool:
 	tw.tween_property(sprite, "rotation", 0.0, 0.08)
 	if fx:
 		fx.impact(global_position, Color("#ffd978"), true)
-		fx.float_text(global_position, "왕젤리 ♥%d" % boss_hp, Color("#ffe9a8"), 24)
+		fx.float_text(global_position, L10n.text("왕젤리 ♥%d") % boss_hp, Color("#ffe9a8"), 24)
 	return true
 
 
@@ -284,7 +285,7 @@ func set_personality(value: String) -> void:
 	if value.is_empty():
 		return
 	var symbols := {"shy":"↝", "sleepy":"Z", "playful":"↔", "lonely":"♡"}
-	_status_badge(String(symbols.get(value, "•")), G.COLORS[color_id].darkened(0.18), Vector2(9, -43))
+	_status_badge(L10n.text(String(symbols.get(value, "•"))), G.COLORS[color_id].darkened(0.18), Vector2(9, -43))
 
 
 func show_personality_feedback(text: String) -> void:

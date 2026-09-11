@@ -1297,11 +1297,12 @@ func add_album_memory(kind: String, caption: String, residents: Array = []) -> v
 
 
 func refresh_resident_requests() -> void:
+	refresh_season()
 	var today := Time.get_date_string_from_system()
-	if resident_request_date == today:
-		return
-	resident_request_date = today
-	resident_requests = []
+	var changed := resident_request_date != today
+	if changed:
+		resident_request_date = today
+		resident_requests = []
 	var templates := RetentionCatalogLib.requests()
 	var residents := get_resident_records()
 	if residents.is_empty() or templates.is_empty():
@@ -1309,8 +1310,15 @@ func refresh_resident_requests() -> void:
 	var date := Time.get_date_dict_from_system()
 	var seed := int(date.year) * 372 + int(date.month) * 31 + int(date.day)
 	var request_slots := 3 if season_premium else 2
-	for slot in range(mini(request_slots, residents.size())):
-		var resident: Dictionary = residents[posmod(seed + slot * 3, residents.size())]
+	# Preserve today's progress and claimed rewards; only append missing residents.
+	var assigned := {}
+	for existing in resident_requests:
+		assigned[String(existing.get("resident_id", ""))] = true
+	for offset in range(residents.size()):
+		if resident_requests.size() >= mini(request_slots, residents.size()): break
+		var resident: Dictionary = residents[posmod(seed + offset, residents.size())]
+		if assigned.has(String(resident.id)): continue
+		var slot := resident_requests.size()
 		var request: Dictionary = templates[posmod(seed + slot * 2, templates.size())].duplicate(true)
 		request["id"] = "%s_%s" % [today, String(resident.id)]
 		request["resident_id"] = String(resident.id)
@@ -1319,7 +1327,9 @@ func refresh_resident_requests() -> void:
 		request["progress"] = 0
 		request["claimed"] = false
 		resident_requests.append(request)
-	save_data()
+		assigned[String(resident.id)] = true
+		changed = true
+	if changed: save_data()
 
 
 func record_retention_action(action: String, amount: int = 1) -> void:

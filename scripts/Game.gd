@@ -6,6 +6,8 @@ class_name Game
 ##   · 다른 색 젤리는 통과 불가(장애물), 캐처끼리도 통과 불가, 벽 통과 불가
 ##   · 모든 젤리를 흡수하면 클리어
 
+const L10n = preload("res://scripts/LocalizedText.gd")
+const LevelSolverLib = preload("res://scripts/levels/LevelSolver.gd")
 const GameBalanceCatalogLib = preload("res://scripts/GameBalanceCatalog.gd")
 
 var main = null
@@ -183,7 +185,7 @@ func _ready() -> void:
 		call_deferred("_begin_tutorial", false)
 	else:
 		var support_line := _adventure_support_line()
-		hud.show_hint(String(L.get("hint", "")) + ("\n" + support_line if not support_line.is_empty() else ""))
+		hud.show_hint(L10n.text(String(L.get("hint", ""))) + ("\n" + support_line if not support_line.is_empty() else ""))
 		if not L.get("signature", {}).is_empty() and main.save.get_stars(level_idx) <= 0:
 			tutorial_timer_paused = true
 			call_deferred("_show_signature_intro")
@@ -211,16 +213,16 @@ func _adventure_support_line() -> String:
 		return ""
 	var parts: Array[String] = []
 	if float(adventure_support.get("time_bonus", 0.0)) > 0.0:
-		parts.append("주민 응원 +%d초" % int(adventure_support.time_bonus))
+		parts.append(L10n.text("주민 응원 +%d초") % int(adventure_support.time_bonus))
 	if int(adventure_support.get("stardust_bonus", 0)) > 0:
-		parts.append("복구 마을 첫 클리어 +%d 별가루" % int(adventure_support.stardust_bonus))
+		parts.append(L10n.text("복구 마을 첫 클리어 +%d 별가루") % int(adventure_support.stardust_bonus))
 	return "✦ " + " · ".join(parts) if not parts.is_empty() else ""
 
 
 func _show_bond_hint() -> void:
 	await _delay(1.0)
 	if state == "play" and is_instance_valid(hud) and _show_movement_hint():
-		fx.float_text(Vector2(G.W * 0.5, 190), "단짝 주민이 첫 움직임을 알려줬어요!", Color("#fff2a0"), 22)
+		fx.float_text(Vector2(G.W * 0.5, 190), L10n.text("단짝 주민이 첫 움직임을 알려줬어요!"), Color("#fff2a0"), 22)
 
 
 func _add_premium_background() -> void:
@@ -504,18 +506,18 @@ func _begin_tutorial(replay: bool = false) -> void:
 	tutorial_wrong_color_shown = false
 	var catcher: Catcher = catchers[0]
 	var target := catcher.center_px()
-	var message := "블록을 끌어 젤리몬을 안에 담아 주세요!"
+	var message := L10n.text("블록을 끌어 젤리몬을 안에 담아 주세요!")
 	match tutorial_id:
 		"shape_seal":
 			if not shape_seals.is_empty():
 				target = _cells_center(shape_seals[0].cells)
-			message = "빛나는 모양과 같은 블록을 정확히 포개 보세요!"
+			message = L10n.text("빛나는 모양과 같은 블록을 정확히 포개 보세요!")
 		"rescue_exit":
 			target = _first_matching_jelly_position(catcher)
-			message = "먼저 같은 색 젤리몬을 블록 안에 모두 담아 주세요!"
+			message = L10n.text("먼저 같은 색 젤리몬을 블록 안에 모두 담아 주세요!")
 		"color_match":
 			target = _first_matching_jelly_position(catcher)
-			message = "블록과 같은 색·같은 문양의 젤리몬만 담을 수 있어요!"
+			message = L10n.text("블록과 같은 색·같은 문양의 젤리몬만 담을 수 있어요!")
 		_:
 			target = _first_matching_jelly_position(catcher)
 	var focus := _guide_focus(catcher.center_px(), target)
@@ -551,7 +553,7 @@ func _show_exit_tutorial(c: Catcher) -> void:
 	if not tutorial_active or rescue_exits.is_empty():
 		return
 	var target := cell_pos(rescue_exits[0].cell)
-	hud.show_tutorial_step("GO가 됐어요! 같은 색 화살표 출구로 내보내세요.", c.center_px(), target, _guide_focus(c.center_px(), target))
+	hud.show_tutorial_step(L10n.text("GO가 됐어요! 같은 색 화살표 출구로 내보내세요."), c.center_px(), target, _guide_focus(c.center_px(), target))
 	_track_tutorial("tutorial_step_start", "move_to_exit")
 
 
@@ -564,8 +566,8 @@ func _show_tutorial_wrong_color(c: Catcher, directions: Array) -> void:
 			continue
 		tutorial_wrong_color_shown = true
 		var target: Vector2 = wrong.position
-		fx.float_text(target, "색이 달라요!", Color("#ffe7a6"), 25)
-		hud.show_tutorial_step("이 젤리몬은 색이 달라요. 같은 문양의 블록을 사용하세요!", c.center_px(), target, _guide_focus(c.center_px(), target))
+		fx.float_text(target, L10n.text("색이 달라요!"), Color("#ffe7a6"), 25)
+		hud.show_tutorial_step(L10n.text("이 젤리몬은 색이 달라요. 같은 문양의 블록을 사용하세요!"), c.center_px(), target, _guide_focus(c.center_px(), target))
 		_track_tutorial_error("wrong_color")
 		_delay(2.0).connect(func():
 			if tutorial_active and is_instance_valid(hud):
@@ -623,22 +625,22 @@ func _start_late_tutorial_if_needed() -> void:
 	match level_idx:
 		50:
 			late_id = "frozen_jelly"
-			text = "얼음 젤리는 같은 색 블록으로 한 번 깨고, 다시 지나가면 구조돼요!"
+			text = L10n.text("얼음 젤리는 같은 색 블록으로 한 번 깨고, 다시 지나가면 구조돼요!")
 			if not frozen_at.is_empty():
 				target = cell_pos(frozen_at.keys()[0])
 		60:
 			late_id = "rescue_chain"
-			text = "번호가 붙은 젤리몬은 1번부터 차례대로 구조하세요!"
+			text = L10n.text("번호가 붙은 젤리몬은 1번부터 차례대로 구조하세요!")
 			if not chain_at.is_empty():
 				target = cell_pos(chain_at.keys()[0])
 		70:
 			late_id = "rescue_switch"
-			text = "바닥 스위치를 먼저 밟으면 봉인된 젤리몬이 깨어나요!"
+			text = L10n.text("바닥 스위치를 먼저 밟으면 봉인된 젤리몬이 깨어나요!")
 			if not switch_at.is_empty():
 				target = cell_pos(switch_at.keys()[0])
 		80:
 			late_id = "key_lock"
-			text = "열쇠 젤리몬을 먼저 구조하면 잠긴 블록을 움직일 수 있어요!"
+			text = L10n.text("열쇠 젤리몬을 먼저 구조하면 잠긴 블록을 움직일 수 있어요!")
 			if not key_unlock_at.is_empty():
 				target = cell_pos(key_unlock_at.keys()[0])
 	if late_id.is_empty() or target == Vector2.ZERO or main.save.has_completed_tutorial(late_id):
@@ -735,7 +737,7 @@ func _pick_catcher(viewport_position: Vector2):
 
 
 func _show_key_locked_feedback(c: Catcher) -> void:
-	fx.float_text(c.center_px(), "열쇠가 필요해요!", Color("#f1d7ff"), 24)
+	fx.float_text(c.center_px(), L10n.text("열쇠가 필요해요!"), Color("#f1d7ff"), 24)
 	audio.play("grab", 0.75, -9.0)
 
 
@@ -888,7 +890,7 @@ func _try_step(c: Catcher, dir: Vector2i) -> bool:
 	if entered_sticky:
 		# 끈끈이 바닥은 통과를 막지 않고 이동 비용만 올린다.
 		c.slow_until_msec = Time.get_ticks_msec() + 420
-		fx.float_text(c.center_px(), "끈적…", Color("#ffe6a8"), 21)
+		fx.float_text(c.center_px(), L10n.text("끈적…"), Color("#ffe6a8"), 21)
 		G.haptic(8)
 	_register_move(1 + (1 if entered_sticky else 0))
 	queue_redraw()
@@ -935,7 +937,7 @@ func _apply_advanced_floor(c: Catcher, previous: Dictionary, direction: Vector2i
 				catcher_at[c.origin_cell + off] = c
 			fx.ring(cell_pos(portal_source), Color("#a989ff"), 1.2)
 			fx.ring(cell_pos(destination), Color("#6ee5ff"), 1.2)
-			fx.float_text(cell_pos(destination), "워프!", Color("#e9ddff"), 24)
+			fx.float_text(cell_pos(destination), L10n.text("워프!"), Color("#e9ddff"), 24)
 			audio.play("shiny", 1.18, -7.0)
 			G.haptic(18)
 	for cell in entered:
@@ -943,7 +945,7 @@ func _apply_advanced_floor(c: Catcher, previous: Dictionary, direction: Vector2i
 			var wind: Vector2i = current_at[cell]
 			var delta_time := 1.5 if wind == direction else (-2.0 if wind == -direction else -0.5)
 			time_left = clampf(time_left + delta_time, 0.1, total_time)
-			fx.float_text(cell_pos(cell), "+1.5초" if delta_time > 0.0 else "%0.1f초" % delta_time, Color("#bcecff") if delta_time > 0.0 else Color("#ffc1cf"), 21)
+			fx.float_text(cell_pos(cell), L10n.text("+1.5초") if delta_time > 0.0 else L10n.text("%0.1f초") % delta_time, Color("#bcecff") if delta_time > 0.0 else Color("#ffc1cf"), 21)
 			break
 	for cell in entered:
 		if time_rift_at.has(cell):
@@ -951,7 +953,7 @@ func _apply_advanced_floor(c: Catcher, previous: Dictionary, direction: Vector2i
 			time_rift_at.erase(cell)
 			time_left = maxf(0.1, time_left - penalty)
 			fx.ring(cell_pos(cell), Color("#8555c7"), 1.5)
-			fx.float_text(cell_pos(cell), "-%0.0f초" % penalty, Color("#efc5ff"), 25)
+			fx.float_text(cell_pos(cell), L10n.text("-%0.0f초") % penalty, Color("#efc5ff"), 25)
 			G.haptic(24)
 			queue_redraw()
 			break
@@ -969,7 +971,7 @@ func _advance_fragile_walls(cost: int) -> void:
 		fragile_at.erase(cell)
 		walls.erase(cell)
 		fx.impact(cell_pos(cell), Color("#d9c5ff"), true)
-		fx.float_text(cell_pos(cell), "균열 붕괴!", Color("#f2eaff"), 22)
+		fx.float_text(cell_pos(cell), L10n.text("균열 붕괴!"), Color("#f2eaff"), 22)
 	if not broken.is_empty():
 		audio.play("pop_big", 0.9)
 		G.haptic(28)
@@ -996,7 +998,7 @@ func _reveal_nearby_fog() -> void:
 		var jelly = jelly_at.get(cell)
 		if jelly != null:
 			jelly.create_tween().tween_property(jelly, "modulate", Color.WHITE, 0.22)
-			jelly.show_personality_feedback("안개 해제!")
+			jelly.show_personality_feedback(L10n.text("안개 해제!"))
 
 
 func _check_move_limit_failure() -> void:
@@ -1017,7 +1019,7 @@ func _check_move_limit_failure() -> void:
 			return
 		if jellies.is_empty() and catchers.is_empty():
 			return
-	_fail("이동 횟수를 모두 썼어요!")
+	_fail(L10n.text("이동 횟수를 모두 썼어요!"))
 
 
 func _target_footprint(c: Catcher, org: Vector2i) -> Dictionary:
@@ -1080,7 +1082,7 @@ func _trigger_moving_personality(c: Catcher, org: Vector2i) -> bool:
 		if j.personality_id == "shy":
 			var target := _personality_destination(cell, footprint)
 			if target != cell:
-				_move_personality_jelly(j, cell, target, "앗, 부끄러워!")
+				_move_personality_jelly(j, cell, target, L10n.text("앗, 부끄러워!"))
 				return true
 		elif j.personality_id == "playful":
 			for dir in [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]:
@@ -1093,7 +1095,7 @@ func _trigger_moving_personality(c: Catcher, org: Vector2i) -> bool:
 					j.cell = other_cell
 					other.cell = cell
 					j.personality_state = 1
-					j.show_personality_feedback("자리 바꾸기!")
+					j.show_personality_feedback(L10n.text("자리 바꾸기!"))
 					j.create_tween().tween_property(j, "position", cell_pos(other_cell), 0.22).set_trans(Tween.TRANS_BACK)
 					other.create_tween().tween_property(other, "position", cell_pos(cell), 0.22).set_trans(Tween.TRANS_BACK)
 					return true
@@ -1105,7 +1107,8 @@ func _trigger_moving_personality(c: Catcher, org: Vector2i) -> bool:
 func _physics_process(delta: float) -> void:
 	if state != "play":
 		return
-	if not tutorial_timer_paused:
+	# 첫 격자 이동 전에는 탐색 시간을 주고, 이동 후에는 손을 떼도 계속 센다.
+	if total_moves > 0 and not tutorial_timer_paused:
 		elapsed_play_time += delta
 		time_left -= delta
 		hud.set_time(time_left, total_time)
@@ -1175,7 +1178,7 @@ func _check_rescue_switch(c: Catcher) -> void:
 			if jelly != null:
 				jelly.set_rescue_sealed(false)
 		fx.impact(cell_pos(cell), Color("#bd8cf4"), true)
-		fx.float_text(cell_pos(cell), "봉인 해제!", Color("#f5e4ff"), 29)
+		fx.float_text(cell_pos(cell), L10n.text("봉인 해제!"), Color("#f5e4ff"), 29)
 		audio.play("pop_big", 1.2)
 		G.haptic(32)
 		queue_redraw()
@@ -1212,7 +1215,7 @@ func _evacuate_catcher(c: Catcher, exit: Dictionary) -> void:
 	var pos := cell_pos(exit.cell)
 	fx.ring(pos, G.COLORS[c.color_id], 1.35)
 	fx.impact(pos, G.COLORS[c.color_id], true)
-	fx.float_text(pos, "구출 완료!", Color("#eaffbe"), 30)
+	fx.float_text(pos, L10n.text("구출 완료!"), Color("#eaffbe"), 30)
 	audio.play("pop_big", 1.3)
 	G.haptic(40)
 	shake_amt = maxf(shake_amt, 8.0)
@@ -1244,7 +1247,7 @@ func _check_shape_seals(c: Catcher) -> void:
 			center += cell_pos(cell)
 		center /= float(seal.cells.size())
 		fx.impact(center, G.COLORS[c.color_id], true)
-		fx.float_text(center, "봉인 해제!", Color("#fff2a6"), 31)
+		fx.float_text(center, L10n.text("봉인 해제!"), Color("#fff2a6"), 31)
 		audio.play("pop_big", 1.25)
 		G.haptic(35)
 		shake_amt = maxf(shake_amt, 6.0)
@@ -1275,7 +1278,7 @@ func _absorb_footprint(c: Catcher) -> void:
 				cracked += 1
 				frozen_at[cl] = j.frost_layers
 				fx.impact(cell_pos(cl), Color("#bff7ff"), false)
-				fx.float_text(cell_pos(cl), "얼음 파괴!", Color("#e8fdff"), 25)
+				fx.float_text(cell_pos(cl), L10n.text("얼음 파괴!"), Color("#e8fdff"), 25)
 			elif j.hit_boss():
 				# 왕젤리는 남은 체력만큼 같은 색 블록으로 더 두드려야 구조된다.
 				cracked += 1
@@ -1299,7 +1302,7 @@ func _absorb_footprint(c: Catcher) -> void:
 func _personality_jelly_ready(j: Jelly, cell: Vector2i) -> bool:
 	if j.personality_id == "sleepy" and j.personality_state == 0:
 		j.personality_state = 1
-		j.show_personality_feedback("Zzz… 한 번 더!")
+		j.show_personality_feedback(L10n.text("Zzz… 한 번 더!"))
 		return false
 	if j.personality_id == "lonely" and j.personality_state == 0:
 		for dir in [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]:
@@ -1309,30 +1312,30 @@ func _personality_jelly_ready(j: Jelly, cell: Vector2i) -> bool:
 				return true
 		# 막다른 해답이 생기지 않게 첫 접촉 뒤에는 혼자서도 용기를 내게 한다.
 		j.personality_state = 1
-		j.show_personality_feedback("친구가 필요해…")
+		j.show_personality_feedback(L10n.text("친구가 필요해…"))
 		return false
 	return true
 
 
 func _special_jelly_ready(cell: Vector2i, catcher: Catcher = null) -> bool:
 	if sealed_at.has(cell) and not rescue_switch_active:
-		fx.float_text(cell_pos(cell), "스위치 먼저!", Color("#e8ceff"), 23)
+		fx.float_text(cell_pos(cell), L10n.text("스위치 먼저!"), Color("#e8ceff"), 23)
 		return false
 	# 호위 대상은 전담 블록만 구조할 수 있다.
 	if cell == escort_cell and catcher != null and catcher.spec_index != escort_catcher:
-		fx.float_text(cell_pos(cell), "전담 블록만!", Color("#c9f7de"), 23)
+		fx.float_text(cell_pos(cell), L10n.text("전담 블록만!"), Color("#c9f7de"), 23)
 		return false
 	# 색 순서 규칙에서 아직 차례가 아닌 색은 구조할 수 없다.
 	var ordered = jelly_at.get(cell)
 	if ordered != null and _order_blocks_color(ordered.color_id):
 		_advance_color_order()
 		var current := String(color_order[mini(color_order_index, color_order.size() - 1)])
-		fx.float_text(cell_pos(cell), "%s 먼저!" % String(G.COLOR_NAMES.get(current, current)), Color("#ffe5a6"), 23)
+		fx.float_text(cell_pos(cell), L10n.text("%s 먼저!") % L10n.text(String(G.COLOR_NAMES.get(current, current))), Color("#ffe5a6"), 23)
 		return false
 	if chain_at.has(cell):
 		var link: Dictionary = chain_at[cell]
 		if chain_progress[int(link.chain)] != int(link.index):
-			fx.float_text(cell_pos(cell), "%d번부터!" % (chain_progress[int(link.chain)] + 1), Color("#ffe5a6"), 23)
+			fx.float_text(cell_pos(cell), L10n.text("%d번부터!") % (chain_progress[int(link.chain)] + 1), Color("#ffe5a6"), 23)
 			return false
 	return true
 
@@ -1375,7 +1378,7 @@ func _absorb(j: Jelly, c: Catcher, cl: Vector2i) -> void:
 			for locked in catchers:
 				if locked.spec_index == int(catcher_index):
 					locked.set_key_locked(false)
-					fx.float_text(locked.center_px(), "잠금 해제!", Color("#f4e2ff"), 27)
+					fx.float_text(locked.center_px(), L10n.text("잠금 해제!"), Color("#f4e2ff"), 27)
 					break
 		audio.play("pop_big", 1.32)
 		G.haptic(30)
@@ -1407,7 +1410,7 @@ func _absorb(j: Jelly, c: Catcher, cl: Vector2i) -> void:
 	if is_instance_valid(c) and c.completed and traps_left == 0:
 		if _has_rescue_exit(c):
 			c.set_full()
-			fx.float_text(c.center_px(), "출구로!", Color("#dcffb4"), 29)
+			fx.float_text(c.center_px(), L10n.text("출구로!"), Color("#dcffb4"), 29)
 			if tutorial_id == "rescue_exit":
 				_show_exit_tutorial(c)
 			call_deferred("_try_rescue_exit", c)
@@ -1428,7 +1431,7 @@ func _detonate_bomb(cell: Vector2i) -> void:
 			broken += 1
 			fx.impact(cell_pos(near), Color("#ffb066"), true)
 	fx.ring(cell_pos(cell), Color("#ff9a3c"), 1.6)
-	fx.float_text(cell_pos(cell), "장벽 파괴!" if broken > 0 else "펑!", Color("#ffd9a8"), 27)
+	fx.float_text(cell_pos(cell), L10n.text("장벽 파괴!") if broken > 0 else L10n.text("펑!"), Color("#ffd9a8"), 27)
 	audio.play("pop_big", 0.92)
 	G.haptic(34)
 	shake_amt = maxf(shake_amt, 9.0)
@@ -1469,7 +1472,7 @@ func _on_boss_defeated(cell: Vector2i) -> void:
 				fx.sparkle(cell_pos(near), 6)
 				placed += 1
 			hud.set_goals(goals)
-			fx.float_text(pos, "%d마리로 분열!" % placed, Color("#e2d0ff"), 29)
+			fx.float_text(pos, L10n.text("%d마리로 분열!") % placed, Color("#e2d0ff"), 29)
 			# 놓을 자리가 모자라 덜 분열했다면, 미리 잡아 둔 여유 수용량을 정리해
 			# 블록이 영원히 GO가 되지 못하는 상태를 막는다.
 			if placed < splits:
@@ -1479,9 +1482,9 @@ func _on_boss_defeated(cell: Vector2i) -> void:
 			time_left += bounty
 			total_time = maxf(total_time, time_left)
 			hud.set_time(time_left, total_time)
-			fx.float_text(pos, "시간 되찾기 +%d초" % int(bounty), Color("#c9f0ff"), 30)
+			fx.float_text(pos, L10n.text("시간 되찾기 +%d초") % int(bounty), Color("#c9f0ff"), 30)
 		_:
-			fx.float_text(pos, "왕젤리 구조 완료!", Color("#ffe9a8"), 30)
+			fx.float_text(pos, L10n.text("왕젤리 구조 완료!"), Color("#ffe9a8"), 30)
 	hud.refresh_objectives()
 
 
@@ -1516,7 +1519,7 @@ func _process_boss_timer(delta: float) -> void:
 	time_left = maxf(0.0, time_left - amount)
 	hud.set_time(time_left, total_time)
 	if boss_cell.x >= 0:
-		fx.float_text(cell_pos(boss_cell), "-%0.1f초" % amount, Color("#ffb3c1"), 25)
+		fx.float_text(cell_pos(boss_cell), L10n.text("-%0.1f초") % amount, Color("#ffb3c1"), 25)
 		fx.ring(cell_pos(boss_cell), Color("#7fb4e0"), 1.1)
 	audio.play("lock", 1.05, -6.0)
 	G.haptic(14)
@@ -1562,7 +1565,7 @@ func _clear_level() -> void:
 		stars_n = 1
 	if not main.active_activity.is_empty() and String(main.active_activity.get("modifier", {}).get("id", "")) == "perfect_rescue" and stars_n < 2:
 		state = "play"
-		_fail("완벽 구조는 2성 이상으로 완료해야 해요!")
+		_fail(L10n.text("완벽 구조는 2성 이상으로 완료해야 해요!"))
 		return
 	audio.play("clear")
 	G.haptic(60)
@@ -1627,7 +1630,7 @@ func _fail(reason: String = "시간이 다 됐어요!") -> void:
 	G.haptic(25)
 	main.save.record_level_failure()
 	if main.analytics:
-		var reason_id := "move_limit" if reason.begins_with("이동") else "time_out"
+		var reason_id := "move_limit" if reason.begins_with(L10n.text("이동")) else "time_out"
 		main.analytics.track("level_fail", {"level": level_idx + 1, "reason": reason_id, "elapsed_seconds": snappedf(elapsed_play_time, 0.01), "continued": continued_after_fail})
 	for j in jellies:
 		if is_instance_valid(j) and not j.absorbing:
@@ -1680,7 +1683,7 @@ func use_booster(booster_id: String) -> void:
 	if state != "play" or main.save.get_booster_count(booster_id) <= 0:
 		return
 	if not main.active_activity.is_empty() and String(main.active_activity.get("modifier", {}).get("id", "")) == "no_boosters":
-		fx.float_text(Vector2(G.W * 0.5, G.H - 150), "맨손 구조에서는 부스터를 사용할 수 없어요", Color("#fff0dc"), 22)
+		fx.float_text(Vector2(G.W * 0.5, G.H - 150), L10n.text("맨손 구조에서는 부스터를 사용할 수 없어요"), Color("#fff0dc"), 22)
 		return
 	var applied := false
 	match booster_id:
@@ -1688,7 +1691,7 @@ func use_booster(booster_id: String) -> void:
 			time_left += 15.0
 			total_time = maxf(total_time, time_left)
 			hud.set_time(time_left, total_time)
-			fx.float_text(Vector2(G.W * 0.5, 165), "+15초", Color("#fff39b"), 31)
+			fx.float_text(Vector2(G.W * 0.5, 165), L10n.text("+15초"), Color("#fff39b"), 31)
 			applied = true
 		"compass":
 			applied = _show_movement_hint()
@@ -1699,7 +1702,7 @@ func use_booster(booster_id: String) -> void:
 		"rescue":
 			applied = _release_one_gimmick()
 	if not applied:
-		fx.float_text(Vector2(G.W * 0.5, G.H - 150), "지금은 사용할 곳이 없어요", Color("#fff0dc"), 22)
+		fx.float_text(Vector2(G.W * 0.5, G.H - 150), L10n.text("지금은 사용할 곳이 없어요"), Color("#fff0dc"), 22)
 		return
 	main.save.consume_booster(booster_id)
 	hud.refresh_boosters()
@@ -1715,7 +1718,7 @@ func _show_movement_hint() -> bool:
 			if _can_place(c, c.origin_cell + dir, dir):
 				var arrow: String = String({Vector2i.UP: "↑", Vector2i.RIGHT: "→", Vector2i.DOWN: "↓", Vector2i.LEFT: "←"}[dir])
 				fx.ring(c.center_px(), G.COLORS[c.color_id], 1.25)
-				fx.float_text(c.center_px(), "%s 이쪽!" % arrow, Color("#e9fbff"), 30)
+				fx.float_text(c.center_px(), L10n.text("%s 이쪽!") % arrow, Color("#e9fbff"), 30)
 				return true
 	return false
 
@@ -1744,7 +1747,7 @@ func _open_bonus_space() -> bool:
 		if adjacent_playable:
 			walls.erase(cell)
 			fx.impact(cell_pos(cell), Color("#ffd978"), true)
-			fx.float_text(cell_pos(cell), "길 열림!", Color("#fff0a8"), 27)
+			fx.float_text(cell_pos(cell), L10n.text("길 열림!"), Color("#fff0a8"), 27)
 			queue_redraw()
 			return true
 	return false
@@ -1755,7 +1758,7 @@ func _release_one_gimmick() -> bool:
 		if is_instance_valid(c) and c.key_locked:
 			locked_catcher_indices.erase(c.spec_index)
 			c.set_key_locked(false)
-			fx.float_text(c.center_px(), "잠금 해제!", Color("#f4e2ff"), 27)
+			fx.float_text(c.center_px(), L10n.text("잠금 해제!"), Color("#f4e2ff"), 27)
 			return true
 	if not rescue_switch_active and not sealed_at.is_empty():
 		rescue_switch_active = true
@@ -1763,7 +1766,7 @@ func _release_one_gimmick() -> bool:
 			var jelly = jelly_at.get(cell)
 			if jelly != null:
 				jelly.set_rescue_sealed(false)
-		fx.float_text(Vector2(G.W * 0.5, G.H * 0.5), "구조 봉인 해제!", Color("#f4e2ff"), 29)
+		fx.float_text(Vector2(G.W * 0.5, G.H * 0.5), L10n.text("구조 봉인 해제!"), Color("#f4e2ff"), 29)
 		return true
 	if not seal_gates.is_empty():
 		var seal = seal_gates.values()[0]
@@ -2021,18 +2024,6 @@ func debug_validate_smooth_drag() -> bool:
 	_unhandled_input(release)
 	return preview_valid and step_valid and grabbed == null
 
-func _find_catcher_for(cid: String, cell: Vector2i = Vector2i(-1, -1)) -> Catcher:
-	# 호위 대상은 전담 블록만 구조할 수 있으므로 자동 검증도 같은 규칙을 따른다.
-	var require_index := escort_catcher if (cell == escort_cell and escort_catcher >= 0) else -1
-	for c in catchers:
-		if c.color_id != cid or c.completed or c.key_locked or c.remaining_capacity <= 0:
-			continue
-		if require_index >= 0 and c.spec_index != require_index:
-			continue
-		return c
-	return null
-
-
 func _debug_terrain_reach(c: Catcher) -> Dictionary:
 	if _debug_terrain_cache.has(c.spec_index):
 		return _debug_terrain_cache[c.spec_index]
@@ -2148,7 +2139,7 @@ func _debug_can_finish_catcher(c: Catcher, target: Vector2i, positions: Array) -
 	var snapshot := {"grid": board, "catchers": specs, "one_ways": L.get("one_ways", []), "ghosts": []}
 	for cell in ghost_at:
 		if not captured.has(cell): snapshot.ghosts.append([cell.x, cell.y])
-	var possible := bool(Levels._greedy_solve(snapshot).ok)
+	var possible := bool(LevelSolverLib._greedy_solve(snapshot).ok)
 	_debug_continuation_cache[cache_key] = possible
 	return possible
 
@@ -2287,7 +2278,7 @@ func debug_capture_one(relaxed_continuation: bool = false) -> bool:
 
 
 func debug_drive() -> bool:
-	debug_catcher_shift = int(Levels._greedy_solve(L).get("shift", 0))
+	debug_catcher_shift = int(LevelSolverLib._greedy_solve(L).get("shift", 0))
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--autoplay-shift="):
 			debug_catcher_shift = int(arg.get_slice("=", 1))

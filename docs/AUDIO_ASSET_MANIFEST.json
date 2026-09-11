@@ -1,0 +1,818 @@
+[
+  {
+    "name": "home",
+    "kind": "bgm",
+    "request": {
+      "category_id": "music",
+      "subcategory_id": "bgm",
+      "engine_id": "ace_step_15",
+      "duration_s": 80,
+      "description": "젤리몬 모바일 슬라이딩 퍼즐 게임의 오리지널 인스트루멘털 BGM. 말랑말랑한 작은 젤리 친구, 둥글고 귀여운 표정, 크림색과 파스텔 색상의 아지트, 친구를 안전하게 구조하는 다정한 장난감 세계. 작고 가까이서 연주하는 장난감 앙상블. 장난감 피아노와 짧게 튕기는 나무 실로폰이 주인공, 둥근 피치카토 저음과 아주 작은 우드블록 리듬. 장조의 단순한 3~5음 모티프, 스타카토 음 사이에 충분한 쉼표, 규칙적인 4/4 박자. 게임의 말랑한 팝 효과음이 잘 들리도록 얇고 조용한 편곡. 햇살 드는 작은 아지트에서 젤리 친구가 고개를 끄덕이는 귀엽고 포근한 홈 음악. C major, 92 BPM. 장난감 피아노의 짧은 질문과 실로폰의 짧은 응답, 가볍고 사랑스러운 걸음 리듬. 멜로디를 과장하지 않음. 처음부터 일정한 반주가 재생되고 같은 8마디 화성 패턴이 반복되며 마지막이 첫 화음으로 자연스럽게 돌아감. 중간에 드롭, 빌드업, 클라이맥스, 긴 도입부, 엔딩, 페이드아웃 없음. 목소리, 허밍, 합창, 가사 없음. 웅장한 오케스트라, 영화 예고편, 록 기타, 강한 킥과 스네어, EDM, 재즈 솔로, 우쿨렐레 광고 음악, 긴 신스 패드 없음. 기존 곡을 인용하지 않는 독창적인 음악."
+    },
+    "job_id": "45050685-7855-440c-98b9-edde03d57698",
+    "asset_id": "15e4e778-be06-4b97-8c42-b48a715d7168",
+    "generation_prompt": "Cute cozy background music for a soft jelly puzzle game, C major at 92 BPM, light toy ensemble with close toy piano and short wooden xylophone, round pizzicato bass, tiny woodblock rhythm, simple staccato three to five note motifs in regular 4/4, gentle rests, warm pastel mood, thin quiet clear high quality arrangement leaving space for pop sound effects, continuous loop-like eight-bar harmony, no vocals, drums, synth pads, rock, EDM, or buildups.",
+    "source_metadata": {
+      "id": "15e4e778-be06-4b97-8c42-b48a715d7168",
+      "job_id": "45050685-7855-440c-98b9-edde03d57698",
+      "file_name": "music_45050685.wav",
+      "media_type": "audio/wav",
+      "duration_s": 80.0,
+      "sample_rate": 48000,
+      "channels": 2,
+      "size_bytes": 15360044,
+      "length_fill": "time_stretched",
+      "audible_source_duration_s": 78.84,
+      "source_asset_id": null,
+      "edit_summary": null,
+      "created_at": "2026-09-11T05:59:37.806855"
+    },
+    "source_sha256": "c69ed05b590049abacba8e5e3f7c768f426c2447a01f8ecb74f6e6a6c160e162",
+    "output_sha256": "55661d202187d12f55b499a3ea843b64c23c90ca010413cd00ac6d8bff13b1ae",
+    "processing": {
+      "source_start_s": 30.3,
+      "bars": 16,
+      "requested_bpm": 92,
+      "estimated_bpm": 88.70999999999955,
+      "effective_bpm": 88.70999999999955,
+      "tempo_confidence": 0.38326247601233615,
+      "overlap_s": 0.6763541666666667,
+      "method": "tail-to-head raised-cosine overlap, no silence",
+      "target_rms": 0.12
+    },
+    "metrics": {
+      "path": "audio/bgm/home.ogg",
+      "seconds": 43.287125,
+      "bytes": 687470,
+      "sample_rate": 48000,
+      "channels": 2,
+      "peak": 0.6772383451461792,
+      "rms": 0.12021064024298098,
+      "seam_step": 0.0001383526250720024,
+      "interior_step_p999": 0.10008871426712782
+    },
+    "revision": "bgm-v2-toy-ensemble-2026-09-11"
+  },
+  {
+    "name": "map",
+    "kind": "bgm",
+    "request": {
+      "category_id": "music",
+      "subcategory_id": "bgm",
+      "engine_id": "ace_step_15",
+      "duration_s": 80,
+      "description": "젤리몬 모바일 슬라이딩 퍼즐 게임의 오리지널 인스트루멘털 BGM. 말랑말랑한 작은 젤리 친구, 둥글고 귀여운 표정, 크림색과 파스텔 색상의 아지트, 친구를 안전하게 구조하는 다정한 장난감 세계. 작고 가까이서 연주하는 장난감 앙상블. 장난감 피아노와 짧게 튕기는 나무 실로폰이 주인공, 둥근 피치카토 저음과 아주 작은 우드블록 리듬. 장조의 단순한 3~5음 모티프, 스타카토 음 사이에 충분한 쉼표, 규칙적인 4/4 박자. 게임의 말랑한 팝 효과음이 잘 들리도록 얇고 조용한 편곡. 젤리 친구들과 작은 섬을 한 칸씩 탐험하는 호기심 많고 경쾌한 지도 음악. F major, 100 BPM. 장난감 피아노와 나무 실로폰에 짧은 리코더 응답, 둥근 피치카토 저음. 행진곡처럼 세지 않고 가볍게 통통 걷는 느낌. 처음부터 일정한 반주가 재생되고 같은 8마디 화성 패턴이 반복되며 마지막이 첫 화음으로 자연스럽게 돌아감. 중간에 드롭, 빌드업, 클라이맥스, 긴 도입부, 엔딩, 페이드아웃 없음. 목소리, 허밍, 합창, 가사 없음. 웅장한 오케스트라, 영화 예고편, 록 기타, 강한 킥과 스네어, EDM, 재즈 솔로, 우쿨렐레 광고 음악, 긴 신스 패드 없음. 기존 곡을 인용하지 않는 독창적인 음악."
+    },
+    "job_id": "da7beabe-fa10-4e5c-b40e-2333a5935b15",
+    "asset_id": "52924bf7-e1e8-465f-9aa2-2672077486a8",
+    "generation_prompt": "High-quality clear original toy-pop game BGM in F major at a light 100 BPM walking pace. Cute mobile puzzle map music led by toy piano and wooden xylophone, with short recorder responses, round pizzicato bass, tiny woodblock rhythm. Simple cheerful three-to-five-note staccato motif, generous rests, constant thin quiet accompaniment, repeating eight-bar harmony, steady loopable return to first chord. Curious soft pastel toy-world mood; no vocals or heavy drums.",
+    "source_metadata": {
+      "id": "52924bf7-e1e8-465f-9aa2-2672077486a8",
+      "job_id": "da7beabe-fa10-4e5c-b40e-2333a5935b15",
+      "file_name": "music_da7beabe.wav",
+      "media_type": "audio/wav",
+      "duration_s": 80.0,
+      "sample_rate": 48000,
+      "channels": 2,
+      "size_bytes": 15360044,
+      "length_fill": "time_stretched",
+      "audible_source_duration_s": 74.08,
+      "source_asset_id": null,
+      "edit_summary": null,
+      "created_at": "2026-09-11T06:02:32.810925"
+    },
+    "source_sha256": "d243530bf94a2563246ca5441b33c1995f21382d44087b1af6d9cb552d9a6786",
+    "output_sha256": "d6849709cae5b6786a760fe422143d40b678a77a94cbdadcd3b4bd3687c87c74",
+    "processing": {
+      "source_start_s": 16.4,
+      "bars": 16,
+      "requested_bpm": 100,
+      "estimated_bpm": 111.09999999999869,
+      "effective_bpm": 111.09999999999869,
+      "tempo_confidence": 0.5439626053528008,
+      "overlap_s": 0.5400625,
+      "method": "tail-to-head raised-cosine overlap, no silence",
+      "target_rms": 0.12
+    },
+    "metrics": {
+      "path": "audio/bgm/map.ogg",
+      "seconds": 34.56345833333334,
+      "bytes": 566079,
+      "sample_rate": 48000,
+      "channels": 2,
+      "peak": 0.6645115613937378,
+      "rms": 0.12005699305699528,
+      "seam_step": 0.006473347544670105,
+      "interior_step_p999": 0.14091894402913913
+    },
+    "revision": "bgm-v2-toy-ensemble-2026-09-11"
+  },
+  {
+    "name": "puzzle",
+    "kind": "bgm",
+    "request": {
+      "category_id": "music",
+      "subcategory_id": "bgm",
+      "engine_id": "ace_step_15",
+      "duration_s": 80,
+      "description": "젤리몬 모바일 슬라이딩 퍼즐 게임의 오리지널 인스트루멘털 BGM. 말랑말랑한 작은 젤리 친구, 둥글고 귀여운 표정, 크림색과 파스텔 색상의 아지트, 친구를 안전하게 구조하는 다정한 장난감 세계. 작고 가까이서 연주하는 장난감 앙상블. 장난감 피아노와 짧게 튕기는 나무 실로폰이 주인공, 둥근 피치카토 저음과 아주 작은 우드블록 리듬. 장조의 단순한 3~5음 모티프, 스타카토 음 사이에 충분한 쉼표, 규칙적인 4/4 박자. 게임의 말랑한 팝 효과음이 잘 들리도록 얇고 조용한 편곡. 색깔 블록을 하나씩 밀며 생각하는 귀여운 퍼즐 음악. C major, 104 BPM. 나무 실로폰의 절제된 두 마디 반복과 낮은 장난감 피아노 응답. 가장 성긴 편곡, 짧은 음과 쉼표가 많고 차분하게 통통 뛰는 박자. 긴 선율보다 집중을 돕는 작은 패턴. 처음부터 일정한 반주가 재생되고 같은 8마디 화성 패턴이 반복되며 마지막이 첫 화음으로 자연스럽게 돌아감. 중간에 드롭, 빌드업, 클라이맥스, 긴 도입부, 엔딩, 페이드아웃 없음. 목소리, 허밍, 합창, 가사 없음. 웅장한 오케스트라, 영화 예고편, 록 기타, 강한 킥과 스네어, EDM, 재즈 솔로, 우쿨렐레 광고 음악, 긴 신스 패드 없음. 기존 곡을 인용하지 않는 독창적인 음악."
+    },
+    "job_id": "0a1ade03-4c7b-4e64-b789-21c495b5aab1",
+    "asset_id": "2fd83401-8ef8-4f2d-88cf-0f2790e13213",
+    "generation_prompt": "Cute minimalist puzzle background music in C major at 104 BPM, gentle toy ensemble with soft toy piano and short wooden xylophone staccato, round pizzicato bass, tiny woodblock rhythm, sparse three to five note motifs, clear rests, steady 4/4, warm pastel mood, thin quiet arrangement leaving space for pop sound effects, looping eight-bar harmony without build-up, drop, climax, intro, ending, or fade-out",
+    "source_metadata": {
+      "id": "2fd83401-8ef8-4f2d-88cf-0f2790e13213",
+      "job_id": "0a1ade03-4c7b-4e64-b789-21c495b5aab1",
+      "file_name": "music_0a1ade03.wav",
+      "media_type": "audio/wav",
+      "duration_s": 80.0,
+      "sample_rate": 48000,
+      "channels": 2,
+      "size_bytes": 15360044,
+      "length_fill": "time_stretched",
+      "audible_source_duration_s": 74.14,
+      "source_asset_id": null,
+      "edit_summary": null,
+      "created_at": "2026-09-11T06:06:22.573736"
+    },
+    "source_sha256": "35d3d3ef3bf349998ce0c660f0a7e06e7c93bba361af0345d51f2c4c2ecacbfe",
+    "output_sha256": "6bbde33ccfd33be880c747b4a6988f0333808439c080ad6236fbd8a64d1a67ab",
+    "processing": {
+      "source_start_s": 9.7,
+      "bars": 16,
+      "requested_bpm": 104,
+      "estimated_bpm": 111.11999999999888,
+      "effective_bpm": 111.11999999999888,
+      "tempo_confidence": 0.5858956611150182,
+      "overlap_s": 0.5399583333333333,
+      "method": "tail-to-head raised-cosine overlap, no silence",
+      "target_rms": 0.12
+    },
+    "metrics": {
+      "path": "audio/bgm/puzzle.ogg",
+      "seconds": 34.557229166666666,
+      "bytes": 577593,
+      "sample_rate": 48000,
+      "channels": 2,
+      "peak": 0.6338838934898376,
+      "rms": 0.1201640076679412,
+      "seam_step": 0.01984025537967682,
+      "interior_step_p999": 0.09598282288388325
+    },
+    "revision": "bgm-v2-toy-ensemble-2026-09-11"
+  },
+  {
+    "name": "boss",
+    "kind": "bgm",
+    "request": {
+      "category_id": "music",
+      "subcategory_id": "bgm",
+      "engine_id": "ace_step_15",
+      "duration_s": 80,
+      "description": "젤리몬 모바일 슬라이딩 퍼즐 게임의 오리지널 인스트루멘털 BGM. 말랑말랑한 작은 젤리 친구, 둥글고 귀여운 표정, 크림색과 파스텔 색상의 아지트, 친구를 안전하게 구조하는 다정한 장난감 세계. 작고 가까이서 연주하는 장난감 앙상블. 장난감 피아노와 짧게 튕기는 나무 실로폰이 주인공, 둥근 피치카토 저음과 아주 작은 우드블록 리듬. 장조의 단순한 3~5음 모티프, 스타카토 음 사이에 충분한 쉼표, 규칙적인 4/4 박자. 게임의 말랑한 팝 효과음이 잘 들리도록 얇고 조용한 편곡. 무서운 전투가 아닌, 심술난 젤리 친구를 달래는 장난스러운 퍼즐 도전. D minor에서 F major로 다정하게 풀리는 8마디 순환, 112 BPM. 나무 실로폰과 짧은 바순 응답, 통통한 피치카토, 작은 우드블록. 약간 재빠르고 익살스럽지만 압박감 없는 어린이 인형극 규모. 처음부터 일정한 반주가 재생되고 같은 8마디 화성 패턴이 반복되며 마지막이 첫 화음으로 자연스럽게 돌아감. 중간에 드롭, 빌드업, 클라이맥스, 긴 도입부, 엔딩, 페이드아웃 없음. 목소리, 허밍, 합창, 가사 없음. 웅장한 오케스트라, 영화 예고편, 록 기타, 강한 킥과 스네어, EDM, 재즈 솔로, 우쿨렐레 광고 음악, 긴 신스 패드 없음. 기존 곡을 인용하지 않는 독창적인 음악."
+    },
+    "job_id": "36e11dee-b813-45cc-b5da-07976f60a9de",
+    "asset_id": "539f23e4-cf4a-493d-ad06-9b4d87b301f1",
+    "generation_prompt": "Cute original instrumental BGM for a jelly sliding puzzle game: playful children’s puppet-theater scale, thin quiet arrangement, 112 BPM in 4/4. Toy piano and short wooden xylophone lead, round pizzicato bass, tiny wood-block rhythm, brief bassoon responses. Simple major-key 3-5 note motif with staccato notes and rests, gentle D minor to F major eight-bar loop, seamless repeat. Warm pastel mood, mischievous but pressure-free puzzle challenge.",
+    "source_metadata": {
+      "id": "539f23e4-cf4a-493d-ad06-9b4d87b301f1",
+      "job_id": "36e11dee-b813-45cc-b5da-07976f60a9de",
+      "file_name": "music_36e11dee.wav",
+      "media_type": "audio/wav",
+      "duration_s": 80.0,
+      "sample_rate": 48000,
+      "channels": 2,
+      "size_bytes": 15360044,
+      "length_fill": "time_stretched",
+      "audible_source_duration_s": 77.32,
+      "source_asset_id": null,
+      "edit_summary": null,
+      "created_at": "2026-09-11T06:10:55.964290"
+    },
+    "source_sha256": "6287893bcafe8ada79a441b2eb8297ca6a4f37e72907f958aa7b66264843f170",
+    "output_sha256": "96b05abd0cf8549140d595ea9d280b04cfe6ae72143398df251e996f5c9274fe",
+    "processing": {
+      "source_start_s": 26.2,
+      "bars": 16,
+      "requested_bpm": 112,
+      "estimated_bpm": 115.95999999999901,
+      "effective_bpm": 115.95999999999901,
+      "tempo_confidence": 0.5762959923192787,
+      "overlap_s": 0.5174166666666666,
+      "method": "tail-to-head raised-cosine overlap, no silence",
+      "target_rms": 0.12
+    },
+    "metrics": {
+      "path": "audio/bgm/boss.ogg",
+      "seconds": 33.114875,
+      "bytes": 500204,
+      "sample_rate": 48000,
+      "channels": 2,
+      "peak": 0.6728178858757019,
+      "rms": 0.11989305085835109,
+      "seam_step": 0.008504819823428988,
+      "interior_step_p999": 0.13432496548630468
+    },
+    "revision": "bgm-v2-toy-ensemble-2026-09-11"
+  },
+  {
+    "name": "story",
+    "kind": "bgm",
+    "request": {
+      "category_id": "music",
+      "subcategory_id": "bgm",
+      "engine_id": "ace_step_15",
+      "duration_s": 80,
+      "description": "젤리몬 모바일 슬라이딩 퍼즐 게임의 오리지널 인스트루멘털 BGM. 말랑말랑한 작은 젤리 친구, 둥글고 귀여운 표정, 크림색과 파스텔 색상의 아지트, 친구를 안전하게 구조하는 다정한 장난감 세계. 작고 가까이서 연주하는 장난감 앙상블. 장난감 피아노와 짧게 튕기는 나무 실로폰이 주인공, 둥근 피치카토 저음과 아주 작은 우드블록 리듬. 장조의 단순한 3~5음 모티프, 스타카토 음 사이에 충분한 쉼표, 규칙적인 4/4 박자. 게임의 말랑한 팝 효과음이 잘 들리도록 얇고 조용한 편곡. 햇살 드는 작은 아지트에서 젤리 친구가 고개를 끄덕이는 귀엽고 포근한 홈 음악. C major, 92 BPM. 장난감 피아노의 짧은 질문과 실로폰의 짧은 응답, 가볍고 사랑스러운 걸음 리듬. 멜로디를 과장하지 않음. 처음부터 일정한 반주가 재생되고 같은 8마디 화성 패턴이 반복되며 마지막이 첫 화음으로 자연스럽게 돌아감. 중간에 드롭, 빌드업, 클라이맥스, 긴 도입부, 엔딩, 페이드아웃 없음. 목소리, 허밍, 합창, 가사 없음. 웅장한 오케스트라, 영화 예고편, 록 기타, 강한 킥과 스네어, EDM, 재즈 솔로, 우쿨렐레 광고 음악, 긴 신스 패드 없음. 기존 곡을 인용하지 않는 독창적인 음악."
+    },
+    "job_id": "45050685-7855-440c-98b9-edde03d57698",
+    "asset_id": "15e4e778-be06-4b97-8c42-b48a715d7168",
+    "generation_prompt": "Cute cozy background music for a soft jelly puzzle game, C major at 92 BPM, light toy ensemble with close toy piano and short wooden xylophone, round pizzicato bass, tiny woodblock rhythm, simple staccato three to five note motifs in regular 4/4, gentle rests, warm pastel mood, thin quiet clear high quality arrangement leaving space for pop sound effects, continuous loop-like eight-bar harmony, no vocals, drums, synth pads, rock, EDM, or buildups.",
+    "source_metadata": {
+      "id": "15e4e778-be06-4b97-8c42-b48a715d7168",
+      "job_id": "45050685-7855-440c-98b9-edde03d57698",
+      "file_name": "music_45050685.wav",
+      "media_type": "audio/wav",
+      "duration_s": 80.0,
+      "sample_rate": 48000,
+      "channels": 2,
+      "size_bytes": 15360044,
+      "length_fill": "time_stretched",
+      "audible_source_duration_s": 78.84,
+      "source_asset_id": null,
+      "edit_summary": null,
+      "created_at": "2026-09-11T05:59:37.806855"
+    },
+    "source_sha256": "c69ed05b590049abacba8e5e3f7c768f426c2447a01f8ecb74f6e6a6c160e162",
+    "output_sha256": "99e9932e0b94f19bbd82f6ce57ab79e8a2caa593cf794c464afcf81d33c6b20d",
+    "processing": {
+      "source_start_s": 33.2,
+      "bars": 16,
+      "requested_bpm": 84,
+      "estimated_bpm": 81.0699999999996,
+      "effective_bpm": 81.0699999999996,
+      "tempo_confidence": 0.33769193054247965,
+      "overlap_s": 0.7401041666666667,
+      "method": "tail-to-head raised-cosine overlap, no silence",
+      "derivation": {
+        "type": "pitch_preserving_tempo_variation",
+        "source_theme": "home",
+        "tempo_factor": 0.9130434782608695,
+        "reason": "Dedicated story generation failed twice at LM Studio prompt conversion; use new home theme variation."
+      },
+      "target_rms": 0.09
+    },
+    "metrics": {
+      "path": "audio/bgm/story.ogg",
+      "seconds": 47.366479166666664,
+      "bytes": 739140,
+      "sample_rate": 48000,
+      "channels": 2,
+      "peak": 0.50505530834198,
+      "rms": 0.09015987428561496,
+      "seam_step": 0.0003404528833925724,
+      "interior_step_p999": 0.07453696460835724
+    },
+    "revision": "bgm-v2-toy-ensemble-2026-09-11"
+  },
+  {
+    "name": "pop",
+    "kind": "sfx",
+    "request": {
+      "category_id": "sfx",
+      "engine_id": "stable_audio_open_small",
+      "duration_s": 0.6,
+      "description": "젤리몬: 파스텔 색감의 귀여운 젤리 생명체를 구출하고 집을 꾸미는 따뜻한 모바일 퍼즐 게임. 보컬, 말소리 없음. 작은 젤리 방울 하나가 톡 터지는 짧고 부드러운 팝. 단 한 번의 분명한 효과음, 시작 즉시 소리, 짧은 자연스러운 잔향. 배경음악, 배경 잡음, 반복 없음."
+    },
+    "job_id": "5a2fc146-f86c-412c-b950-13df876a2ca9",
+    "asset_id": "cab3ff00-99e0-4eff-833b-44c9f92fc011",
+    "generation_prompt": "A single soft pastel jelly droplet pop, cute translucent gel bursting with a gentle high-pitched blip and tiny liquid splash, immediate clear attack, natural reverb tail, warm mobile puzzle game SFX, no vocals, no music, clean high quality",
+    "source_metadata": {
+      "id": "cab3ff00-99e0-4eff-833b-44c9f92fc011",
+      "job_id": "5a2fc146-f86c-412c-b950-13df876a2ca9",
+      "file_name": "sfx_5a2fc146.wav",
+      "media_type": "audio/wav",
+      "duration_s": 0.15,
+      "sample_rate": 44100,
+      "channels": 2,
+      "size_bytes": 26504,
+      "length_fill": "stretch_limited",
+      "audible_source_duration_s": 0.12,
+      "source_asset_id": null,
+      "edit_summary": null,
+      "created_at": "2026-09-11T03:03:48.361680"
+    },
+    "source_sha256": "27506a4f3e64648ab5f2ad45eed52556377455e5087575f02059045cfec5f83d",
+    "output_sha256": "155ea6997eac731b5761d644603ec912da7a5601647713ef80f0a47ec4b6162c",
+    "processing": {
+      "trim_start_s": 0.005646258503401361,
+      "trim_end_s": 0.1492063492063492,
+      "edge_fade_ms": 4,
+      "mono": true
+    },
+    "metrics": {
+      "path": "audio/pop.wav",
+      "seconds": 0.14356009070294784,
+      "bytes": 12706,
+      "sample_rate": 44100,
+      "channels": 1,
+      "peak": 0.5999755859375,
+      "rms": 0.08312519189654526
+    }
+  },
+  {
+    "name": "pop_big",
+    "kind": "sfx",
+    "request": {
+      "category_id": "sfx",
+      "engine_id": "stable_audio_open_small",
+      "duration_s": 0.9,
+      "description": "젤리몬: 파스텔 색감의 귀여운 젤리 생명체를 구출하고 집을 꾸미는 따뜻한 모바일 퍼즐 게임. 보컬, 말소리 없음. 큰 젤리 덩어리가 뿅 하고 터지는 탄력 있는 풍성한 버블 팝. 단 한 번의 분명한 효과음, 시작 즉시 소리, 짧은 자연스러운 잔향. 배경음악, 배경 잡음, 반복 없음."
+    },
+    "job_id": "6937fe10-088b-4215-9362-ec1e664e2c06",
+    "asset_id": "c0325ad3-694e-46b2-b62c-37b15fccff66",
+    "generation_prompt": "A single high-quality bouncy bubble pop from a large soft pastel jelly blob bursting, plump rubbery membrane stretching and snapping with a sweet glossy plop, warm cute mobile game SFX, immediate attack, short natural reverb tail, no music, no noise, no vocals",
+    "source_metadata": {
+      "id": "c0325ad3-694e-46b2-b62c-37b15fccff66",
+      "job_id": "6937fe10-088b-4215-9362-ec1e664e2c06",
+      "file_name": "sfx_6937fe10.wav",
+      "media_type": "audio/wav",
+      "duration_s": 0.25,
+      "sample_rate": 44100,
+      "channels": 2,
+      "size_bytes": 44144,
+      "length_fill": "stretch_limited",
+      "audible_source_duration_s": 0.2,
+      "source_asset_id": null,
+      "edit_summary": null,
+      "created_at": "2026-09-11T03:04:38.415754"
+    },
+    "source_sha256": "7a2bbbb5c49a91136fb0f0a0447b1a62a937be7e07fbc5b20f78053e82b0aae3",
+    "output_sha256": "0815c8a750e191c42a0f2b0c22933efdd7ef1dfb7905fd2b2ba76453b6b2b513",
+    "processing": {
+      "trim_start_s": 0.002380952380952381,
+      "trim_end_s": 0.19941043083900226,
+      "edge_fade_ms": 4,
+      "mono": true
+    },
+    "metrics": {
+      "path": "audio/pop_big.wav",
+      "seconds": 0.19702947845804988,
+      "bytes": 17422,
+      "sample_rate": 44100,
+      "channels": 1,
+      "peak": 0.800018310546875,
+      "rms": 0.08565728597567755
+    }
+  },
+  {
+    "name": "merge",
+    "kind": "sfx",
+    "request": {
+      "category_id": "sfx",
+      "engine_id": "stable_audio_open_small",
+      "duration_s": 1.0,
+      "description": "젤리몬: 파스텔 색감의 귀여운 젤리 생명체를 구출하고 집을 꾸미는 따뜻한 모바일 퍼즐 게임. 보컬, 말소리 없음. 두 말랑한 젤리가 쏙 합쳐지는 촉촉한 블롭과 짧은 상승음. 단 한 번의 분명한 효과음, 시작 즉시 소리, 짧은 자연스러운 잔향. 배경음악, 배경 잡음, 반복 없음."
+    },
+    "job_id": "e8058e4a-36e0-4833-abba-93bdde5a2a08",
+    "asset_id": "97a32cd8-ef04-42bf-aee8-53dd918e6c87",
+    "generation_prompt": "A single clear game sound effect of two soft pastel jelly creatures merging into one moist squishy blob, with a gentle wet squelch and a bright rising chime, cute warm mobile puzzle tone, immediate attack, natural decay, subtle clean reverb, no vocals, no music, no background noise.",
+    "source_metadata": {
+      "id": "97a32cd8-ef04-42bf-aee8-53dd918e6c87",
+      "job_id": "e8058e4a-36e0-4833-abba-93bdde5a2a08",
+      "file_name": "sfx_e8058e4a.wav",
+      "media_type": "audio/wav",
+      "duration_s": 0.2749886621315193,
+      "sample_rate": 44100,
+      "channels": 2,
+      "size_bytes": 48552,
+      "length_fill": "stretch_limited",
+      "audible_source_duration_s": 0.22,
+      "source_asset_id": null,
+      "edit_summary": null,
+      "created_at": "2026-09-11T03:05:42.985089"
+    },
+    "source_sha256": "b1816ffdead2658114c1c502af60ee329017266306ee14cd39341dfc4bf32022",
+    "output_sha256": "1db293d84940da9b07cd8a43f1633f880071e2eaa10c17e94a8a2b79196eacf9",
+    "processing": {
+      "trim_start_s": 0.0,
+      "trim_end_s": 0.2749886621315193,
+      "edge_fade_ms": 4,
+      "mono": true
+    },
+    "metrics": {
+      "path": "audio/merge.wav",
+      "seconds": 0.2749886621315193,
+      "bytes": 24298,
+      "sample_rate": 44100,
+      "channels": 1,
+      "peak": 0.511444091796875,
+      "rms": 0.1599998697229296
+    }
+  },
+  {
+    "name": "grow",
+    "kind": "sfx",
+    "request": {
+      "category_id": "sfx",
+      "engine_id": "stable_audio_open_small",
+      "duration_s": 1.2,
+      "description": "젤리몬: 파스텔 색감의 귀여운 젤리 생명체를 구출하고 집을 꾸미는 따뜻한 모바일 퍼즐 게임. 보컬, 말소리 없음. 작은 젤리가 통통 커지는 탄력 있는 상승 보잉. 단 한 번의 분명한 효과음, 시작 즉시 소리, 짧은 자연스러운 잔향. 배경음악, 배경 잡음, 반복 없음."
+    },
+    "job_id": "30ab74ec-32f6-4fe6-83ac-beda0a042243",
+    "asset_id": "51d7a21d-8b05-4cbf-8866-e190f59898ed",
+    "generation_prompt": "A single clear, cute pastel jelly creature boing as a small soft gelatin blob stretches and plumps upward, high-pitched elastic bounce with glossy squishy texture, immediate attack, short natural room reverb, warm playful mobile puzzle game sound effect, no vocals, no music, no loop",
+    "source_metadata": {
+      "id": "51d7a21d-8b05-4cbf-8866-e190f59898ed",
+      "job_id": "30ab74ec-32f6-4fe6-83ac-beda0a042243",
+      "file_name": "sfx_30ab74ec.wav",
+      "media_type": "audio/wav",
+      "duration_s": 0.6249886621315193,
+      "sample_rate": 44100,
+      "channels": 2,
+      "size_bytes": 110292,
+      "length_fill": "stretch_limited",
+      "audible_source_duration_s": 0.5,
+      "source_asset_id": null,
+      "edit_summary": null,
+      "created_at": "2026-09-11T03:06:35.243628"
+    },
+    "source_sha256": "a21f397ab8fc86a04e9cf89706564db0129be58aa6f09dfb9b7bcf8fb89ff2de",
+    "output_sha256": "01658e36f50ff5693fae95433e47724a12637aa31cc7a256c98ae9ba0881f600",
+    "processing": {
+      "trim_start_s": 0.019183673469387756,
+      "trim_end_s": 0.6185487528344671,
+      "edge_fade_ms": 4,
+      "mono": true
+    },
+    "metrics": {
+      "path": "audio/grow.wav",
+      "seconds": 0.5993650793650793,
+      "bytes": 52908,
+      "sample_rate": 44100,
+      "channels": 1,
+      "peak": 0.408447265625,
+      "rms": 0.15999999459793382
+    }
+  },
+  {
+    "name": "clear",
+    "kind": "sfx",
+    "request": {
+      "category_id": "sfx",
+      "engine_id": "stable_audio_open_small",
+      "duration_s": 2.8,
+      "description": "젤리몬: 파스텔 색감의 귀여운 젤리 생명체를 구출하고 집을 꾸미는 따뜻한 모바일 퍼즐 게임. 보컬, 말소리 없음. 퍼즐 성공을 축하하는 밝은 세 음의 마림바와 반짝이는 벨 팡파르. 단 한 번의 분명한 효과음, 시작 즉시 소리, 짧은 자연스러운 잔향. 배경음악, 배경 잡음, 반복 없음."
+    },
+    "job_id": "574b3197-29ab-44ca-95ec-fcc4665d01dc",
+    "asset_id": "6d3e3dc3-88f1-460f-8550-88c4b38c66c6",
+    "generation_prompt": "Single clear puzzle-success SFX: three bright wooden marimba notes in a quick rising sequence with sparkling high bell chimes forming a tiny fanfare, immediate onset, crisp clean attack, short natural reverb tail, warm cute mobile game feel, high quality, no vocals, no background music, no loop",
+    "source_metadata": {
+      "id": "6d3e3dc3-88f1-460f-8550-88c4b38c66c6",
+      "job_id": "574b3197-29ab-44ca-95ec-fcc4665d01dc",
+      "file_name": "sfx_574b3197.wav",
+      "media_type": "audio/wav",
+      "duration_s": 1.3749886621315193,
+      "sample_rate": 44100,
+      "channels": 2,
+      "size_bytes": 242592,
+      "length_fill": "stretch_limited",
+      "audible_source_duration_s": 1.1,
+      "source_asset_id": null,
+      "edit_summary": null,
+      "created_at": "2026-09-11T03:08:21.518030"
+    },
+    "source_sha256": "6f42a38900e756e68aeacb361908a19978d4aeedd312b38513d8e3d248473048",
+    "output_sha256": "8d782fa80f6851ba0940b013b954b0984a8cf50e081e2eacf3e1e9c6b22e5819",
+    "processing": {
+      "trim_start_s": 0.0,
+      "trim_end_s": 1.175827664399093,
+      "edge_fade_ms": 4,
+      "mono": true
+    },
+    "metrics": {
+      "path": "audio/clear.wav",
+      "seconds": 1.175827664399093,
+      "bytes": 103752,
+      "sample_rate": 44100,
+      "channels": 1,
+      "peak": 0.800018310546875,
+      "rms": 0.1393682980773404
+    }
+  },
+  {
+    "name": "fail",
+    "kind": "sfx",
+    "request": {
+      "category_id": "sfx",
+      "engine_id": "stable_audio_open_small",
+      "duration_s": 1.6,
+      "description": "젤리몬: 파스텔 색감의 귀여운 젤리 생명체를 구출하고 집을 꾸미는 따뜻한 모바일 퍼즐 게임. 보컬, 말소리 없음. 다시 도전하도록 다정하게 내려가는 두 음의 부드러운 목금, 실패 알림. 단 한 번의 분명한 효과음, 시작 즉시 소리, 짧은 자연스러운 잔향. 배경음악, 배경 잡음, 반복 없음."
+    },
+    "job_id": "304dec65-433e-4b3c-ac96-f371d300865a",
+    "asset_id": "de3882cf-5ee8-404c-9513-66f67a01d045",
+    "generation_prompt": "A single soft, cute two-note descending wooden chime for a warm pastel mobile puzzle game, gentle friendly failure-retry cue, rounded mallet-like wood with light jelly bounce, immediate onset, clear short natural room reverb, high quality, no vocals, no music, no noise, no loop",
+    "source_metadata": {
+      "id": "de3882cf-5ee8-404c-9513-66f67a01d045",
+      "job_id": "304dec65-433e-4b3c-ac96-f371d300865a",
+      "file_name": "sfx_304dec65.wav",
+      "media_type": "audio/wav",
+      "duration_s": 1.2749886621315192,
+      "sample_rate": 44100,
+      "channels": 2,
+      "size_bytes": 224952,
+      "length_fill": "stretch_limited",
+      "audible_source_duration_s": 1.02,
+      "source_asset_id": null,
+      "edit_summary": null,
+      "created_at": "2026-09-11T03:09:13.074890"
+    },
+    "source_sha256": "b9e687cb6b357dcc000930b462d46c4d678baf074d85e9db118ddea5d68933e4",
+    "output_sha256": "0176f16ed4b3ffaeab54c3f23c440124496f1d147d76baee69fcb72db4cdde38",
+    "processing": {
+      "trim_start_s": 0.0,
+      "trim_end_s": 1.08859410430839,
+      "edge_fade_ms": 4,
+      "mono": true
+    },
+    "metrics": {
+      "path": "audio/fail.wav",
+      "seconds": 1.08859410430839,
+      "bytes": 96058,
+      "sample_rate": 44100,
+      "channels": 1,
+      "peak": 0.526031494140625,
+      "rms": 0.15999997820870865
+    }
+  },
+  {
+    "name": "shiny",
+    "kind": "sfx",
+    "request": {
+      "category_id": "sfx",
+      "engine_id": "stable_audio_open_small",
+      "duration_s": 1.4,
+      "description": "젤리몬: 파스텔 색감의 귀여운 젤리 생명체를 구출하고 집을 꾸미는 따뜻한 모바일 퍼즐 게임. 보컬, 말소리 없음. 아이템 발견의 반짝이는 짧은 셀레스타 상승 아르페지오. 단 한 번의 분명한 효과음, 시작 즉시 소리, 짧은 자연스러운 잔향. 배경음악, 배경 잡음, 반복 없음."
+    },
+    "job_id": "3ac4eded-2100-4c7d-a08a-02fee45f4d54",
+    "asset_id": "a9171673-0de4-4291-af2b-b5270dadc2d0",
+    "generation_prompt": "A single crisp, sparkling celesta ascending arpeggio for a cute pastel jelly creature item discovery in a warm mobile puzzle game, immediate onset, bright bell-like notes rising gently, short natural reverb tail, clean high-quality sound effect, no vocals, no music bed, no loop",
+    "source_metadata": {
+      "id": "a9171673-0de4-4291-af2b-b5270dadc2d0",
+      "job_id": "3ac4eded-2100-4c7d-a08a-02fee45f4d54",
+      "file_name": "sfx_3ac4eded.wav",
+      "media_type": "audio/wav",
+      "duration_s": 1.2749886621315192,
+      "sample_rate": 44100,
+      "channels": 2,
+      "size_bytes": 224952,
+      "length_fill": "stretch_limited",
+      "audible_source_duration_s": 1.02,
+      "source_asset_id": null,
+      "edit_summary": null,
+      "created_at": "2026-09-11T03:09:57.326992"
+    },
+    "source_sha256": "0ae6314ee9ee8e68c7398d2e1c24c3636fe2f16b42b2a824d4934492690e31d8",
+    "output_sha256": "56b6549c0c081b4780c7718475d8fe470ad807228d109a98736e580339b316fa",
+    "processing": {
+      "trim_start_s": 0.0,
+      "trim_end_s": 1.1819501133786847,
+      "edge_fade_ms": 4,
+      "mono": true
+    },
+    "metrics": {
+      "path": "audio/shiny.wav",
+      "seconds": 1.1819501133786847,
+      "bytes": 104292,
+      "sample_rate": 44100,
+      "channels": 1,
+      "peak": 0.800018310546875,
+      "rms": 0.15867811856242459
+    }
+  },
+  {
+    "name": "grab",
+    "kind": "sfx",
+    "request": {
+      "category_id": "sfx",
+      "engine_id": "stable_audio_open_small",
+      "duration_s": 0.5,
+      "description": "젤리몬: 파스텔 색감의 귀여운 젤리 생명체를 구출하고 집을 꾸미는 따뜻한 모바일 퍼즐 게임. 보컬, 말소리 없음. 젤리를 집는 순간의 아주 짧고 작은 말랑한 뽁. 단 한 번의 분명한 효과음, 시작 즉시 소리, 짧은 자연스러운 잔향. 배경음악, 배경 잡음, 반복 없음."
+    },
+    "job_id": "af553f51-fcd5-4f08-b204-82ca1bd95d74",
+    "asset_id": "ec66d7b0-ddd6-4560-9757-0e547811400b",
+    "generation_prompt": "A single very short tiny soft pock sound of a cute pastel jelly creature being gently grabbed, immediate onset, small squishy gelatinous pop with subtle warm body, clean high quality, no vocals, no music, no background noise, one clear effect with brief natural reverb",
+    "source_metadata": {
+      "id": "ec66d7b0-ddd6-4560-9757-0e547811400b",
+      "job_id": "af553f51-fcd5-4f08-b204-82ca1bd95d74",
+      "file_name": "sfx_af553f51.wav",
+      "media_type": "audio/wav",
+      "duration_s": 0.5,
+      "sample_rate": 44100,
+      "channels": 2,
+      "size_bytes": 88244,
+      "length_fill": "time_stretched",
+      "audible_source_duration_s": 0.46,
+      "source_asset_id": null,
+      "edit_summary": null,
+      "created_at": "2026-09-11T03:10:50.919748"
+    },
+    "source_sha256": "a935f123adae5a3b81205bdb8367a33419800de65ce57c9e02d1674ad1c5fcb1",
+    "output_sha256": "246c4c8b050a6b94c0fb55186d4953799a308f2cfc48ab012f6cef4bbbe12059",
+    "processing": {
+      "trim_start_s": 0.017346938775510204,
+      "trim_end_s": 0.49675736961451245,
+      "edge_fade_ms": 4,
+      "mono": true
+    },
+    "metrics": {
+      "path": "audio/grab.wav",
+      "seconds": 0.47941043083900226,
+      "bytes": 42328,
+      "sample_rate": 44100,
+      "channels": 1,
+      "peak": 0.600006103515625,
+      "rms": 0.03803484828270957
+    }
+  },
+  {
+    "name": "lock",
+    "kind": "sfx",
+    "request": {
+      "category_id": "sfx",
+      "engine_id": "stable_audio_open_small",
+      "duration_s": 0.6,
+      "description": "젤리몬: 파스텔 색감의 귀여운 젤리 생명체를 구출하고 집을 꾸미는 따뜻한 모바일 퍼즐 게임. 보컬, 말소리 없음. 블록이 제자리에 안착하는 부드럽고 명확한 나무 딸깍. 단 한 번의 분명한 효과음, 시작 즉시 소리, 짧은 자연스러운 잔향. 배경음악, 배경 잡음, 반복 없음."
+    },
+    "job_id": "05a9da4b-ba2c-41e7-a404-e03fcdfdf2c0",
+    "asset_id": "8553636c-9311-4523-a220-810057d52bd0",
+    "generation_prompt": "A single soft, clear wooden click as a pastel jelly puzzle block settles into place, cute warm mobile game UI sound, immediate onset, short natural reverb, crisp and satisfying, no music, no noise",
+    "source_metadata": {
+      "id": "8553636c-9311-4523-a220-810057d52bd0",
+      "job_id": "05a9da4b-ba2c-41e7-a404-e03fcdfdf2c0",
+      "file_name": "sfx_05a9da4b.wav",
+      "media_type": "audio/wav",
+      "duration_s": 0.2,
+      "sample_rate": 44100,
+      "channels": 2,
+      "size_bytes": 35324,
+      "length_fill": "stretch_limited",
+      "audible_source_duration_s": 0.16,
+      "source_asset_id": null,
+      "edit_summary": null,
+      "created_at": "2026-09-11T03:11:25.898765"
+    },
+    "source_sha256": "bc5266acfea3242b93b5e53ac36967f03740cb0219c09fc86d9d7edf1a4af892",
+    "output_sha256": "45450cd2f7c39762bf997754589508accbcfac0db91f744dd8888c239e7b8a74",
+    "processing": {
+      "trim_start_s": 0.00873015873015873,
+      "trim_end_s": 0.17596371882086168,
+      "edge_fade_ms": 4,
+      "mono": true
+    },
+    "metrics": {
+      "path": "audio/lock.wav",
+      "seconds": 0.16723356009070295,
+      "bytes": 14794,
+      "sample_rate": 44100,
+      "channels": 1,
+      "peak": 0.600006103515625,
+      "rms": 0.032453164040504724
+    }
+  },
+  {
+    "name": "fever",
+    "kind": "sfx",
+    "request": {
+      "category_id": "sfx",
+      "engine_id": "stable_audio_open_small",
+      "duration_s": 2.0,
+      "description": "젤리몬: 파스텔 색감의 귀여운 젤리 생명체를 구출하고 집을 꾸미는 따뜻한 모바일 퍼즐 게임. 보컬, 말소리 없음. 연속 성공 피버 시작, 밝고 통통 튀는 빠른 상승 벨. 단 한 번의 분명한 효과음, 시작 즉시 소리, 짧은 자연스러운 잔향. 배경음악, 배경 잡음, 반복 없음."
+    },
+    "job_id": "f5a4a1dd-230a-4f99-80d3-2bed536d6d96",
+    "asset_id": "f8d66f5f-6a43-4026-8bd4-81216868e536",
+    "generation_prompt": "Bright, bouncy, fast-rising bell chime for a cute pastel jelly creature puzzle game fever start; one clear high-quality synth bell with quick ascending pitch, soft rounded attack, short natural reverb tail, immediate onset, no vocals, music, noise, or loop",
+    "source_metadata": {
+      "id": "f8d66f5f-6a43-4026-8bd4-81216868e536",
+      "job_id": "f5a4a1dd-230a-4f99-80d3-2bed536d6d96",
+      "file_name": "sfx_f5a4a1dd.wav",
+      "media_type": "audio/wav",
+      "duration_s": 1.1249886621315193,
+      "sample_rate": 44100,
+      "channels": 2,
+      "size_bytes": 198492,
+      "length_fill": "stretch_limited",
+      "audible_source_duration_s": 0.9,
+      "source_asset_id": null,
+      "edit_summary": null,
+      "created_at": "2026-09-11T03:12:10.451847"
+    },
+    "source_sha256": "a37b27202a3ae4454fc6f6ebc7083c76fd4edfcb92d40deb962dfb2c82762933",
+    "output_sha256": "3b4c25f7f6b8a75bcf3b5fba7ac86e07d14c74d6e369d53d6539d7527c520784",
+    "processing": {
+      "trim_start_s": 0.0,
+      "trim_end_s": 1.069092970521542,
+      "edge_fade_ms": 4,
+      "mono": true
+    },
+    "metrics": {
+      "path": "audio/fever.wav",
+      "seconds": 1.069092970521542,
+      "bytes": 94338,
+      "sample_rate": 44100,
+      "channels": 1,
+      "peak": 0.782623291015625,
+      "rms": 0.1599999000399518
+    }
+  },
+  {
+    "name": "ui_click",
+    "kind": "sfx",
+    "request": {
+      "category_id": "sfx",
+      "engine_id": "stable_audio_open_small",
+      "duration_s": 0.5,
+      "description": "젤리몬: 파스텔 색감의 귀여운 젤리 생명체를 구출하고 집을 꾸미는 따뜻한 모바일 퍼즐 게임. 보컬, 말소리 없음. 메뉴 버튼을 누르는 작고 둥근 물방울 클릭. 단 한 번의 분명한 효과음, 시작 즉시 소리, 짧은 자연스러운 잔향. 배경음악, 배경 잡음, 반복 없음."
+    },
+    "job_id": "06ed2668-98e1-4ff3-b362-86c44728851e",
+    "asset_id": "cf506818-8a66-43f5-80cb-2a963bde7070",
+    "generation_prompt": "Soft cute water droplet click for a menu button press in a warm pastel jelly puzzle game UI, small round glossy blob impact, single clear high-quality sound effect with immediate onset and short natural reverb, no vocals, no music, no background noise, no repeat",
+    "source_metadata": {
+      "id": "cf506818-8a66-43f5-80cb-2a963bde7070",
+      "job_id": "06ed2668-98e1-4ff3-b362-86c44728851e",
+      "file_name": "sfx_06ed2668.wav",
+      "media_type": "audio/wav",
+      "duration_s": 0.17498866213151928,
+      "sample_rate": 44100,
+      "channels": 2,
+      "size_bytes": 30912,
+      "length_fill": "stretch_limited",
+      "audible_source_duration_s": 0.14,
+      "source_asset_id": null,
+      "edit_summary": null,
+      "created_at": "2026-09-11T03:13:00.688793"
+    },
+    "source_sha256": "7b6737f55bbc29a3bcb576536f8dc2d2287e8add9c69a710ea5da88a4d07a990",
+    "output_sha256": "c85123a87ca14d7a916448abd18899bef8f280a94877cc0c9376ca94c1c10bb2",
+    "processing": {
+      "trim_start_s": 0.0,
+      "trim_end_s": 0.17383219954648527,
+      "edge_fade_ms": 4,
+      "mono": true
+    },
+    "metrics": {
+      "path": "audio/ui_click.wav",
+      "seconds": 0.17383219954648527,
+      "bytes": 15376,
+      "sample_rate": 44100,
+      "channels": 1,
+      "peak": 0.57293701171875,
+      "rms": 0.11000004364231189
+    }
+  },
+  {
+    "name": "reward",
+    "kind": "sfx",
+    "request": {
+      "category_id": "sfx",
+      "engine_id": "stable_audio_open_small",
+      "duration_s": 2.0,
+      "description": "젤리몬: 파스텔 색감의 귀여운 젤리 생명체를 구출하고 집을 꾸미는 따뜻한 모바일 퍼즐 게임. 보컬, 말소리 없음. 출석 보상을 받는 즐거운 반짝임과 세 음의 따뜻한 실로폰. 단 한 번의 분명한 효과음, 시작 즉시 소리, 짧은 자연스러운 잔향. 배경음악, 배경 잡음, 반복 없음."
+    },
+    "job_id": "21295d4c-52a8-4523-9a51-ebafa7461ceb",
+    "asset_id": "51b70234-7dc1-4dc9-b415-e85373a6f4ad",
+    "generation_prompt": "A single cheerful attendance-reward sound effect for a cute pastel jelly mobile puzzle game: an immediate bright sparkling shimmer followed by three warm wooden xylophone notes in a quick ascending arpeggio, clear high-quality audio, soft short natural reverb, no vocals, no music, no loop",
+    "source_metadata": {
+      "id": "51b70234-7dc1-4dc9-b415-e85373a6f4ad",
+      "job_id": "21295d4c-52a8-4523-9a51-ebafa7461ceb",
+      "file_name": "sfx_21295d4c.wav",
+      "media_type": "audio/wav",
+      "duration_s": 0.9249886621315193,
+      "sample_rate": 44100,
+      "channels": 2,
+      "size_bytes": 163212,
+      "length_fill": "stretch_limited",
+      "audible_source_duration_s": 0.74,
+      "source_asset_id": null,
+      "edit_summary": null,
+      "created_at": "2026-09-11T03:13:46.573052"
+    },
+    "source_sha256": "50c8aab725ccb8987a09962dad38ac8b69844741a2a54cadadc18c871b7268cd",
+    "output_sha256": "2300cf2c3888f3ceff9928c2e8f078c0d452e414a2e0f2a53187faa0ee6d6303",
+    "processing": {
+      "trim_start_s": 0.0,
+      "trim_end_s": 0.8200680272108843,
+      "edge_fade_ms": 4,
+      "mono": true
+    },
+    "metrics": {
+      "path": "audio/reward.wav",
+      "seconds": 0.8200680272108843,
+      "bytes": 72374,
+      "sample_rate": 44100,
+      "channels": 1,
+      "peak": 0.627716064453125,
+      "rms": 0.1600000489501184
+    }
+  }
+]

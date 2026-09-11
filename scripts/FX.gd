@@ -1,5 +1,6 @@
 extends Node2D
 class_name FX
+const L10n = preload("res://scripts/LocalizedText.gd")
 ## 흡수/합체 이펙트 총괄
 
 var soft_tex: Texture2D
@@ -253,7 +254,7 @@ func float_text(pos: Vector2, text: String, col: Color, fsize: int = 32) -> void
 	if not _has_budget():
 		return
 	var l := Label.new()
-	l.text = text
+	l.text = L10n.text(text)
 	l.z_index = 60
 	l.add_theme_font_size_override("font_size", fsize)
 	l.add_theme_color_override("font_color", col)

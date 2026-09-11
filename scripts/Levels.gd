@@ -16,7 +16,8 @@ const LATE_TIME_COMFORT_SCALE := 1.25
 const EARLY_LATE_BOSS_READ_BONUS := 15.0
 const LATE_TIME_MIN_LEVEL := 70
 const LATE_TIME_MIN_SECONDS := 90.0
-const EarlyCampaignCatalogLib = preload("res://scripts/EarlyCampaignCatalog.gd")
+const LevelSolverLib = preload("res://scripts/levels/LevelSolver.gd")
+const LevelPresentationLib = preload("res://scripts/levels/LevelPresentation.gd")
 
 const CHAPTER_NAMES := [
 	"젤리 마을", "캔디 숲", "소다 해변", "아이스 설산", "초코 화산",
@@ -115,67 +116,10 @@ static func get_level(index: int) -> Dictionary:
 		var chunk := _load_chunk(chunk_index)
 		var local_index := index % chunk_size
 		level = chunk[local_index] if local_index < chunk.size() else {}
-	return _apply_long_campaign_presentation(_apply_early_campaign_design(level, index + 1), index + 1)
-
-
-static func _apply_early_campaign_design(source: Dictionary, level_number: int) -> Dictionary:
-	var design := EarlyCampaignCatalogLib.design_for_level(level_number)
-	if design.is_empty():
-		return source
-	var level := source.duplicate(true)
-	level["campaign_arc"] = String(design.get("arc", ""))
-	level["campaign_role"] = String(design.get("role", ""))
-	# 첫 20레벨은 규칙을 읽고 직접 시험할 시간을 보장한다. 자동 생성기의
-	# 급격한 타이머 하락은 첫 두 챕터가 끝난 뒤부터 적용한다.
-	if level_number <= 4:
-		level["time"] = maxf(float(level.get("time", 0.0)), 95.0)
-	elif level_number <= 9:
-		level["time"] = float(level.get("time", 0.0)) + 8.0
-	elif level_number == 10:
-		level["time"] = float(level.get("time", 0.0)) + 14.0
-	elif level_number <= 19:
-		level["time"] = float(level.get("time", 0.0)) + 10.0
-	elif level_number == 20:
-		level["time"] = float(level.get("time", 0.0)) + 18.0
-	level["onboarding_phase"] = (
-		"touch" if level_number <= 4 else
-		"confidence" if level_number <= 10 else
-		"strategy" if level_number <= 20 else "campaign"
+	var presented := LevelPresentationLib.apply_early_campaign(
+		level, index + 1, chapter_name(index / LEVELS_PER_CHAPTER)
 	)
-	var signature: Dictionary = design.get("signature", {})
-	if not signature.is_empty():
-		level["signature"] = signature.duplicate(true)
-		level["name"] = "%s · %s" % [chapter_name((level_number - 1) / 10), String(signature.get("title", level.get("name", "구조 작전")))]
-		level["hint"] = String(signature.get("objective", level.get("hint", "")))
-	return level
-
-
-static func _apply_long_campaign_presentation(source: Dictionary, level_number: int) -> Dictionary:
-	if level_number <= 300:
-		return source
-	var level := source.duplicate(true)
-	var arcs := [
-		[301, 500, "복구 마을 원정", "다섯 지역의 구조 거점을 이어 주세요", "#62b879"],
-		[501, 750, "차원 여행로", "포털과 무너지는 길의 구조 표식을 모아 주세요", "#5aa9d6"],
-		[751, 1000, "전설의 시간 원정", "천 번째 마음까지 구조 기록을 완성해 주세요", "#9a72cf"],
-	]
-	for arc in arcs:
-		if level_number < int(arc[0]) or level_number > int(arc[1]):
-			continue
-		level["campaign_arc"] = String(arc[2])
-		level["campaign_role"] = String(arc[3])
-		level["campaign_progress"] = level_number - int(arc[0]) + 1
-		level["campaign_total"] = int(arc[1]) - int(arc[0]) + 1
-		if level_number % 50 == 0:
-			level["signature"] = {
-				"title": "%s 거점" % String(arc[2]),
-				"eyebrow": "MASTER EXPEDITION · LEVEL %d" % level_number,
-				"objective": String(arc[3]),
-				"reward_line": "%d번째 구조 표식이 원정 지도에 새겨졌어요!" % level_number,
-				"accent": String(arc[4]),
-			}
-		return level
-	return level
+	return LevelPresentationLib.apply_long_campaign(presented, index + 1)
 
 
 static func all_levels() -> Array:
@@ -493,16 +437,16 @@ static func _generated_level(number: int) -> Dictionary:
 	if number >= 501:
 		result["advanced_difficulty_tier"] = 1 + (number - 501) / 100
 		result["mechanic_generation"] = 1 + (number - 501) / 100
-	if not _is_greedily_solvable(result):
+	if not LevelSolverLib._is_greedily_solvable(result):
 		var changed := true
-		while changed and not _is_greedily_solvable(result):
+		while changed and not LevelSolverLib._is_greedily_solvable(result):
 			changed = false
 			for i in range(specs.size() - 1, -1, -1):
 				var simpler := _simpler_shape(specs[i].shape)
 				if simpler != specs[i].shape:
 					specs[i].shape = simpler
 					changed = true
-					if _is_greedily_solvable(result):
+					if LevelSolverLib._is_greedily_solvable(result):
 						break
 	# 승격 목표는 100레벨 수준에서 멈춘다. 그 이상 강제하면 후반 보드에서
 	# 큰 블록이 놓일 자리가 사라지고 생성 비용만 커진다.
@@ -512,7 +456,7 @@ static func _generated_level(number: int) -> Dictionary:
 		# 그 이상 강제하면 후반 복합 기믹의 이동 공간이 사라지므로 자동 승격분은 그대로 둔다.
 		var minimum_large := mini(1 + number / 50, 3) if milestone_challenge else 2
 		_ensure_challenge_tetrominoes(result, _level_shape_pool(number), minimum_large)
-	if _is_greedily_solvable(result):
+	if LevelSolverLib._is_greedily_solvable(result):
 		_intermix_level(result, number)
 		if milestone_challenge and number >= 20:
 			_pack_milestone_catchers(result, _milestone_target_moves(number))
@@ -540,15 +484,15 @@ static func _finalize_level_integrity(level: Dictionary, number: int) -> void:
 	## 모든 후처리가 끝난 최종 데이터에서 다시 검사해 조합 순서에 따른 드문 막힘을 제거한다.
 	if level.has("shape_seals") and not _shape_seal_is_valid(level):
 		level.erase("shape_seals")
-	if not _is_greedily_solvable(level):
+	if not LevelSolverLib._is_greedily_solvable(level):
 		for key in ["one_ways", "color_order", "escort", "shape_seals", "key_locks"]:
 			if not level.has(key):
 				continue
 			level.erase(key)
 			_refresh_gimmick_record(level)
-			if _is_greedily_solvable(level):
+			if LevelSolverLib._is_greedily_solvable(level):
 				break
-	if not _is_greedily_solvable(level):
+	if not LevelSolverLib._is_greedily_solvable(level):
 		_repair_unsolvable(level, number)
 	_sanitize_advanced_gimmicks(level)
 
@@ -578,7 +522,7 @@ static func _ensure_expansion_feature(level: Dictionary, number: int) -> void:
 static func _repair_unsolvable(level: Dictionary, _number: int) -> void:
 	## 여러 규칙이 겹쳐 드물게 풀이가 막히면, 제약이 강한 선택 요소부터 되돌린다.
 	## 콘텐츠를 조금 잃더라도 클리어 불가능한 레벨은 절대 남기지 않는다.
-	if _is_greedily_solvable(level):
+	if LevelSolverLib._is_greedily_solvable(level):
 		return
 	for key in ["one_ways", "color_order", "escort", "boss"]:
 		if not level.has(key):
@@ -588,7 +532,7 @@ static func _repair_unsolvable(level: Dictionary, _number: int) -> void:
 		if key == "boss" and String(removed.get("type", "")) == "splitter":
 			_revoke_extra_capacity(level, String(removed.get("color", "")), int(removed.get("splits", 0)))
 		_refresh_gimmick_record(level)
-		if _is_greedily_solvable(level):
+		if LevelSolverLib._is_greedily_solvable(level):
 			return
 	# 그래도 막히면 시작 압축 단계에서 세운 내부 벽을 누적으로 되돌린다.
 	# 하나씩 넣었다 뺐다 하면 두 칸 이상 열어야 하는 경우를 못 고친다.
@@ -600,20 +544,20 @@ static func _repair_unsolvable(level: Dictionary, _number: int) -> void:
 				continue
 			_put(board, x, y, ".")
 			opened = true
-			if _is_greedily_solvable(level):
+			if LevelSolverLib._is_greedily_solvable(level):
 				break
-		if opened and _is_greedily_solvable(level):
+		if opened and LevelSolverLib._is_greedily_solvable(level):
 			break
 	if opened:
 		level["initial_move_options"] = _initial_move_options(level)
 		level["initial_empty_spaces"] = _count_free_empty(level)
-	if _is_greedily_solvable(level):
+	if LevelSolverLib._is_greedily_solvable(level):
 		return
 	# 마지막 수단: 어떤 블록도 끝내 닿지 못하는 젤리를 그 색 수용량과 함께 덜어낸다.
 	# 한 번에 다 풀리지 않는 경우가 있어 몇 차례 반복한다.
 	for _round in range(3):
 		_drop_unreachable_jellies(level)
-		if _is_greedily_solvable(level):
+		if LevelSolverLib._is_greedily_solvable(level):
 			break
 	# 젤리를 덜어냈다면 기록된 밀도 목표도 실제 값에 맞춰 낮춘다.
 	if level.has("density_target"):
@@ -627,7 +571,7 @@ static func _drop_unreachable_jellies(level: Dictionary) -> void:
 	var leftover: Array = []
 	var first := true
 	for shift in range(maxi(1, level.catchers.size())):
-		var attempt := _solve_with_shift(level, shift)
+		var attempt := LevelSolverLib._solve_with_shift(level, shift)
 		if bool(attempt.ok):
 			return
 		var candidate: Array = attempt.get("leftover", [])
@@ -1188,7 +1132,7 @@ static func _add_one_way_tiles(level: Dictionary, number: int) -> void:
 			budget -= 1
 			placed.append({"cell": [cell.x, cell.y], "dir": [dir.x, dir.y]})
 			level["one_ways"] = placed
-			if _is_greedily_solvable(level):
+			if LevelSolverLib._is_greedily_solvable(level):
 				break
 			placed.pop_back()
 			level.erase("one_ways")
@@ -1350,7 +1294,7 @@ static func _add_boss(level: Dictionary, number: int) -> void:
 				boss["splits"] = splits
 		level["boss"] = boss
 		if boss_type != "splitter":
-			if _is_greedily_solvable(level):
+			if LevelSolverLib._is_greedily_solvable(level):
 				return
 			level.erase("boss")
 			continue
@@ -1361,21 +1305,13 @@ static func _add_boss(level: Dictionary, number: int) -> void:
 			if String(spec.color) != color:
 				continue
 			spec["capacity"] = int(spec.get("capacity", 0)) + splits_amount
-			if _is_greedily_solvable(level):
+			if LevelSolverLib._is_greedily_solvable(level):
 				granted = true
 				break
 			spec["capacity"] = int(spec.get("capacity", 0)) - splits_amount
 		if granted:
 			return
 		level.erase("boss")
-
-
-static func _grant_extra_capacity(level: Dictionary, color: String, amount: int) -> bool:
-	for spec in level.catchers:
-		if String(spec.color) == color:
-			spec["capacity"] = int(spec.get("capacity", 0)) + amount
-			return true
-	return false
 
 
 static func _revoke_extra_capacity(level: Dictionary, color: String, amount: int) -> void:
@@ -1405,7 +1341,7 @@ static func _add_alt_win_condition(level: Dictionary, number: int) -> void:
 		return
 	match kind:
 		"move_limit":
-			var moves := _solve_move_cost(level)
+			var moves := LevelSolverLib._solve_move_cost(level)
 			if moves <= 0:
 				return
 			# 기준이 되는 자동 풀이는 최적해가 아니라 넉넉한 상한이므로, 그 위에
@@ -1417,7 +1353,7 @@ static func _add_alt_win_condition(level: Dictionary, number: int) -> void:
 			if order.size() < 2:
 				return
 			level["color_order"] = order
-			if not _is_greedily_solvable(level):
+			if not LevelSolverLib._is_greedily_solvable(level):
 				level.erase("color_order")
 		"escort":
 			if not _assign_escort(level, number):
@@ -1434,7 +1370,7 @@ static func _color_order_for(level: Dictionary, number: int) -> Array:
 			colors.append(color)
 	if colors.size() < 2:
 		return []
-	var natural := _natural_clear_order(level)
+	var natural := LevelSolverLib._natural_clear_order(level)
 	if natural.size() < 2:
 		natural = _deterministic_shuffle(colors, number)
 	var wanted := 3 if number >= 300 else 2
@@ -1472,11 +1408,11 @@ static func _assign_escort(level: Dictionary, number: int) -> bool:
 				if board[y][x] != color or taken.has(cell):
 					continue
 				for off in G.SHAPES[specs[guard].shape]:
-					if not _can_reach_origin(board, specs, positions, active, guard, cell - off):
+					if not LevelSolverLib._can_reach_origin(board, specs, positions, active, guard, cell - off):
 						continue
 					budget -= 1
 					level["escort"] = {"cell": [cell.x, cell.y], "catcher": guard, "color": color}
-					if _is_greedily_solvable(level):
+					if LevelSolverLib._is_greedily_solvable(level):
 						return true
 					level.erase("escort")
 					break
@@ -1680,7 +1616,7 @@ static func _find_initial_switch_cell(level: Dictionary) -> Vector2i:
 	for si in range(specs.size()):
 		for dir in [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]:
 			var target: Vector2i = positions[si] + dir
-			if not _test_can_place(board, specs, positions, active, si, target):
+			if not LevelSolverLib._test_can_place(board, specs, positions, active, si, target):
 				continue
 			for off in G.SHAPES[specs[si].shape]:
 				var cell: Vector2i = target + off
@@ -1691,7 +1627,7 @@ static func _find_initial_switch_cell(level: Dictionary) -> Vector2i:
 		for y in range(board.size()):
 			for x in range(board[y].length()):
 				var target := Vector2i(x, y)
-				if not _can_reach_origin(board, specs, positions, active, si, target):
+				if not LevelSolverLib._can_reach_origin(board, specs, positions, active, si, target):
 					continue
 				for off in G.SHAPES[specs[si].shape]:
 					var cell: Vector2i = target + off
@@ -1745,7 +1681,7 @@ static func _add_key_lock(level: Dictionary, number: int) -> void:
 	for si in range(specs.size()):
 		for dir in [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]:
 			var target: Vector2i = positions[si] + dir
-			if not _test_can_place(board, specs, positions, active, si, target):
+			if not LevelSolverLib._test_can_place(board, specs, positions, active, si, target):
 				continue
 			for off in G.SHAPES[specs[si].shape]:
 				var cell: Vector2i = target + off
@@ -1767,7 +1703,7 @@ static func _add_key_lock(level: Dictionary, number: int) -> void:
 						continue
 					for off in G.SHAPES[specs[si].shape]:
 						var target: Vector2i = cell - off
-						if _can_reach_origin(board, specs, positions, active, si, target):
+						if LevelSolverLib._can_reach_origin(board, specs, positions, active, si, target):
 							key_cell = cell
 							key_owner = si
 							break
@@ -1870,7 +1806,7 @@ static func _add_rescue_exits(level: Dictionary, number: int) -> void:
 		if not valid:
 			continue
 		level["exits"] = exits
-		if _is_greedily_solvable(level):
+		if LevelSolverLib._is_greedily_solvable(level):
 			level.hint = "젤리를 모두 담아 GO가 된 블록을 같은 색 화살표 출구로 내보내세요!"
 			return
 	level.erase("exits")
@@ -1912,7 +1848,7 @@ static func _add_shape_seal(level: Dictionary, number: int) -> void:
 		for target in targets:
 			if target == positions[si]:
 				continue
-			if not _test_can_place(board, specs, positions, active, si, target):
+			if not LevelSolverLib._test_can_place(board, specs, positions, active, si, target):
 				continue
 			var clean := true
 			for off in G.SHAPES[specs[si].shape]:
@@ -1921,7 +1857,7 @@ static func _add_shape_seal(level: Dictionary, number: int) -> void:
 				if occupied.has(cell) and not own_start.has(cell):
 					clean = false
 					break
-			if clean and _can_reach_origin(board, specs, positions, active, si, target):
+			if clean and LevelSolverLib._can_reach_origin(board, specs, positions, active, si, target):
 				chosen_index = si
 				seal_origin = target
 				break
@@ -1954,8 +1890,8 @@ static func _add_shape_seal(level: Dictionary, number: int) -> void:
 	)
 	for gate in gate_candidates:
 		_put(board, gate.x, gate.y, "#")
-		var seal_reachable := _can_reach_origin(board, specs, positions, active, chosen_index, seal_origin)
-		if seal_reachable and _is_greedily_solvable(level):
+		var seal_reachable := LevelSolverLib._can_reach_origin(board, specs, positions, active, chosen_index, seal_origin)
+		if seal_reachable and LevelSolverLib._is_greedily_solvable(level):
 			_put(board, gate.x, gate.y, ".")
 			level["shape_seals"] = [{
 				"color": specs[chosen_index].color,
@@ -1999,33 +1935,11 @@ static func _shape_seal_is_valid(level: Dictionary) -> bool:
 		_put(board, int(pair[0]), int(pair[1]), "#")
 	# 닫힌 상태에서는 봉인 룬까지만 도달하면 된다. 룬을 맞춘 뒤 장벽이
 	# 사라진 열린 상태에서 남은 젤리를 전부 구출할 수 있는지 별도로 검사한다.
-	var seal_reachable := _can_reach_origin(board, specs, positions, active, chosen_index, seal_origin)
+	var seal_reachable := LevelSolverLib._can_reach_origin(board, specs, positions, active, chosen_index, seal_origin)
 	for pair in seal.gates:
 		_put(board, int(pair[0]), int(pair[1]), ".")
-	var solvable_after_open := _is_greedily_solvable(level)
+	var solvable_after_open := LevelSolverLib._is_greedily_solvable(level)
 	return seal_reachable and solvable_after_open
-
-
-static func _can_reach_origin(board: Array, specs: Array, positions: Array[Vector2i], active: Array[bool], ci: int, target: Vector2i, ctx: Dictionary = {}) -> bool:
-	var queue: Array[Vector2i] = [positions[ci]]
-	var seen := {positions[ci]: true}
-	var head := 0
-	while head < queue.size():
-		var origin: Vector2i = queue[head]
-		head += 1
-		if origin == target:
-			return true
-		for dir in [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]:
-			var next: Vector2i = origin + dir
-			if seen.has(next):
-				continue
-			if not _test_can_place(board, specs, positions, active, ci, next, ctx):
-				continue
-			if not _one_way_allows(ctx, specs, ci, origin, next):
-				continue
-			seen[next] = true
-			queue.append(next)
-	return false
 
 
 static func _remove_unused_islands(level: Dictionary) -> void:
@@ -2143,7 +2057,7 @@ static func _reduce_empty_space(level: Dictionary, number: int) -> void:
 		var removed := false
 		for cell in candidates:
 			_put(board, cell.x, cell.y, "_")
-			if _is_greedily_solvable(level) and (not level.has("shape_seals") or _shape_seal_is_valid(level)):
+			if LevelSolverLib._is_greedily_solvable(level) and (not level.has("shape_seals") or _shape_seal_is_valid(level)):
 				free_empty -= 1
 				removed = true
 				break
@@ -2162,7 +2076,7 @@ static func _initial_move_options(level: Dictionary) -> int:
 	var options := 0
 	for ci in range(specs.size()):
 		for direction in [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]:
-			if _test_can_place(level.grid, specs, positions, active, ci, positions[ci] + direction):
+			if LevelSolverLib._test_can_place(level.grid, specs, positions, active, ci, positions[ci] + direction):
 				options += 1
 	return options
 
@@ -2193,7 +2107,7 @@ static func _pack_milestone_catchers(level: Dictionary, target_options: int) -> 
 						continue
 					spec.cell = [x, y]
 					var options := _initial_move_options(level)
-					if options < chosen_options and _is_greedily_solvable(level):
+					if options < chosen_options and LevelSolverLib._is_greedily_solvable(level):
 						chosen_options = options
 						chosen_cell = [x, y]
 						if chosen_options <= target_options:
@@ -2257,7 +2171,7 @@ static func _tighten_milestone_start(level: Dictionary, number: int) -> void:
 		var added := false
 		for cell in candidates:
 			_put(board, cell.x, cell.y, "#")
-			if _is_greedily_solvable(level) and (not level.has("shape_seals") or _shape_seal_is_valid(level)):
+			if LevelSolverLib._is_greedily_solvable(level) and (not level.has("shape_seals") or _shape_seal_is_valid(level)):
 				added = true
 				break
 			_put(board, cell.x, cell.y, ".")
@@ -2309,7 +2223,7 @@ static func _promote_tetrominoes(level: Dictionary, pool: Array[String], target_
 				if G.SHAPES[candidate].size() != 4 or not _shape_fits_level(level, si, candidate):
 					continue
 				spec.shape = candidate
-				if _is_greedily_solvable(level):
+				if LevelSolverLib._is_greedily_solvable(level):
 					tetrominoes += 1
 					break
 				spec.shape = original
@@ -2344,7 +2258,7 @@ static func _ensure_challenge_tetrominoes(level: Dictionary, pool: Array[String]
 						continue
 					spec.shape = candidate
 					spec.cell = [x, y]
-					if _is_greedily_solvable(level):
+					if LevelSolverLib._is_greedily_solvable(level):
 						tetrominoes += 1
 						promoted = true
 						break
@@ -2430,7 +2344,7 @@ static func _intermix_level(level: Dictionary, number: int) -> void:
 		var color: String = board[source.y][source.x]
 		_put(board, source.x, source.y, ".")
 		_put(board, target.x, target.y, color)
-		if _is_greedily_solvable(level):
+		if LevelSolverLib._is_greedily_solvable(level):
 			moved += 1
 		else:
 			_put(board, target.x, target.y, ".")
@@ -2948,7 +2862,7 @@ static func validate_all() -> PackedStringArray:
 		# ── 대체 승리 조건
 		if level.has("move_limit"):
 			win_condition_usage["move_limit"] = int(win_condition_usage.get("move_limit", 0)) + 1
-			var cost := _solve_move_cost(level)
+			var cost := LevelSolverLib._solve_move_cost(level)
 			if int(level.move_limit) <= 0:
 				errors.append("L%d: 이동 제한 값 오류" % number)
 			elif cost > 0 and int(level.move_limit) < cost:
@@ -3016,13 +2930,13 @@ static func validate_all() -> PackedStringArray:
 			var blue_can_move_down := false
 			if blue_index >= 0:
 				for direction in [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]:
-					if _test_can_place(grid, specs, positions, active, blue_index, positions[blue_index] + direction):
+					if LevelSolverLib._test_can_place(grid, specs, positions, active, blue_index, positions[blue_index] + direction):
 						blue_move_count += 1
 						if direction == Vector2i.DOWN:
 							blue_can_move_down = true
 			if blue_move_count < 2 or not blue_can_move_down:
 				errors.append("L39: 파란 S1 블록의 시작 탈출 경로가 2방향 미만이거나 아래 통로가 막힘")
-		if not _is_greedily_solvable(level):
+		if not LevelSolverLib._is_greedily_solvable(level):
 			errors.append("L%d: 충돌 규칙 기준 도달 불가능한 젤리 존재" % (idx + 1))
 	# ── 캠페인 전체 구성 검사: 후반 단조로움을 막는 콘텐츠가 충분히 깔렸는지 본다.
 	if levels.size() == TOTAL_LEVELS:
@@ -3055,364 +2969,3 @@ static func validate_all() -> PackedStringArray:
 			if int(win_condition_usage.get(condition, 0)) < 10:
 				errors.append("대체 승리 조건 %s 등장 수 부족(%d)" % [condition, int(win_condition_usage.get(condition, 0))])
 	return errors
-
-
-static func _rule_context(level: Dictionary) -> Dictionary:
-	## 신규 기믹/대체 승리 조건을 솔버가 런타임과 같은 규칙으로 해석하도록 모은다.
-	var ctx := {
-		"ghosts": {},              # 다른 색 캐처가 통과할 수 있는 젤리
-		"one_ways": {},            # 셀 -> 진입 허용 방향
-		"escort_cell": Vector2i(-1, -1),
-		"escort_catcher": -1,
-		"blocked_colors": {},      # 색 순서 규칙으로 아직 흡수할 수 없는 색
-		"boss_cell": Vector2i(-1, -1),
-		"boss_splits": 0,
-		"boss_color": "",
-	}
-	for pair in level.get("ghosts", []):
-		ctx.ghosts[Vector2i(int(pair[0]), int(pair[1]))] = true
-	for raw in level.get("one_ways", []):
-		ctx.one_ways[Vector2i(int(raw.cell[0]), int(raw.cell[1]))] = Vector2i(int(raw.dir[0]), int(raw.dir[1]))
-	if level.has("escort"):
-		ctx.escort_cell = Vector2i(int(level.escort.cell[0]), int(level.escort.cell[1]))
-		ctx.escort_catcher = int(level.escort.catcher)
-	var boss: Dictionary = level.get("boss", {})
-	if not boss.is_empty() and String(boss.get("type", "")) == "splitter":
-		ctx.boss_cell = Vector2i(int(boss.cell[0]), int(boss.cell[1]))
-		ctx.boss_splits = int(boss.get("splits", 0))
-		ctx.boss_color = String(boss.get("color", ""))
-	return ctx
-
-
-static func _one_way_allows(ctx: Dictionary, specs: Array, ci: int, from_org: Vector2i, to_org: Vector2i) -> bool:
-	## 새로 밟게 되는 일방통행 타일은 이동 방향이 화살표와 같아야 한다.
-	var one_ways: Dictionary = ctx.get("one_ways", {})
-	if one_ways.is_empty():
-		return true
-	var direction: Vector2i = to_org - from_org
-	if absi(direction.x) + absi(direction.y) != 1:
-		return true
-	var previous := {}
-	for off in G.SHAPES[specs[ci].shape]:
-		previous[from_org + off] = true
-	for off in G.SHAPES[specs[ci].shape]:
-		var cell: Vector2i = to_org + off
-		if previous.has(cell):
-			continue
-		if one_ways.has(cell) and one_ways[cell] != direction:
-			return false
-	return true
-
-
-static func _is_greedily_solvable(level: Dictionary) -> bool:
-	return _greedy_solve(level).ok
-
-
-static func _solve_move_cost(level: Dictionary) -> int:
-	var result := _greedy_solve(level)
-	return int(result.moves) if bool(result.ok) else 0
-
-
-static func _natural_clear_order(level: Dictionary) -> Array:
-	var result := _greedy_solve(level)
-	return result.order if bool(result.ok) else []
-
-
-static func _greedy_solve(level: Dictionary) -> Dictionary:
-	## 캐처 우선순위를 바꿔 가며 시도하고, 성공한 첫 순서의 이동 비용과
-	## 색 완료 순서를 함께 돌려준다.
-	var catcher_count: int = level.catchers.size()
-	var best := {"ok": false, "moves": 0, "order": []}
-	for shift in range(maxi(1, catcher_count)):
-		var attempt := _solve_with_shift(level, shift)
-		if bool(attempt.ok):
-			attempt["shift"] = shift
-			return attempt
-	return best
-
-
-static func _is_solvable_with_shift(level: Dictionary, shift: int) -> bool:
-	return bool(_solve_with_shift(level, shift).ok)
-
-
-static func _solve_with_shift(level: Dictionary, shift: int) -> Dictionary:
-	## 각 캐처의 현재 도달 영역에서 같은 색을 하나씩 제거하는 보수적 검사.
-	## 보너스 모드 없이도 완주 가능한 레벨만 통과시킨다.
-	## 유령/일방통행/호위/색 순서/분열 보스 규칙을 런타임과 동일하게 반영한다.
-	var failure := {"ok": false, "moves": 0, "order": []}
-	var board: Array = level.grid.duplicate()
-	var specs: Array = level.catchers
-	var catcher_count: int = specs.size()
-	var ctx := _rule_context(level)
-	var positions: Array[Vector2i] = []
-	var capacities: Array[int] = []
-	var active: Array[bool] = []
-	var remaining := 0
-	var total_moves := 0
-	var cleared_order: Array = []
-	for spec in specs:
-		positions.append(Vector2i(spec.cell[0], spec.cell[1]))
-		capacities.append(int(spec.get("capacity", 9999)))
-		active.append(true)
-	var color_counts := {}
-	for row in board:
-		for ch in row:
-			if G.COLORS.has(ch):
-				remaining += 1
-				color_counts[ch] = int(color_counts.get(ch, 0)) + 1
-	# 분열 보스가 나중에 뿌릴 미니 젤리도 남은 수에 미리 반영한다.
-	if ctx.boss_splits > 0:
-		color_counts[ctx.boss_color] = int(color_counts.get(ctx.boss_color, 0)) + int(ctx.boss_splits)
-		remaining += int(ctx.boss_splits)
-	var order_rule: Array = level.get("color_order", [])
-	var order_index := 0
-	_refresh_blocked_colors(ctx, order_rule, order_index, color_counts)
-	var safety := remaining + catcher_count * 6 + 24
-	while (remaining > 0 or _has_pending_exit(level, active, capacities)) and safety > 0:
-		safety -= 1
-		var progressed := false
-		for order in range(specs.size()):
-			var ci: int = (order + shift) % specs.size()
-			if not active[ci]:
-				continue
-			if capacities[ci] <= 0:
-				if _catcher_has_exit(level, specs, ci):
-					var exit_hit := _find_reachable_exit(board, specs, positions, active, ci, level.exits, ctx)
-					if exit_hit.origin.x >= 0:
-						positions[ci] = exit_hit.origin
-						total_moves += int(exit_hit.dist)
-						active[ci] = false
-						progressed = true
-						break
-				else:
-					active[ci] = false
-					progressed = true
-					break
-				continue
-			if ctx.blocked_colors.has(specs[ci].color):
-				continue
-			var hit := _find_reachable_jelly(board, specs, positions, active, ci, ctx)
-			if hit.origin.x < 0:
-				continue
-			positions[ci] = hit.origin
-			total_moves += int(hit.dist)
-			for off in G.SHAPES[specs[ci].shape]:
-				var cell: Vector2i = hit.origin + off
-				if board[cell.y][cell.x] != specs[ci].color:
-					continue
-				if cell == ctx.escort_cell and ci != int(ctx.escort_catcher):
-					continue
-				_put(board, cell.x, cell.y, ".")
-				remaining -= 1
-				capacities[ci] -= 1
-				var color_key: String = specs[ci].color
-				color_counts[color_key] = maxi(0, int(color_counts.get(color_key, 0)) - 1)
-				# 실제로 어떤 색이 먼저 비워지는지 기록해 두면 색 순서 규칙을
-				# 자연스러운 풀이 흐름에 맞춰 만들 수 있다.
-				if int(color_counts[color_key]) == 0 and not cleared_order.has(color_key):
-					cleared_order.append(color_key)
-				# 분열 보스를 구조하면 인접 빈칸에 같은 색 미니 젤리가 흩어진다.
-				if ctx.boss_splits > 0 and cell == ctx.boss_cell:
-					_scatter_boss_minions(board, cell, String(ctx.boss_color), int(ctx.boss_splits))
-					ctx.boss_splits = 0
-				if capacities[ci] <= 0:
-					if not _catcher_has_exit(level, specs, ci):
-						active[ci] = false
-					break
-			if not order_rule.is_empty():
-				var previous_index := order_index
-				order_index = _advance_color_order(order_rule, order_index, color_counts, cleared_order)
-				if order_index != previous_index:
-					_refresh_blocked_colors(ctx, order_rule, order_index, color_counts)
-			progressed = true
-			break
-		if not progressed:
-			failure["leftover"] = _remaining_jelly_cells(board)
-			return failure
-	if remaining != 0 or _has_pending_exit(level, active, capacities):
-		failure["leftover"] = _remaining_jelly_cells(board)
-		return failure
-	if cleared_order.is_empty():
-		cleared_order = _fallback_clear_order(level)
-	return {"ok": true, "moves": total_moves, "order": cleared_order}
-
-
-static func _remaining_jelly_cells(board: Array) -> Array:
-	var cells: Array = []
-	for y in range(board.size()):
-		for x in range(board[y].length()):
-			if G.COLORS.has(board[y][x]):
-				cells.append(Vector2i(x, y))
-	return cells
-
-
-static func _scatter_boss_minions(board: Array, cell: Vector2i, color: String, count: int) -> void:
-	var placed := 0
-	for dir in [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]:
-		if placed >= count:
-			return
-		var near: Vector2i = cell + dir
-		if near.x < 0 or near.y < 0 or near.y >= board.size() or near.x >= board[near.y].length():
-			continue
-		if board[near.y][near.x] == ".":
-			_put(board, near.x, near.y, color)
-			placed += 1
-
-
-static func _advance_color_order(order_rule: Array, index: int, color_counts: Dictionary, cleared_order: Array) -> int:
-	var next_index := index
-	while next_index < order_rule.size():
-		var color := String(order_rule[next_index])
-		if int(color_counts.get(color, 0)) > 0:
-			break
-		if not cleared_order.has(color):
-			cleared_order.append(color)
-		next_index += 1
-	return next_index
-
-
-static func _refresh_blocked_colors(ctx: Dictionary, order_rule: Array, index: int, color_counts: Dictionary) -> void:
-	ctx.blocked_colors = {}
-	if order_rule.is_empty():
-		return
-	for i in range(index + 1, order_rule.size()):
-		var color := String(order_rule[i])
-		if int(color_counts.get(color, 0)) > 0:
-			ctx.blocked_colors[color] = true
-
-
-static func _fallback_clear_order(level: Dictionary) -> Array:
-	var colors: Array = []
-	for spec in level.catchers:
-		var color := String(spec.color)
-		if not colors.has(color):
-			colors.append(color)
-	return colors
-
-
-static func _catcher_has_exit(level: Dictionary, specs: Array, ci: int) -> bool:
-	for exit in level.get("exits", []):
-		if exit.color == specs[ci].color and (int(exit.get("catcher", -1)) < 0 or int(exit.catcher) == ci):
-			return true
-	return false
-
-
-static func _has_pending_exit(level: Dictionary, active: Array[bool], capacities: Array[int]) -> bool:
-	if not level.has("exits"):
-		return false
-	for i in range(active.size()):
-		if active[i] and capacities[i] <= 0:
-			return true
-	return false
-
-
-static func _find_reachable_exit(board: Array, specs: Array, positions: Array[Vector2i], active: Array[bool], ci: int, exits: Array, ctx: Dictionary = {}) -> Dictionary:
-	var start: Vector2i = positions[ci]
-	var queue: Array[Vector2i] = [start]
-	var seen := {start: 0}
-	var head := 0
-	while head < queue.size():
-		var origin: Vector2i = queue[head]
-		head += 1
-		for exit in exits:
-			if exit.color != specs[ci].color or (int(exit.get("catcher", -1)) >= 0 and int(exit.catcher) != ci):
-				continue
-			var exit_cell := Vector2i(int(exit.cell[0]), int(exit.cell[1]))
-			for off in G.SHAPES[specs[ci].shape]:
-				if origin + off == exit_cell:
-					return {"origin": origin, "dist": int(seen[origin])}
-		for dir in [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]:
-			var next: Vector2i = origin + dir
-			if seen.has(next):
-				continue
-			if not _test_can_place_full(board, specs, positions, active, ci, next, ctx):
-				continue
-			if not _one_way_allows(ctx, specs, ci, origin, next):
-				continue
-			seen[next] = int(seen[origin]) + 1
-			queue.append(next)
-	return {"origin": Vector2i(-1, -1), "dist": 0}
-
-
-static func _test_can_place_full(board: Array, specs: Array, positions: Array[Vector2i], active: Array[bool], ci: int, org: Vector2i, ctx: Dictionary = {}) -> bool:
-	## 가득 찬 블록은 어떤 젤리도 통과할 수 없다(유령 젤리 제외).
-	var width: int = board[0].length()
-	var ghosts: Dictionary = ctx.get("ghosts", {})
-	for off in G.SHAPES[specs[ci].shape]:
-		var cell: Vector2i = org + off
-		if cell.x < 0 or cell.y < 0 or cell.x >= width or cell.y >= board.size():
-			return false
-		var ch: String = board[cell.y][cell.x]
-		if ch == "#" or ch == "_":
-			return false
-		if G.COLORS.has(ch) and not ghosts.has(cell):
-			return false
-		for oi in range(specs.size()):
-			if oi == ci or not active[oi]:
-				continue
-			for other_off in G.SHAPES[specs[oi].shape]:
-				if positions[oi] + other_off == cell:
-					return false
-	return true
-
-
-static func _find_reachable_jelly(board: Array, specs: Array, positions: Array[Vector2i], active: Array[bool], ci: int, ctx: Dictionary = {}) -> Dictionary:
-	var start: Vector2i = positions[ci]
-	var queue: Array[Vector2i] = [start]
-	var seen := {start: 0}
-	var head := 0
-	var escort_cell: Vector2i = ctx.get("escort_cell", Vector2i(-1, -1))
-	var escort_catcher: int = int(ctx.get("escort_catcher", -1))
-	while head < queue.size():
-		var org: Vector2i = queue[head]
-		head += 1
-		for off in G.SHAPES[specs[ci].shape]:
-			var cell: Vector2i = org + off
-			if board[cell.y][cell.x] != specs[ci].color:
-				continue
-			# 호위 대상은 전담 블록만 구조할 수 있다.
-			if cell == escort_cell and ci != escort_catcher:
-				continue
-			return {"origin": org, "dist": int(seen[org])}
-		for dir in [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]:
-			var next: Vector2i = org + dir
-			if seen.has(next):
-				continue
-			if not _test_can_place(board, specs, positions, active, ci, next, ctx):
-				continue
-			if not _one_way_allows(ctx, specs, ci, org, next):
-				continue
-			seen[next] = int(seen[org]) + 1
-			queue.append(next)
-	return {"origin": Vector2i(-1, -1), "dist": 0}
-
-
-static func _test_can_place(board: Array, specs: Array, positions: Array[Vector2i], active: Array[bool], ci: int, org: Vector2i, ctx: Dictionary = {}) -> bool:
-	var width: int = board[0].length()
-	var ghosts: Dictionary = ctx.get("ghosts", {})
-	var blocked_colors: Dictionary = ctx.get("blocked_colors", {})
-	var escort_cell: Vector2i = ctx.get("escort_cell", Vector2i(-1, -1))
-	var escort_catcher: int = int(ctx.get("escort_catcher", -1))
-	for off in G.SHAPES[specs[ci].shape]:
-		var cell: Vector2i = org + off
-		if cell.x < 0 or cell.y < 0 or cell.x >= width or cell.y >= board.size():
-			return false
-		var ch: String = board[cell.y][cell.x]
-		if ch == "#" or ch == "_":
-			return false
-		if G.COLORS.has(ch) and not ghosts.has(cell):
-			# 다른 색 젤리는 장애물, 같은 색이라도 아직 순서가 아니거나
-			# 전담 호위 대상이 아니면 통과할 수 없다.
-			if ch != specs[ci].color:
-				return false
-			if blocked_colors.has(ch):
-				return false
-			if cell == escort_cell and ci != escort_catcher:
-				return false
-		for oi in range(specs.size()):
-			if oi == ci or not active[oi]:
-				continue
-			for other_off in G.SHAPES[specs[oi].shape]:
-				if positions[oi] + other_off == cell:
-					return false
-	return true

@@ -1,6 +1,7 @@
 extends ColorRect
 ## Confirmation only. The owner performs the selected reset after confirmed.
 signal confirmed
+const L10n = preload("res://scripts/LocalizedText.gd")
 const CONFIRMATION := "DELETE ACCOUNT"
 var input: LineEdit
 var confirm_button: Button
@@ -29,24 +30,24 @@ func _ready() -> void:
 	box.add_theme_constant_override("separation", 18)
 	panel.add_child(box)
 	var heading := Label.new()
-	heading.text = heading_text
+	heading.text = L10n.text(heading_text)
 	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	heading.add_theme_font_size_override("font_size", 30)
 	box.add_child(heading)
 	var explanation := Label.new()
 	explanation.custom_minimum_size.x = 560
 	explanation.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	explanation.text = scope_text + "\n\n초기화하려면 아래 문구를 대문자와 공백까지 정확히 입력해 주세요."
+	explanation.text = L10n.text(scope_text + L10n.text("\n\n초기화하려면 아래 문구를 대문자와 공백까지 정확히 입력해 주세요."))
 	explanation.add_theme_font_size_override("font_size", 21)
 	box.add_child(explanation)
 	var phrase := Label.new()
-	phrase.text = CONFIRMATION
+	phrase.text = L10n.text(CONFIRMATION)
 	phrase.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	phrase.add_theme_font_size_override("font_size", 27)
 	box.add_child(phrase)
 	input = LineEdit.new()
 	input.name = "ResetConfirmationInput"
-	input.placeholder_text = CONFIRMATION
+	input.placeholder_text = L10n.text(CONFIRMATION)
 	input.custom_minimum_size.y = 64
 	input.add_theme_font_size_override("font_size", 25)
 	input.virtual_keyboard_type = LineEdit.KEYBOARD_TYPE_DEFAULT
@@ -59,7 +60,7 @@ func _ready() -> void:
 	actions.add_theme_constant_override("separation", 14)
 	box.add_child(actions)
 	var cancel := Button.new()
-	cancel.text = "취소"
+	cancel.text = L10n.text("취소")
 	cancel.custom_minimum_size = Vector2(260, 66)
 	ArtDirection.apply_button(cancel, ArtDirection.panel_color())
 	cancel.pressed.connect(func():
@@ -68,7 +69,7 @@ func _ready() -> void:
 	actions.add_child(cancel)
 	confirm_button = Button.new()
 	confirm_button.name = "ResetConfirmButton"
-	confirm_button.text = action_text
+	confirm_button.text = L10n.text(action_text)
 	confirm_button.custom_minimum_size = Vector2(260, 66)
 	ArtDirection.apply_button(confirm_button, ArtDirection.danger_color())
 	confirm_button.disabled = true
@@ -85,11 +86,11 @@ func _confirm() -> void:
 	busy = true
 	input.editable = false
 	confirm_button.disabled = true
-	status.text = "초기화 중..."
+	status.text = L10n.text("초기화 중...")
 	confirmed.emit()
 
 func show_error(message: String) -> void:
 	busy = false
 	input.editable = true
 	confirm_button.disabled = not accepts_confirmation(input.text)
-	status.text = message
+	status.text = L10n.text(message)

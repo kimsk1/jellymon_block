@@ -1,5 +1,6 @@
 extends Control
 class_name TutorialGuide
+const L10n = preload("res://scripts/LocalizedText.gd")
 ## 입력을 가로채지 않는 상황형 튜토리얼 오버레이.
 
 var from_point := Vector2.ZERO
@@ -56,7 +57,7 @@ func setup(text: String, from: Vector2, to: Vector2, focus: Rect2 = Rect2()) -> 
 		var bottom := maxf(from.y, to.y) + 70.0
 		focus_rect = Rect2(left, top, right - left, bottom - top)
 	if message_label:
-		message_label.text = text
+		message_label.text = L10n.text(text)
 	queue_redraw()
 
 

@@ -128,6 +128,9 @@ godot --headless --path . -- --validate-levels
 # 앞쪽 N개만 생성해 빠르게 반복 (생성기 수정 중 유용)
 godot --headless --path . -- --validate-levels --gen-limit=210
 
+# 탐색 충돌 규칙·점유 캐시 갱신·타이머 재사용 및 시간 복원 회귀 검사
+godot --headless --path . --script tools/verify_runtime_refactor.gd
+
 # 생성기를 고친 뒤 assets/data/levels.json 재베이크
 godot --headless --path . -- --bake-levels
 
@@ -154,9 +157,10 @@ godot --headless --verbose --path . -- --validate-shutdown
 `--shutdown-only`는 연출 중 종료를 세 번 반복하며, 옵션 없이 실행하면 전체 레벨 및 자동 플레이 검사도 포함한다.
 Godot 경로는 `JELLYMON_GODOT_BIN`으로 지정할 수 있다.
 
-현재 확인된 제한(2026-09-07): 후반 대표 검사 10개 중 161레벨은 자동 탐색이
+현재 확인된 제한(2026-09-11 재확인): 후반 대표 검사 10개 중 161레벨은 자동 탐색이
 젤리 4개를 남기고 실패한다. 검사는 이를 실패로 보고하며, 레벨 자체의 풀이 불가능이
 입증된 것은 아니다. 이 케이스는 출시 전 수동 풀이 또는 탐색기 추가 검증이 필요하다.
+[L161 재현 결과와 추가 탐색 시도](docs/L161_AUTOPLAY_DIAGNOSIS_2026-09-11.md)에 상세 내용을 기록했다.
 
 레벨 데이터는 `assets/data/levels.json`에 베이크되어 있고, 파일이 없거나
 개수가 맞지 않으면 `Levels.gd`의 생성기가 실행 시 다시 만든다. 생성기는
@@ -180,15 +184,25 @@ game/
 ├── scenes/Main.tscn     # 루트 씬 (나머지는 코드로 구성)
 ├── scripts/
 │   ├── Main.gd          # 화면 전환/저장
+│   ├── validation/StartupValidation.gd  # 카탈로그·저장·보상 회귀 검사
 │   ├── Game.gd          # 코어 룰 (캐처 이동/흡수/용량 제거)
 │   ├── Catcher.gd  Jelly.gd  FX.gd  HUD.gd
-│   ├── Levels.gd        # 1,000레벨 생성·검증 데이터 (보스/기믹/승리 조건 스케줄)
+│   ├── Levels.gd        # 레벨 로딩·생성·캠페인 정합성 검사
+│   ├── levels/LevelSolver.gd        # 정적 풀이·도달 탐색·충돌 판정
+│   ├── levels/LevelPresentation.gd  # 캠페인 표시·초반 제한시간 보정
 │   ├── Title.gd  Map.gd  AudioMgr.gd  SaveGame.gd  G.gd
 ├── assets/
 │   ├── catchers/        # 캐처(구멍 블록) 스프라이트 (7모양×6색)
 │   ├── jelly_*.png      # 젤리 + UI 아이콘
 │   └── fonts/Jua-Regular.ttf  (OFL 라이선스, OFL.txt 동봉)
-└── audio/               # 프로그래매틱 생성 효과음 (WAV)
+└── audio/               # Sound Studio 효과음 WAV + bgm/의 반복 OGG
 ```
 
-에셋은 전부 자체 생성물이라 라이선스 문제 없음 (폰트는 SIL OFL).
+폰트는 SIL OFL이다. 생성 오디오의 출처·가공 방식·모델 이용 조건은
+[오디오 적용 가이드](docs/GAME_AUDIO.md)와 [에셋 명세](docs/AUDIO_ASSET_MANIFEST.json)에 기록한다.
+효과음 제작 도구 표기: Powered by Stability AI.
+
+## 스토어 결제 설정
+
+- [Google Play · Hive IAP 등록 및 테스트](docs/GOOGLE_PLAY_HIVE_IAP_SETUP.md)
+- [iOS App Store · Hive IAP 전체 작업 가이드](docs/IOS_HIVE_IAP_SETUP.md)
