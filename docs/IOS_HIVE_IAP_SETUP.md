@@ -206,11 +206,13 @@ curl --fail http://127.0.0.1:8787/healthz
 | `scripts/BillingService.gd` | 주문·영수증·원자 지급·ACK·복원 상태 흐름 |
 | `scripts/Title.gd` | iOS에서 App Store 구매 안내 |
 | `server/leaderboard/src/billing.ts` | 플랫폼별 주문과 영수증 검증, 중복/계정 검사 |
-| `ios/plugins/HiveBridge/hive_bridge.xcframework` | 빌드된 arm64 기기/시뮬레이터 라이브러리 |
+| `ios/plugins/HiveBridge/hive_bridge_variant.{debug,release}.xcframework` | Godot 내보내기 모드에 맞춰 선택하는 arm64 기기/시뮬레이터 라이브러리 |
 
 ### 7.2 반복 가능한 빌드 순서
 
-현재 Podfile에는 Hive IAP 인터페이스를 제공하는 `HiveSDK`가 이미 포함되어 있다. 기존 Hive/Auth/DataStore/Adiz 의존성을 유지한다.
+플러그인은 Debug/Release를 별도로 빌드한다. `DEBUG_ENABLED`가 켜진 플러그인을 Release Godot 템플릿과 링크하면 `D_METHODP`와 `ClassDB::bind_methodfi` 미정의 심볼 오류가 발생한다. `.gdip`의 공통 이름 `hive_bridge_variant.xcframework`를 유지하면 Godot이 실제 `.debug.xcframework` 또는 `.release.xcframework`를 내보내기 모드에 맞춰 선택한다.
+
+현재 Podfile에는 Hive IAP 인터페이스를 제공하는 `HiveSDK`와 실제 App Store 결제를 처리하는 `HiveIAPV4`가 포함되어 있다. `HiveSDK`만 설치하면 컴파일은 통과해도 상점 호출 시 `CommonLibraryMissing(-12)`가 발생한다. 기존 Hive/Auth/DataStore/Adiz 의존성을 유지한다.
 
 ```sh
 # 프로젝트 루트에서. 설치된 Godot 4.7 경로를 사용한다.
@@ -234,6 +236,8 @@ open build/ios/JellyMon.xcworkspace
 Godot 소스와 export template의 버전/ABI가 맞아야 한다. 현재 SConstruct는 기존 프로젝트의 `DEBUG_ENABLED` 설정을 유지한다. 이번 검증은 브리지 컴파일과 debug export이며, 정식 Archive의 링크·시작·결제까지 확인했다는 의미는 아니다. 사용하는 release template와의 호환성을 최종 빌드에서 검증한다.
 
 Xcode에서는 `.xcodeproj`가 아니라 `.xcworkspace`를 연다. 기기 대상, 팀, Bundle ID, 프로비저닝을 확인하고 Run한다. 새 플러그인을 만들기만 하고 이전 export의 앱을 실행하면 결제 메서드가 포함되지 않을 수 있다.
+
+**Godot에서 iOS를 다시 내보낼 때마다 `tools/prepare_ios_hive.sh`를 다시 실행한다.** 내보내기가 Xcode 프로젝트를 재생성하면 기존 `Pods` 폴더와 workspace가 남아 있어도 앱 타깃의 Pods 설정 및 `[CP]` 빌드 단계 연결은 사라질 수 있다. 이 상태에서는 HiveAdiz의 `_GAD…`, Hive SDK의 `_SDImage…`/`_SDWebImage…` 미정의 심볼 오류가 발생한다. 준비 스크립트로 CocoaPods 연결을 복구한 후 `build/ios/JellyMon.xcworkspace`에서 빌드한다.
 
 현재 XML 사본은 `native/hive_ios/hive_config.xml`과 `ios/plugins/HiveBridge/hive_config.xml`이다. 환경을 바꿀 때 둘을 맞추고, 최종 앱 번들에 포함된 파일을 확인한다.
 

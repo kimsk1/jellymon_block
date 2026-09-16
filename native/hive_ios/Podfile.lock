@@ -67,6 +67,8 @@ PODS:
     - HiveSDK (= 26.4.0)
   - HiveDataStore (26.4.0):
     - HiveSDK (= 26.4.0)
+  - HiveIAPV4 (26.4.0):
+    - HiveSDK (= 26.4.0)
   - HiveSDK (26.4.0):
     - SDWebImage (= 5.21.7)
   - PromisesObjC (2.4.1)
@@ -82,6 +84,7 @@ DEPENDENCIES:
   - HiveAuthV4ProviderAppleSignIn (= 26.4.0)
   - HiveAuthV4ProviderGoogle (= 26.4.0)
   - HiveDataStore (= 26.4.0)
+  - HiveIAPV4 (= 26.4.0)
   - HiveSDK (= 26.4.0)
 
 SPEC REPOS:
@@ -91,6 +94,7 @@ SPEC REPOS:
     - HiveAuthV4ProviderAppleSignIn
     - HiveAuthV4ProviderGoogle
     - HiveDataStore
+    - HiveIAPV4
     - HiveSDK
   trunk:
     - AppAuth
@@ -119,12 +123,13 @@ SPEC CHECKSUMS:
   HiveAuthV4ProviderAppleSignIn: 75b49247e010e8cbba389f03dcb5a44ff2130b5e
   HiveAuthV4ProviderGoogle: 98b68d08bb90f8e77129df63061046d7ac9bc59b
   HiveDataStore: 243fbb86b52eddf39cfd6845161f8b3a9db614f3
+  HiveIAPV4: a5d11413277aa545981f0827cc7279ac289b8ed6
   HiveSDK: d107b45d9776df09aa0d82200f7c0f44d798c807
   PromisesObjC: 752c3227f599e3467650e47ea36f433eeb10c273
   PromisesSwift: 217dea0fd5d2ad65222a109c48698add13cc1c5b
   RecaptchaInterop: 11e0b637842dfb48308d242afc3f448062325aba
   SDWebImage: e9fc87c1aab89a8ab1bbd74eba378c6f53be8abf
 
-PODFILE CHECKSUM: 4910bc92bc6ff39db07543418f4c2b9b3f80b4cd
+PODFILE CHECKSUM: eb319010a3f331e73ffa47579d10dcb2dac5bb6a
 
 COCOAPODS: 1.17.0

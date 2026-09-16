@@ -5,6 +5,7 @@ opts = Variables([], ARGUMENTS)
 env = DefaultEnvironment()
 opts.Add(EnumVariable('arch', 'Architecture', 'arm64', ['arm64', 'x86_64']))
 opts.Add(BoolVariable('simulator', 'Build for simulator', False))
+opts.Add(EnumVariable('target', 'Godot template target', 'debug', ['debug', 'release']))
 opts.Add(PathVariable('godot_path', 'Godot source root', '/private/tmp/godot-4.7'))
 opts.Add(PathVariable('project_root', 'JellyMon project root', '../..'))
 opts.Add(PathVariable('target_path', 'Output directory', 'bin'))
@@ -28,12 +29,16 @@ framework_paths.append(adiz)
 env['CC'] = 'clang'
 env['CXX'] = 'clang++'
 env.Append(CPPPATH=[env['godot_path'], os.path.join(env['godot_path'], 'platform/ios')])
-env.Append(CCFLAGS=['-arch', env['arch'], '-isysroot', sdk_path, minimum, '-fobjc-arc', '-fblocks', '-fmodules', '-fcxx-modules', '-fmodules-cache-path=/private/tmp/jellymon-clang-cache', '-fvisibility=hidden', '-DDEBUG_ENABLED', '-DPTRCALL_ENABLED', '-DIOS_ENABLED', '-DUNIX_ENABLED', '-DCOREAUDIO_ENABLED'])
+env.Append(CCFLAGS=['-arch', env['arch'], '-isysroot', sdk_path, minimum, '-fobjc-arc', '-fblocks', '-fmodules', '-fcxx-modules', '-fmodules-cache-path=/private/tmp/jellymon-clang-cache', '-fvisibility=hidden', '-DPTRCALL_ENABLED', '-DIOS_ENABLED', '-DUNIX_ENABLED', '-DCOREAUDIO_ENABLED'])
+if env['target'] == 'debug':
+    env.Append(CPPDEFINES=['DEBUG_ENABLED'])
 env.Append(CXXFLAGS=['-std=gnu++17', '-DNEED_LONG_INT', '-DVULKAN_ENABLED', '-fno-exceptions'])
 for path in framework_paths:
     env.Append(CCFLAGS=['-F' + path])
 
 sources = Glob('plugin/*.cpp') + Glob('plugin/*.mm')
 kind = 'simulator' if env['simulator'] else 'ios'
-library = env.StaticLibrary(target=os.path.join(env['target_path'], 'hive_bridge_%s_%s' % (env['arch'], kind)), source=sources)
+variant_dir = os.path.join(env['target_path'], env['target'], env['arch'], kind)
+objects = [env.Object(target=os.path.join(variant_dir, os.path.basename(str(source)) + '.o'), source=source) for source in sources]
+library = env.StaticLibrary(target=os.path.join(variant_dir, 'hive_bridge'), source=objects)
 Default(library)

@@ -1,6 +1,6 @@
 [config]
 name="HiveBridge"
-binary="hive_bridge.xcframework"
+binary="hive_bridge_variant.xcframework"
 
 initialization="register_hive_bridge_types"
 deinitialization="unregister_hive_bridge_types"

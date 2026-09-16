@@ -715,6 +715,8 @@ func _shop_item_card(item: Dictionary) -> PanelContainer:
 	var is_season := L10n.text(String(item.get("type", ""))) == "season_pass"
 	var card := PanelContainer.new()
 	card.custom_minimum_size = Vector2(570, 128)
+	# 상품 위에서 시작한 드래그도 목록의 ScrollContainer까지 전달한다.
+	card.mouse_filter = Control.MOUSE_FILTER_PASS
 	var style := StyleBoxFlat.new()
 	style.bg_color = ArtDirection.panel_color()
 	style.border_color = ArtDirection.border_color()
@@ -730,6 +732,7 @@ func _shop_item_card(item: Dictionary) -> PanelContainer:
 	card.add_child(row)
 	var icon_frame := PanelContainer.new()
 	icon_frame.custom_minimum_size = Vector2(92, 92)
+	icon_frame.mouse_filter = Control.MOUSE_FILTER_PASS
 	var icon_style := StyleBoxFlat.new()
 	icon_style.bg_color = ArtDirection.panel_color()
 	icon_style.set_corner_radius_all(25)
@@ -818,6 +821,7 @@ func _shop_item_card(item: Dictionary) -> PanelContainer:
 	var purchased: bool = (is_season and main.save.season_premium) or (not bool(item.get("consumable", true)) and main.save.has_purchased_shop_item(String(item.get("id", "")))) or (is_furniture and main.save.has_furniture(L10n.text(String(item.get("furniture_id", "")))))
 	var buy := _button(tr("보유 중") if purchased and is_furniture else (L10n.text("구매 완료") if purchased else L10n.text(String(item.get("display_price", "")))), Color("#77b984") if purchased else Color("#eb8650"), Vector2(135, 68), 23)
 	buy.clip_text = true
+	buy.mouse_filter = Control.MOUSE_FILTER_PASS
 	buy.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	buy.disabled = purchased
 	buy.pressed.connect(func(): _show_purchase_confirmation(item, buy))
@@ -1581,6 +1585,7 @@ func _show_daily_mission_popup() -> void:
 
 func _vip_support_button() -> Button:
 	var button := _button(L10n.text("VIP 오늘의 구조 지원 · 별가루 8 + 시간 젤리 1"), Color("#d7aa39"), Vector2(530, 58), 17)
+	button.mouse_filter = Control.MOUSE_FILTER_PASS
 	button.set_meta("vip_daily_support", true)
 	button.disabled = not main.save.can_claim_vip_daily_support()
 	if button.disabled:

@@ -14,10 +14,34 @@ project 'JellyMon.xcodeproj'
 
 target 'JellyMon' do
   pod 'HiveSDK', $HIVE_SDK_VERSION
+  pod 'HiveIAPV4', $HIVE_SDK_VERSION
   pod 'HiveAuthV4ProviderGoogle', $HIVE_SDK_VERSION
   pod 'HiveAuthV4ProviderAppleSignIn', $HIVE_SDK_VERSION
   pod 'HiveDataStore', $HIVE_SDK_VERSION
   pod 'HiveAdiz', $HIVE_ADIZ_VERSION
+end
+
+# Godot can regenerate Release with Apple Distribution even when the target
+# uses automatic signing. Let Xcode manage distribution during archive export.
+post_integrate do |installer|
+  installer.aggregate_targets.map(&:user_project).uniq.each do |project|
+    automatic_configs = []
+    project.native_targets.each do |target|
+      next unless target.name == 'JellyMon'
+      target.build_configurations.each do |config|
+        next unless config.build_settings['CODE_SIGN_STYLE'] == 'Automatic'
+        config.build_settings['CODE_SIGN_IDENTITY'] = 'Apple Development'
+        automatic_configs << config.name
+      end
+    end
+    project.build_configurations.each do |config|
+      next unless automatic_configs.include?(config.name)
+      if config.build_settings['CODE_SIGN_IDENTITY'] == 'Apple Distribution'
+        config.build_settings['CODE_SIGN_IDENTITY'] = 'Apple Development'
+      end
+    end
+    project.save unless automatic_configs.empty?
+  end
 end
 
 post_install do |installer|
