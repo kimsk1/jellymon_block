@@ -32,7 +32,7 @@ export function createRankingServer(hive: Hive, store: RecordStore, retryMs = 30
         for (const key of ['x-hive-player-token', 'x-hive-access-token']) {
           const token = req.headers[key]; if (typeof token === 'string') headers.set(key, token);
         }
-        const pid = await hive.authenticate(headers, data);
+        const pid = await hive.authenticate(headers, data, { forceFresh: path === "/v1/billing/verify" });
         value = await billing.handle(path.slice('/v1/billing/'.length), pid, data);
       } else if (req.method === 'GET' && path === '/v1/ranking/top') {
         if (!cache || Date.now() - cacheAt >= 10_000) {

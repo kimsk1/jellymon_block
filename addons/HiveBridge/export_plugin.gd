@@ -19,6 +19,13 @@ class HiveAndroidExportPlugin extends EditorExportPlugin:
 	const HIVE_VERSION := "26.4.0"
 	const ADIZ_VERSION := "3.0.0"
 
+	func _export_begin(features: PackedStringArray, is_debug: bool, path: String, _flags: int) -> void:
+		if is_debug and features.has("android"):
+			var expiry = preload("res://scripts/DebugBuildExpiry.gd")
+			var metadata: Dictionary = expiry.build_metadata(int(Time.get_unix_time_from_system()))
+			metadata["enabled"] = path.get_extension().to_lower() == "apk"
+			add_file(expiry.METADATA_PATH, JSON.stringify(metadata).to_utf8_buffer(), false)
+
 	func _supports_platform(platform: EditorExportPlatform) -> bool:
 		return platform is EditorExportPlatformAndroid
 

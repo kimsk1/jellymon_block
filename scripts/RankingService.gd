@@ -15,6 +15,11 @@ var _account := ""
 var _busy := false
 var _sent: Dictionary = {}
 var _acked: Dictionary = {}
+var _batch: Timer
+var _retry_seconds := 60.0
+var _auth_blocked := false
+var _ack_key := ""
+var _ack_pending := false
 
 func configure(service: Node, storage: SaveGame) -> void:
 	platform = service
@@ -33,7 +38,12 @@ func configure(service: Node, storage: SaveGame) -> void:
 	_retry.one_shot = true
 	_retry.wait_time = 60
 	add_child(_retry)
-	_retry.timeout.connect(sync_record)
+	_retry.timeout.connect(func(): sync_record(true))
+	_batch = Timer.new()
+	_batch.one_shot = true
+	_batch.wait_time = 30
+	add_child(_batch)
+	_batch.timeout.connect(func(): sync_record(true))
 	platform.ranking_auth_ready.connect(_on_auth)
 	platform.login_changed.connect(_on_login)
 	if platform.logged_in:
@@ -54,7 +64,7 @@ func refresh() -> void:
 	var error := _read.request(_base + "/v1/ranking/top", _transport_headers())
 	if error != OK:
 		_on_read(HTTPRequest.RESULT_CANT_CONNECT, 0, PackedStringArray(), PackedByteArray())
-	sync_record()
+	sync_record(true)
 
 func _transport_headers() -> PackedStringArray:
 	var headers := PackedStringArray(["Accept: application/json"])
@@ -98,10 +108,15 @@ func _on_login(_ok: bool, _id: String) -> void:
 	_busy = false
 	_write.cancel_request()
 	_acked = {}
+	_ack_key = ""
+	_auth_blocked = false
+	_retry_seconds = 60.0
+	_batch.stop()
 	_retry.stop()
 	sync_record()
 
-func sync_record() -> void:
+func sync_record(immediate: bool = false) -> void:
+	if _auth_blocked or not _retry.is_stopped(): return
 	if platform.cloud_restore_pending or platform.account_disconnect_pending or _busy or not available() or not platform.logged_in or not platform.native_available or not save.persistence_enabled:
 		return
 	if not save.hive_record_owner.is_empty() and save.hive_record_owner != platform.player_id:
@@ -113,7 +128,14 @@ func sync_record() -> void:
 		submit_status = "별 3개로 클리어하면 랭킹에 등록됩니다."
 		changed.emit()
 		return
-	if record == _acked: return
+	_load_ack()
+	if record == _acked:
+		submit_status = "서버 접수 완료 · 랭킹 반영 대기" if _ack_pending else "내 기록이 서버에 접수되었습니다."
+		return
+	if not immediate:
+		if _batch.is_stopped(): _batch.start()
+		return
+	_batch.stop()
 	if save.hive_record_owner.is_empty():
 		save.hive_record_owner = platform.player_id
 		save.save_data()
@@ -144,23 +166,59 @@ func _on_auth(id: int, success: bool, json: String) -> void:
 func _on_write(result: int, code: int, _headers: PackedStringArray, _body: PackedByteArray) -> void:
 	if not _busy or platform.player_id != _account: return
 	print("[JellyMonRanking] upload transport=%d http=%d" % [result, code])
-	if result == HTTPRequest.RESULT_SUCCESS and code == 202:
-		_submit_failed("서버에 기록을 보관했습니다. Hive 반영을 기다리는 중입니다.")
-		return
 	if result == HTTPRequest.RESULT_SUCCESS and code == 401:
-		_submit_failed("랭킹 인증에 실패했습니다. 서버의 Hive App ID 설정과 로그인을 확인해 주세요.")
+		_auth_blocked = true
+		_busy = false
+		_retry.stop()
+		submit_status = "랭킹 인증이 만료되었습니다. 계정을 다시 연결해 주세요."
+		changed.emit()
 		return
-	if result != HTTPRequest.RESULT_SUCCESS or code != 200:
-		_submit_failed("기록을 보관했습니다. Hive 반영을 다시 확인합니다.")
+	if result != HTTPRequest.RESULT_SUCCESS or code not in [200, 202]:
+		_submit_failed("기록을 보관했습니다. 연결 후 다시 전송합니다.")
 		return
 	_busy = false
+	_retry_seconds = 60.0
 	_acked = _sent.duplicate(true)
-	submit_status = "내 별 3개 기록을 Hive에 등록했습니다."
+	_ack_pending = code == 202
+	_store_ack()
+	submit_status = "서버 접수 완료 · 랭킹 반영 대기" if _ack_pending else "내 별 3개 기록을 Hive에 등록했습니다."
 	changed.emit()
-	refresh()
+	# A newer best may have arrived while this request was in flight.
+	sync_record()
 
 func _submit_failed(message: String) -> void:
 	_busy = false
 	submit_status = message
-	_retry.start()
+	_retry.start(minf(900.0, _retry_seconds + randf_range(0.0, _retry_seconds * 0.1)))
+	_retry_seconds = minf(900.0, _retry_seconds * 2.0)
 	changed.emit()
+
+
+func _receipt_key() -> String:
+	var app_id := String(platform.config.get("ios", {}).get("bundle_id", "")) if OS.get_name() == "iOS" else String(platform.config.get("app_id", ""))
+	return JSON.stringify([_base, app_id, platform.player_id]).sha256_text()
+
+func _load_ack() -> void:
+	var key := _receipt_key()
+	if _ack_key == key: return
+	_ack_key = key
+	_acked = {}
+	_ack_pending = false
+	var path := save.storage_path + ".ranking-ack"
+	if not save.persistence_enabled or not FileAccess.file_exists(path): return
+	var data = JSON.parse_string(FileAccess.get_file_as_string(path))
+	if data is Dictionary and data.get("key", "") == key and data.get("record") is Dictionary:
+		_acked = {"level": int(data.record.get("level", 0)), "stars": int(data.record.get("stars", 0)),
+			"achieved_at_ms": int(data.record.get("achieved_at_ms", 0)), "nickname": String(data.record.get("nickname", ""))}
+		_ack_pending = bool(data.get("pending", false))
+
+func _store_ack() -> void:
+	if not save.persistence_enabled: return
+	var path := save.storage_path + ".ranking-ack"
+	var file := FileAccess.open(path + ".tmp", FileAccess.WRITE)
+	if file == null: return
+	file.store_string(JSON.stringify({"key": _receipt_key(), "record": _acked, "pending": _ack_pending}))
+	file.flush()
+	var error := file.get_error()
+	file.close()
+	if error == OK: DirAccess.rename_absolute(path + ".tmp", path)

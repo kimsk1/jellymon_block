@@ -17,6 +17,10 @@ var _queue: Array = []
 var _grant: Dictionary = {}
 var _request: HTTPRequest
 var _timeout: Timer
+var _restore_requested := true
+var _last_refresh_ms := -1
+var _recovery_needed := true
+const REFRESH_CACHE_MS := 5 * 60 * 1000
 
 func configure(service: Node, storage: SaveGame) -> void:
 	platform = service
@@ -47,13 +51,15 @@ func configure(service: Node, storage: SaveGame) -> void:
 				file.flush()
 				if file.get_error() != OK: _install = ""
 			else: _install = ""
-	if platform.logged_in and available(): refresh.call_deferred()
+	if platform.logged_in and available(): refresh.call_deferred(true)
 
 func _on_login(_ok: bool, _pid: String) -> void:
 	_auth_id -= 1
 	_request.cancel_request()
 	_timeout.stop()
 	prices.clear()
+	_last_refresh_ms = -1
+	_recovery_needed = true
 	_queue.clear()
 	_grant.clear()
 	busy = false
@@ -62,11 +68,11 @@ func _on_login(_ok: bool, _pid: String) -> void:
 	_data.clear()
 	status = "상점에서 구매 내역을 확인할 수 있어요." if platform.logged_in else "계정 연결 후 상점을 이용할 수 있어요."
 	changed.emit()
-	if _ok and available(): refresh.call_deferred()
+	if _ok and available(): refresh.call_deferred(true)
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_APPLICATION_RESUMED and is_instance_valid(platform) and is_instance_valid(_request) and available() and not busy:
-		refresh.call_deferred()
+		refresh.call_deferred(_recovery_needed)
 
 func available() -> bool:
 	return platform.billing_available() and _base.begins_with("https://") and _install.length() == 32 and save.persistence_enabled
@@ -80,8 +86,12 @@ func price(item: Dictionary) -> String:
 func can_buy(item: Dictionary) -> bool:
 	return available() and not busy and prices.has(_product_id(item))
 
-func refresh() -> void:
+func refresh(force_restore: bool = false) -> void:
 	if busy: return
+	var now := Time.get_ticks_msec()
+	if not force_restore and not _recovery_needed and not prices.is_empty() and _last_refresh_ms >= 0 and now - _last_refresh_ms < REFRESH_CACHE_MS:
+		return
+	_restore_requested = force_restore or _recovery_needed
 	if not available():
 		_fail("%s 결제를 사용할 수 없습니다. 앱의 계정 연결을 확인해 주세요." % platform.billing_store_name())
 		return
@@ -95,6 +105,7 @@ func refresh() -> void:
 func purchase(item: Dictionary) -> void:
 	if not can_buy(item): return
 	_account = platform.player_id
+	_recovery_needed = true
 	status = "구매를 준비하고 있어요."
 	_post("order", {"sku": _product_id(item)})
 
@@ -174,7 +185,14 @@ func _on_native(kind: String, raw: String) -> void:
 			prices.clear()
 			for item in data.get("products", []):
 				if not String(item.get("price", "")).is_empty(): prices[String(item.sku)] = String(item.price)
-			_post("entitlements", {})
+			_last_refresh_ms = Time.get_ticks_msec()
+			if _restore_requested:
+				_post("entitlements", {})
+			else:
+				busy = false
+				_native_stage = ""
+				_timeout.stop()
+				status = "상품 가격 확인 완료."
 		"receipts":
 			if _native_stage not in ["billingPurchase", "billingRestore"]: return
 			_queue = data.get("receipts", [])
@@ -193,6 +211,7 @@ func _next_receipt() -> void:
 		busy = false
 		_native_stage = ""
 		_timeout.stop()
+		_recovery_needed = false
 		status = "구매 내역 확인 완료. 최종 가격은 %s 결제창에서 확인해 주세요." % platform.billing_store_name()
 		if prices.is_empty(): status = "판매 중인 상품이 없습니다. 잠시 후 다시 확인해 주세요."
 		_grant.clear()

@@ -30,6 +30,7 @@ window/size/viewport_height=1280
 window/size/window_width_override=414
 window/size/window_height_override=736
 window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
 window/handheld/orientation=1
 
 [editor_plugins]

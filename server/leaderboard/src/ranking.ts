@@ -34,7 +34,7 @@ export function ordered(rows: Entry[]): Entry[] {
     .slice(0, 100).map((row, i) => ({ ...row, rank: i + 1 }));
 }
 export interface Hive {
-  authenticate(headers: Headers, data: Record<string, unknown>): Promise<string>;
+  authenticate(headers: Headers, data: Record<string, unknown>, options?: { forceFresh?: boolean }): Promise<string>;
   submit(pid: string, record: RecordData): Promise<void>;
   top(): Promise<Entry[]>;
 }

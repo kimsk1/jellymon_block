@@ -1,16 +1,26 @@
+import { createHash } from 'node:crypto';
 import { APIError, object, ordered, scoreFor, validateRecord, type Entry, type Hive, type RecordData } from './ranking.js';
-export interface Config { appId: string; allowedAppIds: string[]; boardId: string; key: string; zone: 'sandbox' | 'live' }
+export interface Config { appId: string; allowedAppIds: string[]; boardId: string; key: string; zone: 'sandbox' | 'live'; authCacheSeconds?: number }
 export function readConfig(env: NodeJS.ProcessEnv): Config {
   const appId = env.HIVE_APP_ID?.trim(), boardId = env.HIVE_LEADERBOARD_ID?.trim() ?? '163', key = env.HIVE_CERTIFICATION_KEY?.trim();
   if (!appId || !key || !/^[1-9]\d*$/.test(boardId)) throw new Error('HIVE_APP_ID, HIVE_CERTIFICATION_KEY, HIVE_LEADERBOARD_ID 설정을 확인하세요.');
   const zone = env.HIVE_ZONE ?? 'sandbox';
   if (zone !== 'sandbox' && zone !== 'live') throw new Error('HIVE_ZONE은 sandbox 또는 live여야 합니다.');
   const allowedAppIds = [...new Set([appId, ...(env.HIVE_ALLOWED_APP_IDS ?? '').split(',').map(v => v.trim()).filter(Boolean)])];
-  return { appId, allowedAppIds, boardId, key, zone };
+  const authCacheSeconds = Number(env.HIVE_AUTH_CACHE_SECONDS ?? 0);
+  if (!Number.isInteger(authCacheSeconds) || authCacheSeconds < 0 || authCacheSeconds > 300)
+    throw new Error('HIVE_AUTH_CACHE_SECONDS must be 0..300');
+  if (authCacheSeconds > 0 && env.HIVE_SINGLE_LOGIN_CONFIRMED !== 'true')
+    throw new Error('Confirm the Hive single-login policy before enabling auth caching');
+  return { appId, allowedAppIds, boardId, key, zone, authCacheSeconds };
 }
 export class HiveAPI implements Hive {
   readonly base: string;
-  constructor(private config: Config, private transport: typeof fetch = fetch) {
+  private authCache = new Map<string, { pid: string; until: number }>();
+  private authPending = new Map<string, Promise<string>>();
+  readonly authStats = { requests: 0, upstream: 0, joined: 0, hits: 0, failed: 0 };
+  authMetrics() { return { ...this.authStats, cached: this.authCache.size, inFlight: this.authPending.size }; }
+  constructor(private config: Config, private transport: typeof fetch = fetch, private now: () => number = Date.now) {
     this.base = `https://${config.zone === 'sandbox' ? 'sandbox-' : ''}api-leaderboard.withhive.com`;
   }
   private async request(url: string, method = 'GET', data?: unknown, headers: Record<string, string> = {}): Promise<unknown> {
@@ -42,7 +52,8 @@ export class HiveAPI implements Hive {
       throw new APIError(502, 'Hive 연결을 확인해 주세요.');
     }
   }
-  async authenticate(headers: Headers, data: Record<string, unknown>): Promise<string> {
+  async authenticate(headers: Headers, data: Record<string, unknown>, options: { forceFresh?: boolean } = {}): Promise<string> {
+    this.authStats.requests++;
     const appId = data.app_id === undefined ? this.config.appId : data.app_id;
     if (typeof appId !== 'string' || !this.config.allowedAppIds.includes(appId))
       throw new APIError(401, '허용되지 않은 Hive App ID입니다. 서버 설정을 확인해 주세요.');
@@ -50,10 +61,40 @@ export class HiveAPI implements Hive {
     const token = headers.get('x-hive-player-token'), access = headers.get('x-hive-access-token');
     if (typeof pid !== 'string' || !/^[1-9]\d{0,15}$/.test(pid) || !Number.isSafeInteger(Number(pid)) || typeof did !== 'string' || !did || did.length > 256 || !token || !access)
       throw new APIError(401, 'Hive 로그인이 필요합니다.');
+    const cacheKey = createHash('sha256').update(JSON.stringify([this.config.zone, appId, pid, did, token, access])).digest('hex');
+    const now = this.now();
+    for (const [key, value] of this.authCache) if (value.until <= now) this.authCache.delete(key);
+    if (options.forceFresh) this.authCache.delete(cacheKey);
+    const cached = this.authCache.get(cacheKey);
+    if (cached) { this.authStats.hits++; return cached.pid; }
+    const pending = this.authPending.get(cacheKey);
+    if (pending) { this.authStats.joined++; return pending; }
+    if (this.authPending.size >= 1024) throw new APIError(429, '인증 요청이 많습니다. 잠시 후 다시 시도해 주세요.');
+    const job = this.verifyIdentity(appId, pid, did, token, access).then(result => {
+      // Parse expiration only AFTER Hive has validated this exact token. Never use
+      // unverified JWT payloads to authenticate or extend an existing cache entry.
+      let expires = 0;
+      try {
+        const payload = JSON.parse(Buffer.from(access.split('.')[1], 'base64url').toString());
+        if (typeof payload.exp === 'number' && Number.isFinite(payload.exp)) expires = payload.exp * 1000 - 5000;
+      } catch { /* opaque tokens are verified on every request */ }
+      const until = Math.min(now + (this.config.authCacheSeconds ?? 0) * 1000, expires);
+      if (until > this.now()) {
+        if (this.authCache.size >= 4096) this.authCache.delete(this.authCache.keys().next().value!);
+        this.authCache.set(cacheKey, { pid: result, until });
+      }
+      return result;
+    }).catch(error => { this.authStats.failed++; this.authCache.delete(cacheKey); throw error; })
+      .finally(() => { this.authPending.delete(cacheKey); });
+    this.authPending.set(cacheKey, job);
+    return job;
+  }
+  private async verifyIdentity(appId: string, pid: string, did: string, token: string, access: string): Promise<string> {
     const hosts = this.config.zone === 'sandbox' ? ['https://sandbox-auth.qpyou.cn'] : ['https://auth.qpyou.cn', 'https://auth.globalwithhive.com'];
     let result: Record<string, unknown> | undefined;
     for (const [i, host] of hosts.entries()) {
       try {
+        this.authStats.upstream++;
         result = object(await this.request(host + '/v2/game/token/get-token', 'POST',
           { appid: appId, did, player_id: Number(pid), include_fields: ['is_blocked'] },
           { Authorization: token, 'X-Access-Token': access, ISCRYPT: '0' }));
