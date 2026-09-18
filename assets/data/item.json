@@ -39,7 +39,7 @@
     {
       "id": "remove_ads",
       "type": "remove_ads",
-      "name": "VIP 구조대 패스",
+      "name": "VIP 구조대 패스 (기존 구매자)",
       "amount": 0,
       "price_krw": 3000,
       "display_price": "₩3,000",
@@ -49,7 +49,24 @@
       "furniture_ids": ["vip_nameplate"],
       "profile_badge": "VIP",
       "exclusive": true,
-      "description": "매일 별가루 8 + 시간 젤리 1 · 선택형 보상 광고 일 1회 즉시 완료 · VIP 배지와 주민이 반응하는 빛나는 명패. 캠페인은 누구나 광고 없이 진행해요."
+      "description": "기존 구매자 권리 그대로 · 매일 별가루 8 + 시간 젤리 1 · 클리어 2배 보상 하루 1회 즉시 수령 · VIP 배지와 빛나는 명패. 신규 판매는 종료됐고 캠페인은 누구나 광고 없이 진행해요.",
+      "legacy": true,
+      "sale_ended": true
+    },
+    {
+      "id": "supporter_pack",
+      "type": "supporter",
+      "name": "구조대 후원 팩",
+      "amount": 0,
+      "price_krw": 3900,
+      "display_price": "₩3,900",
+      "consumable": false,
+      "android_product_id": "jellymon.pack.supporter",
+      "ios_product_id": "jellymon.pack.supporter",
+      "furniture_ids": ["supporter_nameplate", "supporter_memory_frame"],
+      "profile_badge": "후원",
+      "exclusive": true,
+      "description": "후원 배지 · 주민이 반응하는 후원 명패와 추억 액자 한정 가구 2종을 영구 소장해요. 매일 지급 재화와 광고 스킵은 포함하지 않아요."
     },
     {
       "id": "starter_rescue_pack",
@@ -108,7 +125,9 @@
       "ios_product_id": "jellymon.season.heartstar.s1",
       "furniture_ids": ["season_welcome_sign"],
       "exclusive": true,
-      "description": "28일 프리미엄 보상 트랙 · 시즌 한정 가구와 주민 전용 반응 · 매일 주민 부탁 1개 추가. 시즌마다 다시 선택할 수 있어요."
+      "description": "28일 프리미엄 보상 트랙 · 시즌 기간 매일 별가루 8 + 시간 젤리 1 · 클리어 보상 광고 시청 시 2배 대신 3배 · 시즌 한정 가구와 주민 전용 반응 · 매일 주민 부탁 1개 추가. 시즌마다 다시 선택할 수 있어요.",
+      "daily_support": {"stardust": 8, "boosters": {"time": 1}},
+      "clear_reward_ad_multiplier": 3
     }
   ]
 }

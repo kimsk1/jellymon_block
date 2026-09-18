@@ -19,6 +19,7 @@ var _timer_state := -1
 var goal_items := {}
 var star_tex: Texture2D
 var clear_base_reward := 0
+var clear_reward_multiplier := 2
 var clear_bonus_claimed := false
 var clear_reward_label: Label
 var clear_double_button: Button
@@ -217,7 +218,7 @@ func _build_booster_tray() -> void:
 		var id := L10n.text(String(spec[0]))
 		var count: int = game.main.save.get_booster_count(id)
 		var button := Button.new()
-		button.text = L10n.text("×%d" % count)
+		button.text = L10n.text("광고") if id == "time" and count <= 0 else L10n.text("×%d" % count)
 		button.tooltip_text = L10n.text(String(spec[1]))
 		button.custom_minimum_size = Vector2(119, 62)
 		button.add_theme_font_size_override("font_size", 19)
@@ -228,7 +229,7 @@ func _build_booster_tray() -> void:
 		button.add_theme_constant_override("icon_max_width", 43)
 		button.add_theme_constant_override("h_separation", 2)
 		ArtDirection.apply_button(button, Color("#e48658") if id == "time" else Color("#6d8fd1"), 17)
-		button.disabled = count <= 0
+		button.disabled = count <= 0 and not (id == "time" and game.main.save.rewarded_remaining("booster_time") > 0)
 		button.pressed.connect(func(): game.use_booster(id))
 		row.add_child(button)
 		booster_buttons[id] = button
@@ -335,9 +336,9 @@ func refresh_boosters() -> void:
 	for id in booster_buttons:
 		var button: Button = booster_buttons[id]
 		var count: int = game.main.save.get_booster_count(L10n.text(String(id)))
-		button.text = L10n.text("×%d" % count)
-		button.disabled = count <= 0 or game.state != "play" or activity_blocks_boosters
-		button.tooltip_text = L10n.text("맨손 구조 규칙에서는 사용할 수 없어요") if activity_blocks_boosters else ""
+		button.text = L10n.text("광고") if id == "time" and count <= 0 else L10n.text("×%d" % count)
+		button.disabled = (count <= 0 and not (id == "time" and game.main.save.rewarded_remaining("booster_time") > 0)) or game.state != "play" or activity_blocks_boosters
+		button.tooltip_text = L10n.text("맨손 구조 규칙에서는 사용할 수 없어요") if activity_blocks_boosters else (L10n.text("광고 보고 이번 판 +15초 · 하루 2회") if id == "time" and count <= 0 else "")
 
 
 func _apply_responsive_layout() -> void:
@@ -709,6 +710,7 @@ func _title_label(text: String, col: Color) -> Label:
 
 func show_result(stars_n: int, score: int, stardust_reward: int, stardust_total: int, clear_time: float, best_time: float, has_next: bool, on_next: Callable, on_map: Callable, on_retry: Callable) -> void:
 	clear_base_reward = stardust_reward
+	clear_reward_multiplier = 2
 	clear_bonus_claimed = false
 	var v := _popup_frame()
 	var mascot := TextureRect.new()
@@ -764,36 +766,28 @@ func show_result(stars_n: int, score: int, stardust_reward: int, stardust_total:
 		finale.add_theme_font_size_override("font_size", 21)
 		finale.add_theme_color_override("font_color", ArtDirection.text_color(Color(L10n.text(String(signature.get("accent", "#db6f88")))).darkened(0.2)))
 		v.add_child(finale)
-	# 별 3개 (순차 팝)
+	# 빈 별 위로 획득한 별이 차례로 내려와 박힌다.
 	var row := HBoxContainer.new()
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
 	row.add_theme_constant_override("separation", 16)
 	v.add_child(row)
 	for i in range(3):
-		var tr := TextureRect.new()
-		tr.texture = star_tex
-		tr.custom_minimum_size = Vector2(92, 92)
-		tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		tr.pivot_offset = Vector2(46, 46)
-		if i < stars_n:
-			tr.modulate = Color(1.0, 0.8, 0.15)
-			tr.scale = Vector2.ZERO
-			var tw := tr.create_tween()
-			tw.tween_interval(0.25 + 0.22 * i)
-			tw.tween_callback(func():
-				if game:
-					game.audio.play("pop", 1.0 + 0.15 * i))
-			tw.tween_property(tr, "scale", Vector2.ONE, 0.3).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-		else:
-			tr.modulate = Color(0.45, 0.42, 0.5, 0.55)
-		row.add_child(tr)
+		var slot := Control.new()
+		slot.custom_minimum_size = Vector2(92, 92)
+		slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		row.add_child(slot)
+		var empty := _result_star(Vector2(92, 92))
+		empty.modulate = Color(0.45, 0.42, 0.5, 0.3)
+		slot.add_child(empty)
+		if i < clampi(stars_n, 0, 3):
+			_animate_result_star(slot, i)
 	var sc := Label.new()
-	sc.text = L10n.text(tr("점수  %d") % score)
+	sc.text = L10n.text(tr("점수  %d") % 0)
 	sc.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	sc.add_theme_font_size_override("font_size", 34)
 	sc.add_theme_color_override("font_color", ArtDirection.ink())
 	v.add_child(sc)
+	_animate_result_score(sc, score)
 	var record := Label.new()
 	record.text = L10n.text(tr("클리어  %s   ·   최고 기록  %s") % [_format_clear_time(clear_time), _format_clear_time(best_time)])
 	record.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -819,7 +813,7 @@ func show_result(stars_n: int, score: int, stardust_reward: int, stardust_total:
 		reward_label.add_theme_constant_override("outline_size", 0)
 		v.add_child(reward_label)
 	if stardust_reward > 0:
-		clear_double_button = _big_button(tr("VIP 오늘의 무료 2배") if game.main.save.can_skip_rewarded_ad("clear_reward_double") else L10n.text("광고 보고 보상 2배"), Color("#8e64c8"))
+		clear_double_button = _big_button(_clear_double_button_text(), Color("#8e64c8"))
 		clear_double_button.custom_minimum_size = Vector2(430, 72)
 		clear_double_button.pressed.connect(_request_clear_double_reward)
 		v.add_child(clear_double_button)
@@ -840,14 +834,82 @@ func show_result(stars_n: int, score: int, stardust_reward: int, stardust_total:
 		btns.add_child(b_next)
 
 
+func _result_star(icon_size: Vector2) -> TextureRect:
+	var icon := TextureRect.new()
+	icon.texture = star_tex
+	icon.size = icon_size
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon.pivot_offset = icon_size * 0.5
+	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return icon
+
+
+func _animate_result_star(slot: Control, index: int) -> void:
+	var icon := _result_star(Vector2(92, 92))
+	icon.modulate = Color(1.0, 0.86, 0.3, 0.0)
+	icon.position = Vector2(0, -55)
+	icon.scale = Vector2.ONE * 2.0
+	icon.rotation = -0.25 if index % 2 == 0 else 0.25
+	slot.add_child(icon)
+	var tw := slot.create_tween()
+	tw.tween_interval(0.35 + 0.38 * index)
+	tw.tween_property(icon, "modulate:a", 1.0, 0.12)
+	tw.parallel().tween_property(icon, "position", Vector2.ZERO, 0.2).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	tw.parallel().tween_property(icon, "scale", Vector2(0.88, 0.8), 0.2).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	tw.parallel().tween_property(icon, "rotation", 0.0, 0.2)
+	tw.tween_callback(func():
+		_result_star_burst(slot)
+		if is_instance_valid(game) and is_instance_valid(game.audio):
+			game.audio.play("pop", 1.0 + 0.15 * index))
+	tw.tween_property(icon, "scale", Vector2(1.12, 1.15), 0.1).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tw.tween_property(icon, "scale", Vector2.ONE, 0.18).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+
+
+func _result_star_burst(slot: Control) -> void:
+	# 팝업 내부 좌표를 사용하므로 화면 비율과 CanvasLayer에 영향받지 않는다.
+	for i in range(8):
+		var spark := _result_star(Vector2(14, 14))
+		var direction := Vector2.from_angle(TAU * i / 8.0)
+		spark.position = Vector2(39, 39) + direction * 20.0
+		spark.modulate = Color(1.0, 0.82, 0.25)
+		slot.add_child(spark)
+		var tw := spark.create_tween().set_parallel()
+		tw.tween_property(spark, "position", Vector2(39, 39) + direction * 72.0, 0.38).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		tw.tween_property(spark, "scale", Vector2.ZERO, 0.38)
+		tw.tween_property(spark, "modulate:a", 0.0, 0.38)
+		tw.chain().tween_callback(spark.queue_free)
+
+
+func _animate_result_score(label: Label, score: int) -> void:
+	var target := maxi(0, score)
+	var tw := label.create_tween()
+	tw.tween_interval(0.35)
+	tw.tween_method(func(value: float):
+		label.text = L10n.text(tr("점수  %d") % int(value)), 0.0, float(target), 1.55).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tw.tween_callback(func():
+		label.text = L10n.text(tr("점수  %d") % target)
+		label.pivot_offset = label.size * 0.5)
+	tw.tween_property(label, "scale", Vector2.ONE * 1.08, 0.1)
+	tw.tween_property(label, "scale", Vector2.ONE, 0.18).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+
+
 static func _format_clear_time(seconds: float) -> String:
 	var centiseconds := maxi(0, int(round(seconds * 100.0)))
 	return "%d:%02d.%02d" % [centiseconds / 6000, (centiseconds / 100) % 60, centiseconds % 100]
 
 
+func _clear_double_button_text() -> String:
+	## 레거시 VIP는 하루 1회 광고 없이 2배. 시즌 프리미엄은 광고를 보는 대신 배수가 커진다.
+	if game.main.save.can_skip_rewarded_ad("clear_reward_double"):
+		return tr("VIP 오늘의 무료 2배")
+	return L10n.text("광고 보고 보상 %d배") % game.main.save.clear_reward_ad_multiplier()
+
+
 func _request_clear_double_reward() -> void:
 	if clear_bonus_claimed or clear_base_reward <= 0 or not clear_double_button:
 		return
+	clear_reward_multiplier = 2 if game.main.save.can_skip_rewarded_ad("clear_reward_double") else game.main.save.clear_reward_ad_multiplier()
 	clear_double_button.disabled = true
 	clear_double_button.text = L10n.text(tr("2배 보상 지급 중...") if game.main.save.can_skip_rewarded_ad("clear_reward_double") else L10n.text("광고 재생 중..."))
 	game.main.request_rewarded_ad(_finish_clear_double_reward, _restore_clear_double_button, "clear_reward_double")
@@ -856,16 +918,17 @@ func _request_clear_double_reward() -> void:
 func _finish_clear_double_reward() -> void:
 	if clear_bonus_claimed or clear_base_reward <= 0 or not is_instance_valid(clear_double_button):
 		return
-	if not game.main.save.grant_stardust(clear_base_reward):
+	var bonus := clear_base_reward * (maxi(2, clear_reward_multiplier) - 1)
+	if not game.main.save.grant_stardust(bonus):
 		_restore_clear_double_button()
 		return
 	if game.main.analytics:
-		game.main.analytics.track("currency_source", {"currency": "stardust", "amount": clear_base_reward, "source": "clear_reward_double"})
+		game.main.analytics.track("currency_source", {"currency": "stardust", "amount": bonus, "source": "clear_reward_double", "multiplier": clear_reward_multiplier})
 	clear_bonus_claimed = true
-	clear_double_button.text = L10n.text(tr("✓ 2배 보상 받음"))
+	clear_double_button.text = L10n.text("✓ %d배 보상 받음") % clear_reward_multiplier
 	_set_reward_complete_style(clear_double_button)
 	clear_double_button.disabled = true
-	clear_reward_label.text = L10n.text("★ 별가루 +%d  · 2배 완료!   보유 %d") % [clear_base_reward * 2, game.main.save.get_stardust()]
+	clear_reward_label.text = L10n.text("★ 별가루 +%d  · %d배 완료!   보유 %d") % [clear_base_reward * clear_reward_multiplier, clear_reward_multiplier, game.main.save.get_stardust()]
 	clear_reward_label.add_theme_color_override("font_color", ArtDirection.danger_color())
 	game.audio.play("shiny", 1.12)
 	game.fx.sparkle(Vector2(G.W * 0.5, 470), 22)
@@ -876,10 +939,10 @@ func _restore_clear_double_button() -> void:
 	if not is_instance_valid(clear_double_button) or clear_bonus_claimed:
 		return
 	clear_double_button.disabled = false
-	clear_double_button.text = L10n.text(tr("VIP 오늘의 무료 2배") if game.main.save.can_skip_rewarded_ad("clear_reward_double") else L10n.text("광고 보고 보상 2배"))
+	clear_double_button.text = L10n.text(_clear_double_button_text())
 	if clear_reward_label:
 		var reason := L10n.text(String(game.main.platform.rewarded_ad_message)) if game.main.platform else ""
-		clear_reward_label.text = L10n.text("광고를 끝까지 시청해야 2배 보상을 받을 수 있어요.") if reason.contains("완료되지") else L10n.text("광고를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.")
+		clear_reward_label.text = (L10n.text("광고를 끝까지 시청해야 %d배 보상을 받을 수 있어요.") % game.main.save.clear_reward_ad_multiplier()) if reason.contains("완료되지") else L10n.text("광고를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.")
 
 
 func show_fail(reason: String, stardust_total: int, continue_available: bool, on_continue: Callable, on_retry: Callable, on_map: Callable) -> void:
@@ -911,6 +974,13 @@ func show_fail(reason: String, stardust_total: int, continue_available: bool, on
 			dim.queue_free()
 	)
 	v.add_child(b_continue)
+	if game.can_ad_continue():
+		var ad_continue := _big_button(L10n.text("광고 보고 30초 이어하기"), Color("#8e64c8"))
+		ad_continue.custom_minimum_size = Vector2(430, 72)
+		ad_continue.pressed.connect(func():
+			game.main.offer_rewarded("fail_continue", L10n.text("광고를 끝까지 보면 현재 보드에서 30초 더 도전해요.\n별가루 이어하기와 합쳐 한 판에 1회예요."), func():
+				if game.continue_with_ad() and is_instance_valid(dim): dim.queue_free()))
+		v.add_child(ad_continue)
 	var btns := HBoxContainer.new()
 	btns.alignment = BoxContainer.ALIGNMENT_CENTER
 	btns.add_theme_constant_override("separation", 18)

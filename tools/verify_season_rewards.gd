@@ -41,6 +41,46 @@ func run() -> void:
 	main.current_screen._close_shop_popup()
 	check(save.claim_retention_season_reward(1, true).is_empty(), "premium ownership required")
 	check(save.apply_verified_shop_item(Shop.item_by_id("season_heart_star_pass")), "buy premium")
+	check(save.clear_reward_ad_multiplier() == 3 and not save.can_skip_rewarded_ad("clear_reward_double") or save.ads_removed, "premium watches ads for 3x")
+	check(save.clear_reward_ad_multiplier() == 3, "premium clear ad multiplier")
+	main.current_screen._show_shop_popup()
+	var season_count := 0
+	for button in buttons(main.current_screen.shop_popup):
+		if not button.has_meta("season_daily_support"): continue
+		season_count += 1
+		var before: int = save.stardust
+		var boosters: int = save.get_booster_count("time")
+		button.pressed.emit()
+		check(button.disabled and save.stardust == before + 8 and save.get_booster_count("time") == boosters + 1, "season support shop claim")
+		button.pressed.emit()
+		check(save.stardust == before + 8, "season support duplicate rejected")
+	check(season_count == 1, "season support visible after premium purchase")
+	var legacy_visible := false
+	var supporter_visible := false
+	for label in main.current_screen.shop_popup.find_children("*", "Label", true, false):
+		if label.text.contains("VIP 구조대 패스"): legacy_visible = true
+		if label.text.contains("구조대 후원 팩"): supporter_visible = true
+	check(legacy_visible and supporter_visible, "legacy VIP card shown to owner and supporter pack listed")
+	main.current_screen._close_shop_popup()
+	var home_button: Button = main.current_screen.daily_support_button
+	check(home_button != null and home_button.visible and home_button.text.contains("완료"), "home button reflects shop claims")
+	save.vip_daily_support_date = ""
+	main.current_screen._refresh_daily_support_button()
+	check(home_button.text.contains("받기"), "home daily support button offered")
+	var home_before: int = save.stardust
+	main.current_screen._claim_daily_support_from_home()
+	check(save.stardust == home_before + 8 and not save.can_claim_daily_support(), "home claim grants remaining VIP support once")
+	check(home_button.text.contains("완료"), "home button refreshes after claim")
+	save.ads_removed = false
+	main.show_title()
+	await get_tree().process_frame
+	main.current_screen._show_shop_popup()
+	var legacy_hidden := true
+	for label in main.current_screen.shop_popup.find_children("*", "Label", true, false):
+		if label.text.contains("VIP 구조대 패스"): legacy_hidden = false
+	check(legacy_hidden, "legacy VIP hidden from non-owners")
+	main.current_screen._close_shop_popup()
+	save.ads_removed = true
 	check(save.claim_retention_season_reward(5, true).is_empty(), "future reward locked")
 	check(save.claim_retention_season_reward(1, false).is_empty(), "absent free reward rejected")
 	main.current_screen._show_lifestyle_popup()

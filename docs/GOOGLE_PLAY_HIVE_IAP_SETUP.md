@@ -107,7 +107,8 @@
 | 1 | `jellymon.stardust.50` | 별가루 50개 | ₩1,000 | 반복 구매 |
 | 2 | `jellymon.stardust.110` | 별가루 110개 | ₩2,000 | 반복 구매 |
 | 3 | `jellymon.energy.5` | 하트 5개 | ₩500 | 반복 구매 |
-| 4 | `jellymon.remove_ads` | VIP 구조대 패스 | ₩3,000 | Hive 계정당 1회 |
+| 4 | `jellymon.remove_ads` | VIP 구조대 패스 (기존 구매자, 판매 종료) | ₩3,000 | Hive 계정당 1회. 신규 노출 없음, 복원 전용 |
+| 4-1 | `jellymon.pack.supporter` | 구조대 후원 팩 | ₩3,900 | Hive 계정당 1회 |
 | 5 | `jellymon.pack.starter` | 새내기 구조대 팩 | ₩1,500 | Hive 계정당 1회 |
 | 6 | `jellymon.pack.chapter` | 챕터 돌파 팩 | ₩3,000 | Hive 계정당 1회 |
 | 7 | `jellymon.pack.hideout` | 말랑 아지트 꾸미기 팩 | ₩4,500 | Hive 계정당 1회 |
@@ -141,6 +142,8 @@
 - 구매 시 VIP 권한과 `vip_nameplate` 가구 지급.
 - 일일 지원은 기존 게임의 일일 수령 규칙을 따릅니다. 구매 즉시 모든 일수의 재화가 지급되는 상품이 아닙니다.
 - **상품 ID에 remove_ads가 있어도 '모든 광고 제거'로 등록하지 마세요.** 실제 기능은 선택형 보상 광고 하루 1회 즉시 완료입니다.
+- **`jellymon.remove_ads`는 2026-09-18부터 신규 판매를 종료했습니다.** 앱 상점에는 기존 구매자에게만 표시되고, 스토어 콘솔에서는 구매 복원을 위해 활성 상태를 유지합니다. 비활성화하면 기존 구매자의 복원이 실패합니다.
+- **`jellymon.pack.supporter`(구조대 후원 팩)는 배지와 한정 가구만 제공하는 비소모성 상품입니다.** 매일 지급 재화나 광고 스킵을 설명에 넣지 마세요. 매일 지급과 클리어 광고 3배 혜택은 `jellymon.season.heartstar.s1` 시즌 프리미엄에 속합니다.
 - 영구 소유권 복원 대상. 구독/월정액 아님.
 
 #### 새내기 구조대 팩
@@ -227,7 +230,7 @@ JSON 개인키 파일은 Hive Console에 등록하기 위한 서버 자격증명
 1. Hive Console **빌링 → 상품 관리**에서 `[3674] JellyADtest`를 선택합니다.
 2. Android Google 스토어의 상품을 만듭니다.
 3. **마켓 상품 ID/marketPid**에 3장의 ID를 그대로 입력합니다.
-4. 게임 내부 상품 ID를 따로 입력하는 화면이라면 `stardust_50`, `stardust_110`, `heart_5`, `remove_ads`, `starter_rescue_pack`, `chapter_rescue_pack`, `hideout_decor_pack`, `season_heart_star_pass`를 각각 대응시킵니다.
+4. 게임 내부 상품 ID를 따로 입력하는 화면이라면 `stardust_50`, `stardust_110`, `heart_5`, `remove_ads`, `supporter_pack`, `starter_rescue_pack`, `chapter_rescue_pack`, `hideout_decor_pack`, `season_heart_star_pass`를 각각 대응시킵니다.
 5. 표시명/구성 설명/가격 정보가 필요한 경우 3장의 값을 사용합니다. 실제 앱 표시 가격은 Google Play의 조회 결과를 우선합니다.
 6. 사용 환경과 대상 App ID를 확인하고 상품을 판매/조회 가능한 상태로 저장합니다.
 7. 앱의 상품 새로고침에서 가격이 조회되는지 확인합니다.

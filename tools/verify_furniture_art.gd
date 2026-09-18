@@ -74,7 +74,7 @@ func run() -> void:
 		main.current_screen.hide()
 		root.size = Vector2i(1200,600)
 		root.content_scale_size = root.size
-		for group in range(5):
+		for group in range(ceili(items.size() / 10.0)):
 			var gallery := Control.new()
 			root.add_child(gallery)
 			var bg := ColorRect.new()
@@ -82,6 +82,7 @@ func run() -> void:
 			bg.size = Vector2(1200,600)
 			gallery.add_child(bg)
 			for j in range(10):
+				if group*10+j >= items.size(): break
 				var entry: Dictionary = items[group*10+j]
 				var pic := TextureRect.new()
 				pic.expand_mode = TextureRect.EXPAND_IGNORE_SIZE

@@ -13,6 +13,7 @@ const LiveMessageCatalogLib = preload("res://scripts/LiveMessageCatalog.gd")
 const LiveProgressionCatalogLib = preload("res://scripts/LiveProgressionCatalog.gd")
 const RetentionCatalogLib = preload("res://scripts/RetentionCatalog.gd")
 
+var _header_layout: Array = []
 var main = null
 var room_theme_popup: Control
 var room_theme_button: Button
@@ -24,6 +25,7 @@ var nav_bar: Control
 var palette: Control
 var photo_layer: Control
 var attendance_button: Button
+var daily_support_button: Button
 var attendance_popup: Control
 var mission_button: Button
 var mission_popup: Control
@@ -85,7 +87,11 @@ func _ready() -> void:
 	ui_layer.z_index = 10
 	add_child(ui_layer)
 	_build_header()
+	for child in ui_layer.get_children():
+		if child is Control:
+			_header_layout.append({"node": child, "position": child.position})
 	_build_navigation()
+	_apply_responsive_layout()
 	_refresh_room()
 	_start_resident_life()
 	# 최초 닉네임 설정을 출석 안내보다 먼저 처리한다. 자동 QA에서는 기존 화면 캡처를 가리지 않는다.
@@ -106,6 +112,17 @@ func _process(_delta: float) -> void:
 func _apply_responsive_layout() -> void:
 	position = G.safe_offset(get_viewport_rect().size)
 	size = Vector2(G.W, G.H)
+	var safe := G.safe_rect(get_viewport_rect().size)
+	var top_shift := safe.position.y - position.y
+	var bottom_shift := safe.end.y - position.y - G.H
+	for entry in _header_layout:
+		if is_instance_valid(entry.node):
+			entry.node.position = entry.position + Vector2(0, top_shift)
+	if is_instance_valid(nav_bar):
+		nav_bar.position.y = 1104 + bottom_shift
+	if is_instance_valid(ui_layer) and ui_layer.has_node("NextAdventureCard"):
+		ui_layer.get_node("NextAdventureCard").position.y = 920 + bottom_shift
+	if is_instance_valid(backdrop): backdrop.queue_redraw()
 
 
 func _fit_overlay_to_viewport(control: Control) -> void:
@@ -371,11 +388,16 @@ func _build_header() -> void:
 	attendance_button.pressed.connect(_show_attendance_popup)
 	attendance_button.visible = main.save.home_feature_unlocked("attendance")
 	ui_layer.add_child(attendance_button)
+	daily_support_button = _home_button(L10n.text("오늘의 구조 지원"), Vector2(280, 46), 19)
+	daily_support_button.position = Vector2(24, 190)
+	daily_support_button.pressed.connect(_claim_daily_support_from_home)
+	ui_layer.add_child(daily_support_button)
 	if ArtDirection.is_botanical() or ArtDirection.is_night():
 		_add_botanical_action_icon(mission_button, "rescue")
 		_add_botanical_action_icon(attendance_button, "gift")
 	_refresh_home_energy()
 	_refresh_attendance_button()
+	_refresh_daily_support_button()
 	_refresh_mission_button()
 	_add_header_badges()
 	_refresh_room_theme_label()
@@ -479,9 +501,15 @@ func _refresh_vip_identity() -> void:
 		return
 	var display_name: String = String(main.save.get_nickname()) if main.save.has_nickname() else L10n.text("내 젤리몬")
 	header_name_label.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
-	header_name_label.text = "VIP ✦  %s" % display_name if main.save.has_removed_ads() else display_name
-	header_name_label.add_theme_color_override("font_color", ArtDirection.text_color(Color("#a36822") if main.save.has_removed_ads() else ArtDirection.ink()))
-	header_name_label.tooltip_text = L10n.text("VIP 광고 스킵 패스 보유 · 전용 명패 지급 완료") if main.save.has_removed_ads() else ""
+	var badge: String = main.save.profile_badge()
+	header_name_label.text = ("%s ✦  %s" % [badge, display_name]) if not badge.is_empty() else display_name
+	header_name_label.add_theme_color_override("font_color", ArtDirection.text_color(Color("#a36822") if not badge.is_empty() else ArtDirection.ink()))
+	if badge == "VIP":
+		header_name_label.tooltip_text = L10n.text("VIP 구조대 패스 보유 · 전용 명패 지급 완료")
+	elif badge.is_empty():
+		header_name_label.tooltip_text = ""
+	else:
+		header_name_label.tooltip_text = L10n.text("구조대 후원 팩 보유 · 후원 명패와 추억 액자 지급 완료")
 
 
 func _add_notification_dot(target: Control, visible_now: bool) -> void:
@@ -500,6 +528,7 @@ func _add_notification_dot(target: Control, visible_now: bool) -> void:
 	style.shadow_size = 3
 	style.shadow_offset = Vector2(0, 2)
 	dot.add_theme_stylebox_override("panel", style)
+	dot.set_meta("notification_dot", true)
 	target.add_child(dot)
 	dot.pivot_offset = Vector2(13.5, 13.5)
 	var mark := Label.new()
@@ -518,6 +547,45 @@ func _add_notification_dot(target: Control, visible_now: bool) -> void:
 func _add_header_badges() -> void:
 	_add_notification_dot(attendance_button, main.save.can_claim_attendance())
 	_add_notification_dot(mission_button, main.save.can_claim_daily_mission_chest())
+	_add_notification_dot(daily_support_button, main.save.can_claim_daily_support())
+
+
+func _refresh_daily_support_button() -> void:
+	## 상점(L10)에서 구매한 직후부터 홈에서 바로 받을 수 있어야 한다. 받을 게 없는 날은 숨긴다.
+	if not daily_support_button:
+		return
+	daily_support_button.visible = main.save.has_daily_support() and main.save.home_feature_unlocked("shop")
+	for child in daily_support_button.get_children():
+		if child is Control and child.has_meta("notification_dot"):
+			child.queue_free()
+	_add_notification_dot(daily_support_button, main.save.can_claim_daily_support())
+	if main.save.can_claim_daily_support():
+		daily_support_button.text = L10n.text("오늘의 구조 지원 받기")
+		daily_support_button.tooltip_text = L10n.text("VIP·시즌 프리미엄 일일 지원을 오늘 아직 받지 않았어요")
+	else:
+		daily_support_button.text = L10n.text("구조 지원 수령 완료")
+		daily_support_button.tooltip_text = L10n.text("다음 지원은 내일 받을 수 있어요")
+
+
+func _claim_daily_support_from_home() -> void:
+	var stardust_total := 0
+	var time_total := 0
+	var claimed := 0
+	for reward in [main.save.claim_vip_daily_support(), main.save.claim_season_daily_support()]:
+		if reward.is_empty(): continue
+		claimed += 1
+		stardust_total += int(reward.get("stardust", 0))
+		time_total += int(reward.get("boosters", {}).get("time", 0))
+	if claimed == 0:
+		_show_toast(L10n.text("오늘 지원은 이미 받았어요. 내일 다시 만나요!"))
+	else:
+		if main.analytics: main.analytics.track("vip_daily_support", {"result":"claimed", "source":"home", "count":claimed})
+		_show_toast(L10n.text("구조 지원 도착! 별가루 %d · 시간 젤리 %d") % [stardust_total, time_total])
+	# 상점이 닫혀 있어도 홈의 별가루 표시와 버튼 상태를 갱신한다.
+	if stardust_label:
+		stardust_label.text = L10n.text(("%s" if (ArtDirection.is_botanical() or ArtDirection.is_night()) else "★ %s") % _format_number(main.save.get_stardust()))
+	_refresh_daily_support_button()
+	_refresh_billing_ui()
 
 
 func _show_nickname_popup() -> void:
@@ -709,6 +777,7 @@ func _refresh_attendance_button() -> void:
 
 func _shop_item_card(item: Dictionary) -> PanelContainer:
 	var is_ads := L10n.text(String(item.get("type", ""))) == "remove_ads"
+	var is_supporter := L10n.text(String(item.get("type", ""))) == "supporter"
 	var is_energy := L10n.text(String(item.get("type", ""))) == "energy"
 	var is_furniture := L10n.text(String(item.get("type", ""))) == "furniture"
 	var is_bundle := L10n.text(String(item.get("type", ""))) == "bundle"
@@ -748,9 +817,9 @@ func _shop_item_card(item: Dictionary) -> PanelContainer:
 		furniture_icon.add_theme_font_size_override("font_size", 45)
 		furniture_icon.add_theme_color_override("font_color", ArtDirection.ink())
 		icon_frame.add_child(furniture_icon)
-	elif is_ads:
+	elif is_ads or is_supporter:
 		var ad_icon := Label.new()
-		ad_icon.text = L10n.text("VIP\nPASS")
+		ad_icon.text = L10n.text("후원\nPACK") if is_supporter else L10n.text("VIP\nPASS")
 		ad_icon.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		ad_icon.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		ad_icon.add_theme_font_size_override("font_size", 23)
@@ -923,8 +992,12 @@ func _show_shop_popup() -> void:
 	currency_guide.add_theme_color_override("font_color", ArtDirection.ink())
 	currency_products.add_child(currency_guide)
 	if main.save.has_removed_ads():
-		currency_products.add_child(_vip_support_button())
+		currency_products.add_child(_daily_support_button("vip"))
+	if main.save.can_claim_season_daily_support() or main.save.season_premium:
+		currency_products.add_child(_daily_support_button("season"))
 	var shop_items := ShopCatalog.load_items()
+	# 판매 종료 상품(레거시 VIP)은 기존 구매자에게만 보인다.
+	shop_items = shop_items.filter(func(item: Dictionary): return not bool(item.get("sale_ended", false)) or main.save.has_purchased_shop_item(String(item.get("id", ""))))
 	var recommended_id: String = L10n.text(String(main.save.recommended_shop_item_id()))
 	if main.analytics and not recommended_id.is_empty():
 		main.analytics.track("shop_offer_view", {"item_id":recommended_id,"reason":"progress_recommendation"})
@@ -969,7 +1042,7 @@ func _show_shop_popup() -> void:
 	shop_status_label.add_theme_color_override("font_color", ArtDirection.ink())
 	content.add_child(shop_status_label)
 	var restore := _button(L10n.text("구매 복원 / 상품 새로고침"), ArtDirection.panel_color(), Vector2(390, 58), 21)
-	restore.pressed.connect(func(): main.billing.refresh())
+	restore.pressed.connect(func(): main.billing.refresh(true))
 	content.add_child(restore)
 	var close := _button(tr("닫기"), Color("#806aa7"), Vector2(190, 64), 24)
 	close.pressed.connect(_close_shop_popup)
@@ -989,6 +1062,7 @@ func _refresh_billing_ui() -> void:
 	stardust_label.text = L10n.text(("%s" if (ArtDirection.is_botanical() or ArtDirection.is_night()) else "★ %s") % _format_number(main.save.get_stardust()))
 	_refresh_home_energy()
 	_refresh_vip_identity()
+	_refresh_daily_support_button()
 
 
 func _show_purchase_confirmation(item: Dictionary, buy_button: Button) -> void:
@@ -1026,10 +1100,10 @@ func _show_purchase_confirmation(item: Dictionary, buy_button: Button) -> void:
 	badge.add_theme_stylebox_override("panel", badge_style)
 	content.add_child(badge)
 	var badge_icon := Label.new()
-	badge_icon.text = L10n.text(String(item.get("mark", "◆"))) if item_type == "furniture" else ("★" if item_type == "stardust" else ("♥" if item_type == "energy" else ("PACK" if item_type == "bundle" else "VIP\nPASS")))
+	badge_icon.text = L10n.text(String(item.get("mark", "◆"))) if item_type == "furniture" else ("★" if item_type == "stardust" else ("♥" if item_type == "energy" else ("PACK" if item_type == "bundle" else ("후원\nPACK" if item_type == "supporter" else "VIP\nPASS"))))
 	badge_icon.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	badge_icon.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	badge_icon.add_theme_font_size_override("font_size", 20 if ["remove_ads", "bundle"].has(L10n.text(String(item.get("type", "")))) else 48)
+	badge_icon.add_theme_font_size_override("font_size", 20 if ["remove_ads", "bundle", "supporter"].has(L10n.text(String(item.get("type", "")))) else 48)
 	badge_icon.add_theme_color_override("font_color", ArtDirection.ink())
 	badge.add_child(badge_icon)
 	var title := Label.new()
@@ -1279,6 +1353,15 @@ func _show_attendance_popup() -> void:
 	else:
 		status.text = L10n.text("오늘 선물을 받았어요. 내일 다시 만나요!")
 	status_panel.add_child(status)
+	var ad_gift := _button(L10n.text("광고 보고 별가루 +5 · 하루 1회"), Color("#8e64c8"), Vector2(500, 64), 23)
+	ad_gift.disabled = main.save.rewarded_remaining("home_gift") <= 0
+	if ad_gift.disabled: ad_gift.text = L10n.text("오늘의 광고 선물 받기 완료")
+	ad_gift.pressed.connect(func():
+		main.offer_rewarded("home_gift", L10n.text("광고를 끝까지 보면 별가루 5개를 받아요.\n무료 출석 선물과 별개로 하루 1회 받을 수 있어요."), func():
+			_refresh_billing_ui()
+			_close_attendance_popup()
+			_show_attendance_popup()))
+	content.add_child(ad_gift)
 	var action_row := HBoxContainer.new()
 	action_row.alignment = BoxContainer.ALIGNMENT_CENTER
 	action_row.add_theme_constant_override("separation", 12)
@@ -1583,21 +1666,27 @@ func _show_daily_mission_popup() -> void:
 	content.add_child(close)
 
 
-func _vip_support_button() -> Button:
-	var button := _button(L10n.text("VIP 오늘의 구조 지원 · 별가루 8 + 시간 젤리 1"), Color("#d7aa39"), Vector2(530, 58), 17)
+func _daily_support_button(kind: String) -> Button:
+	## kind: "vip"(레거시 영구 권리) 또는 "season"(시즌 프리미엄 기간 한정).
+	var is_season := kind == "season"
+	var reward: Dictionary = main.save.season_daily_support_reward() if is_season else {"stardust":8,"boosters":{"time":1}}
+	var stardust_amount := int(reward.get("stardust", 0))
+	var time_amount := int(reward.get("boosters", {}).get("time", 0))
+	var title := L10n.text("시즌 프리미엄 오늘의 구조 지원") if is_season else L10n.text("VIP 오늘의 구조 지원")
+	var button := _button("%s · 별가루 %d + 시간 젤리 %d" % [title, stardust_amount, time_amount], Color("#8c5fc4") if is_season else Color("#d7aa39"), Vector2(530, 58), 17)
 	button.mouse_filter = Control.MOUSE_FILTER_PASS
-	button.set_meta("vip_daily_support", true)
-	button.disabled = not main.save.can_claim_vip_daily_support()
+	button.set_meta("season_daily_support" if is_season else "vip_daily_support", true)
+	button.disabled = not (main.save.can_claim_season_daily_support() if is_season else main.save.can_claim_vip_daily_support())
 	if button.disabled:
-		button.text = L10n.text("VIP 오늘의 구조 지원 · 수령 완료")
+		button.text = "%s · %s" % [title, L10n.text("수령 완료")]
 	button.pressed.connect(func():
-		var reward: Dictionary = main.save.claim_vip_daily_support()
-		if reward.is_empty(): return
+		var granted: Dictionary = main.save.claim_season_daily_support() if is_season else main.save.claim_vip_daily_support()
+		if granted.is_empty(): return
 		button.disabled = true
-		button.text = L10n.text("VIP 오늘의 구조 지원 · 수령 완료")
-		if main.analytics: main.analytics.track("vip_daily_support", {"result":"claimed"})
+		button.text = "%s · %s" % [title, L10n.text("수령 완료")]
+		if main.analytics: main.analytics.track("vip_daily_support", {"result":"claimed", "source":kind})
 		_refresh_billing_ui()
-		_show_toast(L10n.text("VIP 지원 도착! 별가루 8 · 시간 젤리 1"))
+		_show_toast(L10n.text("%s 도착! 별가루 %d · 시간 젤리 %d") % [L10n.text("시즌 지원") if is_season else L10n.text("VIP 지원"), stardust_amount, time_amount])
 	)
 	return button
 
@@ -1641,7 +1730,9 @@ func _show_lifestyle_popup() -> void:
 	content.add_theme_constant_override("separation", 13)
 	scroll.add_child(content)
 	if main.save.has_removed_ads():
-		content.add_child(_vip_support_button())
+		content.add_child(_daily_support_button("vip"))
+	if main.save.season_premium:
+		content.add_child(_daily_support_button("season"))
 	var request_title := Label.new()
 	request_title.text = L10n.text(tr("오늘의 주민 부탁"))
 	request_title.add_theme_font_size_override("font_size", 27)

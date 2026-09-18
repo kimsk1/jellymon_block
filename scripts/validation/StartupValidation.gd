@@ -92,6 +92,19 @@ static func validate(localization: Node) -> PackedStringArray:
 		level_errors.append("광고 제거 중복 구매 차단 오류")
 	if not shop_test_save.consume_rewarded_ad_skip("clear_reward_double") or shop_test_save.can_skip_rewarded_ad("clear_reward_double"):
 		level_errors.append("VIP 선택형 보상 광고 일일 스킵 오류")
+	var supporter_pack := ShopCatalog.item_by_id("supporter_pack")
+	var supporter_dust_before := shop_test_save.get_stardust()
+	if not shop_test_save.apply_verified_shop_item(supporter_pack) or not shop_test_save.has_supporter_pack() or shop_test_save.get_stardust() != supporter_dust_before:
+		level_errors.append("후원 팩 지급 오류")
+	for supporter_furniture_id in supporter_pack.get("furniture_ids", []):
+		if not shop_test_save.has_furniture(String(supporter_furniture_id)):
+			level_errors.append("후원 팩 한정 가구 누락: %s" % String(supporter_furniture_id))
+	if shop_test_save.apply_verified_shop_item(supporter_pack) or shop_test_save.profile_badge() != "VIP":
+		level_errors.append("후원 팩 중복 지급/레거시 VIP 배지 우선 오류")
+	var supporter_only := SaveGame.new()
+	supporter_only.persistence_enabled = false
+	if not supporter_only.apply_verified_shop_item(supporter_pack) or supporter_only.profile_badge() != "후원" or supporter_only.has_daily_support() or supporter_only.can_skip_rewarded_ad("clear_reward_double") or supporter_only.clear_reward_ad_multiplier() != 2:
+		level_errors.append("후원 팩은 배지/가구만 제공해야 함")
 	var starter_pack := ShopCatalog.item_by_id("starter_rescue_pack")
 	var starter_dust_before := shop_test_save.get_stardust()
 	if not shop_test_save.apply_verified_shop_item(starter_pack) or shop_test_save.get_stardust() != starter_dust_before + int(starter_pack.get("stardust", 0)) or not shop_test_save.has_furniture("sofa_p"):
@@ -210,6 +223,20 @@ static func validate(localization: Node) -> PackedStringArray:
 		level_errors.append("프리미엄 시즌 상품 지급 오류")
 	if retention_test.claim_retention_season_reward(5, true).is_empty():
 		level_errors.append("프리미엄 시즌 보상 수령 오류")
+	if retention_test.clear_reward_ad_multiplier() != 3:
+		level_errors.append("시즌 프리미엄 클리어 광고 3배 오류")
+	if retention_test.can_skip_rewarded_ad("clear_reward_double"):
+		level_errors.append("시즌 프리미엄은 광고를 건너뛰면 안 됨")
+	var season_dust_before := retention_test.get_stardust()
+	var season_time_before := retention_test.get_booster_count("time")
+	if not retention_test.can_claim_season_daily_support() or retention_test.claim_season_daily_support().is_empty() or retention_test.get_stardust() != season_dust_before + 8 or retention_test.get_booster_count("time") != season_time_before + 1:
+		level_errors.append("시즌 프리미엄 일일 지원 지급 오류")
+	if not retention_test.claim_season_daily_support().is_empty():
+		level_errors.append("시즌 프리미엄 일일 지원 중복 지급")
+	retention_test.season_key = "expired"
+	retention_test.season_premium = true
+	if retention_test.can_claim_season_daily_support() or retention_test.clear_reward_ad_multiplier() != 2:
+		level_errors.append("시즌 종료 후 프리미엄 혜택이 멈추지 않음")
 	retention_test.award_stars(299, 1)
 	for _point in range(5): retention_test.grant_restoration_point(301)
 	if retention_test.upgrade_town("plaza").is_empty() or int(retention_test.town_levels.get("plaza", 0)) != 1:

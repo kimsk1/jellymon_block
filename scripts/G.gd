@@ -7,12 +7,23 @@ const H := 1280.0
 static var haptics_enabled := true
 
 
+static func safe_rect(viewport_size: Vector2) -> Rect2:
+	var full := Rect2(Vector2.ZERO, viewport_size)
+	if not (OS.has_feature("android") or OS.has_feature("ios")):
+		return full
+	var pixels := Rect2(DisplayServer.get_display_safe_area())
+	var window_size := Vector2(DisplayServer.window_get_size())
+	if not pixels.has_area() or window_size.x <= 0 or window_size.y <= 0:
+		return full
+	pixels.position -= Vector2(DisplayServer.window_get_position())
+	var ratio := viewport_size / window_size
+	var safe := Rect2(pixels.position * ratio, pixels.size * ratio).intersection(full)
+	return safe if safe.has_area() else full
+
+
 static func safe_offset(viewport_size: Vector2) -> Vector2:
-	## expand 스트레치가 추가한 폴드폰/태블릿 여백 안에서 720×1280 게임 영역을 중앙에 둔다.
-	return Vector2(
-		maxf(0.0, (viewport_size.x - W) * 0.5),
-		maxf(0.0, (viewport_size.y - H) * 0.5)
-	)
+	var safe := safe_rect(viewport_size)
+	return safe.position + Vector2(maxf(0.0, (safe.size.x - W) * 0.5), maxf(0.0, (safe.size.y - H) * 0.5))
 
 const COLORS := {
 	"R": Color(1.0, 0.353, 0.431),

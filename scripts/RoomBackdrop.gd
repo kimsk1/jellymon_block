@@ -43,8 +43,11 @@ func _draw() -> void:
 		# one fixed seam above ORIGIN so existing furniture never lands on a wall.
 		var texture_size := room_texture.get_size()
 		var seam := texture_size.y * float(theme.wall_ratio)
-		draw_texture_rect_region(room_texture, Rect2(0, 138, G.W, 252), Rect2(0, 0, texture_size.x, seam))
-		draw_texture_rect_region(room_texture, Rect2(0, 390, G.W, 468), Rect2(0, seam, texture_size.x, texture_size.y - seam))
+		var safe := G.safe_rect(viewport_size)
+		var top := 138.0 if photo_mode else 138.0 + safe.position.y - extra_offset.y
+		var bottom := 858.0 if photo_mode else 858.0 + safe.end.y - extra_offset.y - G.H
+		draw_texture_rect_region(room_texture, Rect2(-extra_offset.x, top, viewport_size.x, 390.0 - top), Rect2(0, 0, texture_size.x, seam))
+		draw_texture_rect_region(room_texture, Rect2(-extra_offset.x, 390, viewport_size.x, bottom - 390.0), Rect2(0, seam, texture_size.x, texture_size.y - seam))
 	if edit_mode:
 		for y in range(RoomData.GRID_H):
 			for x in range(RoomData.GRID_W):

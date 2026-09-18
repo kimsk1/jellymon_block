@@ -59,6 +59,9 @@ var claimed_shop_items: Array[String] = []
 var iap_transactions: Dictionary = {}
 var vip_reward_skip_date := ""
 var vip_daily_support_date := ""
+var season_daily_support_date := ""
+var rewarded_daily: Dictionary = {}
+const REWARDED_LIMITS := {"energy_refill": 3, "booster_time": 2, "home_gift": 1}
 var nickname := ""
 var seen_scenarios: Array[String] = []
 var completed_tutorials: Array[String] = []
@@ -125,6 +128,7 @@ func load_data() -> void:
 			var d = JSON.parse_string(f.get_as_text())
 			if typeof(d) == TYPE_DICTIONARY:
 				iap_transactions = d.get("iap_transactions", {})
+				rewarded_daily = d.get("rewarded_daily", {}) if d.get("rewarded_daily", {}) is Dictionary else {}
 				stars = d.get("stars", {})
 				best_clear_times = d.get("best_clear_times", {})
 				best_clear_at = d.get("best_clear_at", {})
@@ -153,6 +157,7 @@ func load_data() -> void:
 						claimed_shop_items.append(shop_id)
 				vip_reward_skip_date = String(d.get("vip_reward_skip_date", ""))
 				vip_daily_support_date = String(d.get("vip_daily_support_date", ""))
+				season_daily_support_date = String(d.get("season_daily_support_date", ""))
 				nickname = String(d.get("nickname", ""))
 				for scenario_id in d.get("seen_scenarios", []):
 					var value := String(scenario_id)
@@ -281,6 +286,8 @@ func to_dictionary() -> Dictionary:
 		"iap_transactions": iap_transactions,
 		"vip_reward_skip_date": vip_reward_skip_date,
 		"vip_daily_support_date": vip_daily_support_date,
+		"season_daily_support_date": season_daily_support_date,
+		"rewarded_daily": rewarded_daily.duplicate(true),
 		"nickname": nickname,
 		"seen_scenarios": seen_scenarios,
 		"completed_tutorials": completed_tutorials,
@@ -323,6 +330,7 @@ func to_dictionary() -> Dictionary:
 func cloud_data() -> Dictionary:
 	var data := to_dictionary()
 	data.erase("hive_record_owner")
+	data.erase("rewarded_daily") # Device-local quotas must not roll back with cloud snapshots.
 	data.erase("iap_transactions") # Device delivery journal must not roll back with a cloud snapshot.
 	return data
 
@@ -681,6 +689,7 @@ func progression_snapshot() -> Dictionary:
 		"claimed_shop_items": claimed_shop_items.duplicate(),
 		"ads_removed": ads_removed,
 		"vip_daily_support_date": vip_daily_support_date,
+		"season_daily_support_date": season_daily_support_date,
 		"daily_challenge_date": daily_challenge_date,
 		"weekly_key": weekly_key,
 		"weekly_expedition_step": weekly_expedition_step,
@@ -952,10 +961,18 @@ func apply_verified_shop_item(item: Dictionary, persist: bool = true) -> bool:
 				return false
 			stardust += amount
 		"remove_ads":
+			## 레거시 VIP. 신규 판매는 종료됐지만 기존 구매자의 복원/재지급 경로는 유지한다.
 			if ads_removed:
 				return false
 			ads_removed = true
 			claimed_shop_items.append(String(item.get("id", "remove_ads")))
+			_grant_shop_furniture(item)
+		"supporter":
+			## 영구 소장 상품. 매일 지급 재화와 광고 스킵은 포함하지 않는다.
+			var supporter_id := String(item.get("id", ""))
+			if supporter_id.is_empty() or claimed_shop_items.has(supporter_id):
+				return false
+			claimed_shop_items.append(supporter_id)
 			_grant_shop_furniture(item)
 		"energy":
 			var amount := maxi(0, int(item.get("amount", 0)))
@@ -1081,6 +1098,62 @@ func claim_vip_daily_support() -> Dictionary:
 	booster_inventory["time"] = get_booster_count("time") + 1
 	save_data()
 	return {"stardust":8,"boosters":{"time":1}}
+
+
+func has_supporter_pack() -> bool:
+	return claimed_shop_items.has("supporter_pack")
+
+
+func profile_badge() -> String:
+	## 헤더 이름 앞에 붙는 배지. 레거시 VIP 권리가 우선이고, 후원 팩은 소장 배지만 제공한다.
+	if ads_removed:
+		return "VIP"
+	if has_supporter_pack():
+		return "후원"
+	return ""
+
+
+func season_daily_support_reward() -> Dictionary:
+	var item := ShopCatalogLib.item_by_id(String(RetentionCatalogLib.season().get("premium_product_id", "season_heart_star_pass")))
+	var reward: Dictionary = item.get("daily_support", {})
+	return reward.duplicate(true) if reward is Dictionary else {}
+
+
+func can_claim_season_daily_support() -> bool:
+	refresh_season()
+	return season_premium and not season_daily_support_reward().is_empty() and season_daily_support_date != Time.get_date_string_from_system()
+
+
+func claim_season_daily_support() -> Dictionary:
+	## 시즌 프리미엄 보유 기간에만 매일 지급된다. 시즌이 끝나면 자동으로 멈춘다.
+	if not can_claim_season_daily_support():
+		return {}
+	var reward := season_daily_support_reward()
+	season_daily_support_date = Time.get_date_string_from_system()
+	stardust += maxi(0, int(reward.get("stardust", 0)))
+	for booster_id in reward.get("boosters", {}):
+		if booster_inventory.has(booster_id):
+			booster_inventory[booster_id] = get_booster_count(String(booster_id)) + maxi(0, int(reward.boosters[booster_id]))
+	save_data()
+	return reward
+
+
+func can_claim_daily_support() -> bool:
+	return can_claim_vip_daily_support() or can_claim_season_daily_support()
+
+
+func has_daily_support() -> bool:
+	refresh_season()
+	return ads_removed or (season_premium and not season_daily_support_reward().is_empty())
+
+
+func clear_reward_ad_multiplier() -> int:
+	## 클리어 보상 광고 시청 배수. 프리미엄은 광고를 건너뛰는 대신 더 받는다.
+	refresh_season()
+	if season_premium:
+		var item := ShopCatalogLib.item_by_id(String(RetentionCatalogLib.season().get("premium_product_id", "season_heart_star_pass")))
+		return maxi(2, int(item.get("clear_reward_ad_multiplier", 2)))
+	return 2
 
 
 func has_furniture(id: String) -> bool:
@@ -1449,8 +1522,8 @@ func mark_beta_feedback_submitted() -> void:
 func recommended_shop_item_id() -> String:
 	if not has_purchased_shop_item("starter_rescue_pack") and RoomDataLib.clear_count(self) < 30:
 		return "starter_rescue_pack"
-	if not has_removed_ads() and RoomDataLib.clear_count(self) >= 100:
-		return "remove_ads"
+	if not has_removed_ads() and not has_supporter_pack() and RoomDataLib.clear_count(self) >= 100:
+		return "supporter_pack"
 	if consecutive_failures >= 3 and not has_purchased_shop_item("chapter_rescue_pack"):
 		return "chapter_rescue_pack"
 	if not has_purchased_shop_item("hideout_decor_pack") and room_placements.size() >= 6:
@@ -1547,3 +1620,30 @@ func _migrate_level_segments() -> void:
 		if not unlocked_level_segments.has(segment):
 			unlocked_level_segments.append(segment)
 	unlocked_level_segments.sort()
+
+
+func rewarded_remaining(placement: String) -> int:
+	var today := Time.get_date_string_from_system()
+	var entry: Dictionary = rewarded_daily.get(placement, {})
+	# Retain a future date to avoid granting extra quotas when the device clock rolls back.
+	var used := int(entry.get("count", 0)) if String(entry.get("date", "")) >= today else 0
+	return maxi(0, int(REWARDED_LIMITS.get(placement, 0)) - used)
+
+
+func claim_rewarded_placement(placement: String) -> bool:
+	if rewarded_remaining(placement) <= 0:
+		return false
+	var used := int(REWARDED_LIMITS[placement]) - rewarded_remaining(placement)
+	var previous: Dictionary = rewarded_daily.get(placement, {})
+	var date := Time.get_date_string_from_system()
+	if String(previous.get("date", "")) > date: date = String(previous.date)
+	rewarded_daily[placement] = {"date": date, "count": used + 1}
+	match placement:
+		"energy_refill":
+			refresh_energy()
+			energy += 1
+		"home_gift":
+			stardust += 5
+	# booster_time is applied to the current run, never permanent inventory.
+	save_data()
+	return true

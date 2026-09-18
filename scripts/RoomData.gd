@@ -100,6 +100,8 @@ const EXCLUSIVE_ITEMS := [
 	{"id":"season_balloon_arch", "name":"별풍선 아치", "shape":"TD", "color":"#78bfe2", "mark":"☆", "package_exclusive":true, "animated":true, "reaction":"풍선 사이로 달리면 축제가 시작돼!"},
 	{"id":"season_star_table", "name":"별과자 테이블", "shape":"H2", "color":"#e8c84f", "mark":"★", "package_exclusive":true, "animated":true, "reaction":"별과자가 반짝반짝 맛있어 보여!"},
 	{"id":"season_memory_tree", "name":"추억나무", "shape":"V3", "color":"#72c47f", "mark":"✦", "package_exclusive":true, "animated":true, "reaction":"우리 추억이 잎사귀마다 자라고 있어!"},
+	{"id":"supporter_nameplate", "name":"후원 구조대 명패", "shape":"H2", "color":"#e9a34a", "mark":"✿", "package_exclusive":true, "animated":true, "reaction":"우리 구조대를 응원해 줘서 고마워!"},
+	{"id":"supporter_memory_frame", "name":"후원 추억 액자", "shape":"V2", "color":"#9fb4ea", "mark":"▣", "package_exclusive":true, "animated":true, "reaction":"액자 속 사진이 반짝이며 우리를 기억해!"},
 ]
 
 const ACHIEVEMENT_NAMES := [
@@ -250,8 +252,8 @@ static func validate_catalog() -> PackedStringArray:
 		errors.append("업적 아지트 가구가 10종이 아님")
 	if JOURNEY_ITEMS.size() != 10:
 		errors.append("장기 원정 가구가 10종이 아님")
-	if EXCLUSIVE_ITEMS.size() != 10:
-		errors.append("VIP/꾸미기/시즌 한정 가구가 10종이 아님")
+	if EXCLUSIVE_ITEMS.size() != 12:
+		errors.append("VIP/후원/꾸미기/시즌 한정 가구가 12종이 아님")
 	var ids := {}
 	for item in all_items():
 		if ids.has(item.id):

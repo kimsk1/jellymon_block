@@ -1660,13 +1660,17 @@ func _continue_with_stardust() -> bool:
 	if main.analytics:
 		main.analytics.track("level_continue", {"level": level_idx + 1, "cost": continue_cost})
 		main.analytics.track("currency_sink", {"currency": "stardust", "amount": continue_cost, "sink": "level_continue"})
+	return _resume_after_failure(total_time)
+
+
+func _resume_after_failure(seconds: float) -> bool:
 	for j in jellies:
 		if is_instance_valid(j) and not j.absorbing:
 			j.revive()
 	for c in catchers:
 		if is_instance_valid(c):
 			c.revive()
-	time_left = total_time
+	time_left = seconds
 	hud.set_time(time_left, total_time)
 	continued_after_fail = true
 	state = "play"
@@ -1680,10 +1684,21 @@ func _continue_with_stardust() -> bool:
 # ────────────────────────── 구조 보조 아이템 ──────────────────────────
 
 func use_booster(booster_id: String) -> void:
-	if state != "play" or main.save.get_booster_count(booster_id) <= 0:
+	if state != "play":
 		return
 	if not main.active_activity.is_empty() and String(main.active_activity.get("modifier", {}).get("id", "")) == "no_boosters":
 		fx.float_text(Vector2(G.W * 0.5, G.H - 150), L10n.text("맨손 구조에서는 부스터를 사용할 수 없어요"), Color("#fff0dc"), 22)
+		return
+	if main.save.get_booster_count(booster_id) <= 0:
+		if booster_id == "time" and main.save.rewarded_remaining("booster_time") > 0:
+			state = "reward_ad"
+			_release()
+			main.offer_rewarded("booster_time", L10n.text("광고를 끝까지 보면 이번 판에 15초가 추가돼요.\n하루 2회 · 보유 부스터는 사용하지 않아요."), func():
+				time_left += 15.0
+				total_time = maxf(total_time, time_left)
+				hud.set_time(time_left, total_time), func():
+				if state == "reward_ad": state = "play"
+				hud.refresh_boosters())
 		return
 	var applied := false
 	match booster_id:
@@ -2311,3 +2326,15 @@ func _delay(seconds: float) -> Signal:
 	add_child(timer)
 	timer.start(seconds)
 	return timer.timeout
+
+
+func can_ad_continue() -> bool:
+	return state == "fail" and not continued_after_fail and time_left <= 0.0
+
+
+func continue_with_ad() -> bool:
+	if not can_ad_continue():
+		return false
+	if main.analytics:
+		main.analytics.track("level_continue", {"level": level_idx + 1, "cost": 0})
+	return _resume_after_failure(30.0)

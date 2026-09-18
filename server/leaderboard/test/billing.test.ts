@@ -22,7 +22,9 @@ function verified(payload: string, tx = 'GO_test', sku = data.sku) {
 test('deployment product catalog exactly matches the game catalog', () => {
   const canonical = JSON.parse(readFileSync(new URL('../../../../assets/data/item.json', import.meta.url), 'utf8'));
   assert.deepEqual(products, canonical.items);
-  assert.equal(products.length, 8);
+  assert.equal(products.length, 9);
+  assert.equal(products.find(p => p.id === 'supporter_pack')?.type, 'supporter');
+  assert.equal(products.find(p => p.id === 'remove_ads')?.sale_ended, true);
 });
 test('verified grant is durable, retries use one transaction, only originating install can ACK', async () => {
   const dir = mkdtempSync(join(tmpdir(), 'jelly-iap-')), path = join(dir, 'billing.db');
@@ -59,7 +61,7 @@ test('invalid, refunded, foreign app, account, real payment and multi-quantity r
   } finally { f.db.close(); }
 });
 test('one-time ownership restores without a new currency grant; other account gets no entitlement', async () => {
-  const f = fixture(), once = { ...data, sku: products[4].android_product_id };
+  const f = fixture(), once = { ...data, sku: products.find(p => p.id === 'starter_rescue_pack')!.android_product_id };
   try {
     const order: any = await f.service.handle('order', '10', once);
     f.set(verified(order.payload, 'GO_pack', once.sku));

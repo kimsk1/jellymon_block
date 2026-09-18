@@ -529,6 +529,18 @@ func show_energy_empty() -> void:
 	empty_energy_timer_label.add_theme_font_size_override("font_size", 30)
 	empty_energy_timer_label.add_theme_color_override("font_color", ArtDirection.danger_color())
 	box.add_child(empty_energy_timer_label)
+	var ad_energy := Button.new()
+	ad_energy.text = L10n.text("광고 보고 하트 +1 (%d/3)") % main.save.rewarded_remaining("energy_refill")
+	ad_energy.custom_minimum_size = Vector2(400, 70)
+	ad_energy.add_theme_font_size_override("font_size", 24)
+	ArtDirection.apply_button(ad_energy, Color("#8e64c8"), 20)
+	ad_energy.disabled = main.save.rewarded_remaining("energy_refill") <= 0
+	ad_energy.pressed.connect(func():
+		main.offer_rewarded("energy_refill", L10n.text("광고를 끝까지 보면 하트 1개를 받아요.\n하루 최대 3회예요."), func():
+			empty_energy_timer_label = null
+			if is_instance_valid(dim): dim.queue_free()
+			_update_energy_display()))
+	box.add_child(ad_energy)
 	var ok := Button.new()
 	ok.text = L10n.text(tr("확인"))
 	ok.custom_minimum_size = Vector2(250, 72)

@@ -30,6 +30,10 @@ var _shutting_down := false
 
 
 func _ready() -> void:
+	var debug_expiry := preload("res://scripts/DebugBuildExpiry.gd").new()
+	add_child(debug_expiry)
+	if not debug_expiry.start():
+		return
 	_startup_trace("main_ready")
 	get_tree().auto_accept_quit = false
 	get_window().close_requested.connect(_request_shutdown)
@@ -1499,3 +1503,12 @@ func _shutdown(exit_code: int) -> void:
 	# 오디오 스레드가 중지 요청과 재생 참조 해제를 처리할 시간을 보장한다.
 	await get_tree().create_timer(0.1).timeout
 	get_tree().quit(exit_code)
+
+
+func offer_rewarded(placement: String, description: String, on_reward: Callable, on_close: Callable = Callable()) -> void:
+	if get_node_or_null("RewardedOffer") != null:
+		return
+	var offer := preload("res://scripts/RewardedOffer.gd").new()
+	offer.name = "RewardedOffer"
+	add_child(offer)
+	offer.open(self, placement, description, on_reward, on_close)

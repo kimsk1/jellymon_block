@@ -450,6 +450,24 @@
         310,
         363
       ]
+    },
+    "supporter_nameplate": {
+      "atlas": "res://assets/furniture/supporter.png",
+      "region": [
+        4,
+        4,
+        381,
+        142
+      ]
+    },
+    "supporter_memory_frame": {
+      "atlas": "res://assets/furniture/supporter.png",
+      "region": [
+        389,
+        4,
+        142,
+        381
+      ]
     }
   }
 }

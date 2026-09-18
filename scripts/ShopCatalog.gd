@@ -2,7 +2,7 @@ class_name ShopCatalog
 ## 상점 상품은 APK/PCK에도 원본이 포함되는 assets/data/item.json에서 관리한다.
 
 const PATH := "res://assets/data/item.json"
-const REQUIRED_IDS := ["stardust_50", "stardust_110", "heart_5", "remove_ads", "starter_rescue_pack", "chapter_rescue_pack", "hideout_decor_pack", "season_heart_star_pass"]
+const REQUIRED_IDS := ["stardust_50", "stardust_110", "heart_5", "remove_ads", "supporter_pack", "starter_rescue_pack", "chapter_rescue_pack", "hideout_decor_pack", "season_heart_star_pass"]
 
 
 static func load_items() -> Array[Dictionary]:
@@ -57,17 +57,24 @@ static func validate_catalog() -> PackedStringArray:
 		errors.append("별가루 50 상품 구성 오류")
 	if int(item_by_id("stardust_110").get("amount", 0)) != 110 or int(item_by_id("stardust_110").get("price_krw", 0)) != 2000:
 		errors.append("별가루 110 상품 구성 오류")
-	if int(item_by_id("remove_ads").get("price_krw", 0)) != 3000:
-		errors.append("광고 제거 상품 구성 오류")
+	var legacy_vip := item_by_id("remove_ads")
+	if int(legacy_vip.get("price_krw", 0)) != 3000 or not bool(legacy_vip.get("legacy", false)) or not bool(legacy_vip.get("sale_ended", false)):
+		errors.append("레거시 VIP 상품 구성 오류")
+	var supporter := item_by_id("supporter_pack")
+	if String(supporter.get("type", "")) != "supporter" or bool(supporter.get("consumable", true)) or supporter.has("stardust") or supporter.has("energy") or supporter.has("boosters") or bool(supporter.get("sale_ended", false)):
+		errors.append("후원 팩 상품 구성 오류")
 	if int(item_by_id("heart_5").get("amount", 0)) != 5 or int(item_by_id("heart_5").get("price_krw", 0)) != 500:
 		errors.append("하트 5 상품 구성 오류")
 	for bundle_id in ["starter_rescue_pack", "chapter_rescue_pack", "hideout_decor_pack"]:
 		var bundle := item_by_id(bundle_id)
 		if String(bundle.get("type", "")) != "bundle" or bundle.get("boosters", {}).is_empty():
 			errors.append("패키지 상품 구성 오류: %s" % bundle_id)
-	if String(item_by_id("season_heart_star_pass").get("type", "")) != "season_pass":
+	var season_pass := item_by_id("season_heart_star_pass")
+	if String(season_pass.get("type", "")) != "season_pass":
 		errors.append("28일 프리미엄 시즌 상품 구성 오류")
-	for exclusive_id in ["remove_ads", "hideout_decor_pack", "season_heart_star_pass"]:
+	if int(season_pass.get("daily_support", {}).get("stardust", 0)) <= 0 or int(season_pass.get("clear_reward_ad_multiplier", 0)) < 2:
+		errors.append("시즌 프리미엄 일일 지원/광고 배수 구성 오류")
+	for exclusive_id in ["remove_ads", "supporter_pack", "hideout_decor_pack", "season_heart_star_pass"]:
 		var exclusive_item := item_by_id(exclusive_id)
 		if not bool(exclusive_item.get("exclusive", false)) or exclusive_item.get("furniture_ids", []).is_empty():
 			errors.append("독점 보상 상품 구성 오류: %s" % exclusive_id)
